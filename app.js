@@ -1,4 +1,4 @@
-/* AP Stats 小站：双语支持 + 列名翻译 + Sheet 名称翻译 */
+/* AP Stats 小站：双语支持 + 列名 & Sheet 名称翻译（带容错） */
 const $ = (id) => document.getElementById(id);
 const chart = $('chart');
 const W = 1000, H = 610, M = { left:86, right:38, top:32, bottom:75 };
@@ -98,18 +98,28 @@ const SHEET_MAP = {
     '8.学习时长-考试成绩': { zh: '8.学习时长-考试成绩', en: '8. Study Hours-Exam Scores' }
 };
 
-function getColumnName(key) {
-    if (COLUMN_MAP[key] && COLUMN_MAP[key][currentLang]) {
-        return COLUMN_MAP[key][currentLang];
+// ---------- 获取翻译（带容错：忽略空格差异） ----------
+function getTranslation(map, key, lang) {
+    let result = map[key]?.[lang];
+    if (!result) {
+        // 去除所有空格后再尝试匹配
+        const normalized = key.replace(/\s/g, '');
+        for (const [k, v] of Object.entries(map)) {
+            if (k.replace(/\s/g, '') === normalized) {
+                result = v[lang];
+                break;
+            }
+        }
     }
-    return key;
+    return result || key;
+}
+
+function getColumnName(key) {
+    return getTranslation(COLUMN_MAP, key, currentLang);
 }
 
 function getSheetDisplayName(key) {
-    if (SHEET_MAP[key] && SHEET_MAP[key][currentLang]) {
-        return SHEET_MAP[key][currentLang];
-    }
-    return key;
+    return getTranslation(SHEET_MAP, key, currentLang);
 }
 
 let currentLang = 'zh';
