@@ -1,4 +1,4 @@
-/* AP Stats 小站：双语支持 + 列名翻译 */
+/* AP Stats 小站：双语支持 + 列名翻译 + Sheet 名称翻译 */
 const $ = (id) => document.getElementById(id);
 const chart = $('chart');
 const W = 1000, H = 610, M = { left:86, right:38, top:32, bottom:75 };
@@ -80,16 +80,36 @@ const COLUMN_MAP = {
     '平均学分绩点 (GPA)': { zh: '平均学分绩点 (GPA)', en: 'GPA' },
     '每周计算机使用时长 (小时)': { zh: '每周计算机使用时长 (小时)', en: 'Weekly Computer Use (hours)' },
     '学习效果综合评分': { zh: '学习效果综合评分', en: 'Learning Effect Score' },
-    '每周学习时长 (小时)': { zh: '每周学习时长 (小时)', en: 'Weekly Study Hours (hours)' },
+    '每周学习时长 (小时)': { zh: '每周学习时长 (小时)', en: 'Study Hours (hours/week)' },
     '期末考试成绩 (分)': { zh: '期末考试成绩 (分)', en: 'Final Exam Score (points)' },
     '性别': { zh: '性别', en: 'Gender' }
+};
+
+// ---------- Excel Sheet 名称中英对照 ----------
+const SHEET_MAP = {
+    '1.海拔-气温': { zh: '1.海拔-气温', en: '1. Elevation-Temperature' },
+    '2.冰淇淋-空调销量': { zh: '2.冰淇淋-空调销量', en: '2. Ice Cream-Air Conditioner Sales' },
+    '3.年龄-握力': { zh: '3.年龄-握力', en: '3. Age-Grip Strength' },
+    '4.酒精浓度-反应时间': { zh: '4.酒精浓度-反应时间', en: '4. Alcohol Concentration-Reaction Time' },
+    '5.身高-体重': { zh: '5.身高-体重', en: '5. Height-Weight' },
+    '身高-体重分析': { zh: '身高-体重分析', en: 'Height-Weight Analysis' },
+    '6.鞋码-GPA': { zh: '6.鞋码-GPA', en: '6. Shoe Size-GPA' },
+    '7.计算机使用-学习效果': { zh: '7.计算机使用-学习效果', en: '7. Computer Use-Learning Effect' },
+    '8.学习时长-考试成绩': { zh: '8.学习时长-考试成绩', en: '8. Study Hours-Exam Scores' }
 };
 
 function getColumnName(key) {
     if (COLUMN_MAP[key] && COLUMN_MAP[key][currentLang]) {
         return COLUMN_MAP[key][currentLang];
     }
-    return key; // 若无翻译则返回原值
+    return key;
+}
+
+function getSheetDisplayName(key) {
+    if (SHEET_MAP[key] && SHEET_MAP[key][currentLang]) {
+        return SHEET_MAP[key][currentLang];
+    }
+    return key;
 }
 
 let currentLang = 'zh';
@@ -106,33 +126,35 @@ function switchLanguage(lang) {
     });
     // 切换按钮文字
     document.getElementById('langToggle').textContent = lang === 'zh' ? 'English' : '中文';
-    // 更新下拉选项显示（翻译列名）
-    refreshSelectDisplay();
+    // 刷新所有下拉菜单显示（Sheet名和列名）
+    refreshAllSelects();
     // 重新渲染图表（轴标签、统计信息等）
     render();
 }
 
-// 刷新下拉菜单的显示文本（不改变选中值）
-function refreshSelectDisplay() {
-    const selects = [$('xSelect'), $('ySelect')];
+// 刷新所有下拉菜单的显示文本（不改变选中值）
+function refreshAllSelects() {
+    const selects = [$('sheetSelect'), $('xSelect'), $('ySelect')];
     selects.forEach(sel => {
         const options = sel.options;
         for (let i = 0; i < options.length; i++) {
             const val = options[i].value;
-            options[i].text = getColumnName(val);
+            const displayFn = sel.id === 'sheetSelect' ? getSheetDisplayName : getColumnName;
+            options[i].text = displayFn(val);
         }
     });
 }
 
-// ---------- 原有功能函数（修改部分） ----------
+// ---------- 原有功能函数（修改） ----------
 function numericColumns(rows) {
     if (!rows.length) return [];
     return Object.keys(rows[0]).filter(k => rows.some(r => Number.isFinite(Number(r[k]))));
 }
 
 function setOptions(select, values, selection) {
-    // 显示翻译后的列名
-    select.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(getColumnName(v))}</option>`).join('');
+    const isSheet = select.id === 'sheetSelect';
+    const displayFn = isSheet ? getSheetDisplayName : getColumnName;
+    select.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(displayFn(v))}</option>`).join('');
     if (selection && values.includes(selection)) select.value = selection;
 }
 
@@ -222,7 +244,7 @@ function render() {
         html += `<line class="fit-line" x1="${sx(x1)}" y1="${sy(fit.slope*x1+fit.intercept)}" x2="${sx(x2)}" y2="${sy(fit.slope*x2+fit.intercept)}"/>`;
     }
 
-    // 轴标签：使用翻译后的列名
+    // 轴标签使用翻译后的列名
     html += `<text class="axis-label" x="${(M.left+W-M.right)/2}" y="${H-18}" text-anchor="middle">${escapeHtml(getColumnName(xKey))}</text>
              <text class="axis-label" transform="translate(22 ${(M.top+H-M.bottom)/2}) rotate(-90)" text-anchor="middle">${escapeHtml(getColumnName(yKey))}</text>`;
 
