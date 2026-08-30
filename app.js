@@ -1,10 +1,10 @@
-/* AP Stats 小站：无需服务器；数据来自同目录 Excel 文件。 */
+/* AP Stats 小站：双语支持 + 列名翻译 */
 const $ = (id) => document.getElementById(id);
 const chart = $('chart');
 const W = 1000, H = 610, M = { left:86, right:38, top:32, bottom:75 };
 let sheets = {}, original = [], current = [], xKey = '', yKey = '', dragging = null;
 
-// ---------- 多语言词库（全部中/英对照） ----------
+// ---------- 多语言词库 ----------
 const LANG = {
     zh: {
         brand: 'AP Stats 小站',
@@ -64,33 +64,78 @@ const LANG = {
     }
 };
 
-let currentLang = 'zh'; // 默认中文
+// ---------- Excel 列名中英对照 ----------
+const COLUMN_MAP = {
+    '海拔高度 (m)': { zh: '海拔高度 (m)', en: 'Elevation (m)' },
+    '气温 (°C)': { zh: '气温 (°C)', en: 'Temperature (°C)' },
+    '冰淇淋销量 (件/周)': { zh: '冰淇淋销量 (件/周)', en: 'Ice Cream Sales (units/week)' },
+    '空调销量 (台/周)': { zh: '空调销量 (台/周)', en: 'Air Conditioner Sales (units/week)' },
+    '年龄 (岁)': { zh: '年龄 (岁)', en: 'Age (years)' },
+    '握力 (kg)': { zh: '握力 (kg)', en: 'Grip Strength (kg)' },
+    '血液酒精浓度 (%)': { zh: '血液酒精浓度 (%)', en: 'Blood Alcohol Concentration (%)' },
+    '反应时间 (秒)': { zh: '反应时间 (秒)', en: 'Reaction Time (seconds)' },
+    '身高 (cm)': { zh: '身高 (cm)', en: 'Height (cm)' },
+    '体重 (kg)': { zh: '体重 (kg)', en: 'Weight (kg)' },
+    '鞋码 (码)': { zh: '鞋码 (码)', en: 'Shoe Size (US)' },
+    '平均学分绩点 (GPA)': { zh: '平均学分绩点 (GPA)', en: 'GPA' },
+    '每周计算机使用时长 (小时)': { zh: '每周计算机使用时长 (小时)', en: 'Weekly Computer Use (hours)' },
+    '学习效果综合评分': { zh: '学习效果综合评分', en: 'Learning Effect Score' },
+    '每周学习时长 (小时)': { zh: '每周学习时长 (小时)', en: 'Weekly Study Hours (hours)' },
+    '期末考试成绩 (分)': { zh: '期末考试成绩 (分)', en: 'Final Exam Score (points)' },
+    '性别': { zh: '性别', en: 'Gender' }
+};
 
-// 核心切换函数：更新所有静态文本 + 动态文本（重新渲染图表）
+function getColumnName(key) {
+    if (COLUMN_MAP[key] && COLUMN_MAP[key][currentLang]) {
+        return COLUMN_MAP[key][currentLang];
+    }
+    return key; // 若无翻译则返回原值
+}
+
+let currentLang = 'zh';
+
+// ---------- 核心切换函数 ----------
 function switchLanguage(lang) {
     currentLang = lang;
-    // 1. 更新所有带 data-i18n 的静态元素
+    // 更新所有 data-i18n 静态元素
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         if (LANG[lang][key]) {
             el.textContent = LANG[lang][key];
         }
     });
-    // 2. 切换按钮自身文字
+    // 切换按钮文字
     document.getElementById('langToggle').textContent = lang === 'zh' ? 'English' : '中文';
-    // 3. 重新渲染图表和统计信息（让动态文字也切换）
+    // 更新下拉选项显示（翻译列名）
+    refreshSelectDisplay();
+    // 重新渲染图表（轴标签、统计信息等）
     render();
 }
 
-// ---------- 原有功能函数 ----------
+// 刷新下拉菜单的显示文本（不改变选中值）
+function refreshSelectDisplay() {
+    const selects = [$('xSelect'), $('ySelect')];
+    selects.forEach(sel => {
+        const options = sel.options;
+        for (let i = 0; i < options.length; i++) {
+            const val = options[i].value;
+            options[i].text = getColumnName(val);
+        }
+    });
+}
+
+// ---------- 原有功能函数（修改部分） ----------
 function numericColumns(rows) {
     if (!rows.length) return [];
     return Object.keys(rows[0]).filter(k => rows.some(r => Number.isFinite(Number(r[k]))));
 }
+
 function setOptions(select, values, selection) {
-    select.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    // 显示翻译后的列名
+    select.innerHTML = values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(getColumnName(v))}</option>`).join('');
     if (selection && values.includes(selection)) select.value = selection;
 }
+
 function escapeHtml(v) { return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
 
 function loadSheet(name) {
@@ -134,7 +179,6 @@ function ticks(lo, hi, count = 6) { return Array.from({ length: count }, (_, i) 
 
 function render() {
     const deleteMode = $('deleteToggle').checked;
-    // 更新提示（动态文字，使用当前语言）
     const hintEl = $('hint');
     if (deleteMode) {
         hintEl.className = 'hint danger';
@@ -145,10 +189,8 @@ function render() {
     }
 
     const fit = regression(current);
-    // 更新数据点计数
     $('count').textContent = LANG[currentLang].countPrefix + current.length;
 
-    // 更新拟合方程和统计指标
     const eqEl = $('equation');
     const metEl = $('metrics');
     if (fit && $('fitToggle').checked) {
@@ -160,7 +202,6 @@ function render() {
         metEl.textContent = current.length < 2 ? LANG[currentLang].metricsAtLeast : LANG[currentLang].fitHidden;
     }
 
-    // 画图
     if (!current.length) {
         chart.innerHTML = `<text x="500" y="300" text-anchor="middle" class="axis-label">${LANG[currentLang].noData}</text>`;
         return;
@@ -181,9 +222,9 @@ function render() {
         html += `<line class="fit-line" x1="${sx(x1)}" y1="${sy(fit.slope*x1+fit.intercept)}" x2="${sx(x2)}" y2="${sy(fit.slope*x2+fit.intercept)}"/>`;
     }
 
-    // 轴标签（数据列名不受语言影响，保留原样）
-    html += `<text class="axis-label" x="${(M.left+W-M.right)/2}" y="${H-18}" text-anchor="middle">${escapeHtml(xKey)}</text>
-             <text class="axis-label" transform="translate(22 ${(M.top+H-M.bottom)/2}) rotate(-90)" text-anchor="middle">${escapeHtml(yKey)}</text>`;
+    // 轴标签：使用翻译后的列名
+    html += `<text class="axis-label" x="${(M.left+W-M.right)/2}" y="${H-18}" text-anchor="middle">${escapeHtml(getColumnName(xKey))}</text>
+             <text class="axis-label" transform="translate(22 ${(M.top+H-M.bottom)/2}) rotate(-90)" text-anchor="middle">${escapeHtml(getColumnName(yKey))}</text>`;
 
     current.forEach((p, i) => html += `<circle class="point${deleteMode?' delete':''}" data-index="${i}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="6"/>`);
     chart.innerHTML = html;
@@ -212,13 +253,13 @@ $('fitToggle').addEventListener('change', render);
 $('deleteToggle').addEventListener('change', render);
 $('resetButton').addEventListener('click', () => { current = original.map(p => ({ ...p })); render(); });
 
-// 语言切换按钮监听
+// 语言切换
 document.getElementById('langToggle').addEventListener('click', function() {
     const nextLang = currentLang === 'zh' ? 'en' : 'zh';
     switchLanguage(nextLang);
 });
 
-// 读取 Excel 数据
+// 读取 Excel
 fetch('linear-regression-data.xlsx').then(r => r.arrayBuffer()).then(buffer => {
     const book = XLSX.read(buffer, { type: 'array' });
     book.SheetNames.forEach(name => { sheets[name] = XLSX.utils.sheet_to_json(book.Sheets[name], { defval: null }); });
@@ -227,7 +268,7 @@ fetch('linear-regression-data.xlsx').then(r => r.arrayBuffer()).then(buffer => {
     $('xSelect').disabled = false;
     $('ySelect').disabled = false;
     loadSheet(book.SheetNames[0]);
-    // 初始化语言为中文（同时确保按钮文字正确）
+    // 初始化为中文
     switchLanguage('zh');
 }).catch(() => {
     $('sheetSelect').innerHTML = '<option>数据文件读取失败</option>';
