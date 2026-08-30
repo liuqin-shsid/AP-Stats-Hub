@@ -92,7 +92,6 @@ const SHEET_MAP = {
     '3.年龄-握力': { zh: '3.年龄-握力', en: '3. Age-Grip Strength' },
     '4.酒精浓度-反应时间': { zh: '4.酒精浓度-反应时间', en: '4. Alcohol Concentration-Reaction Time' },
     '5.身高-体重': { zh: '5.身高-体重', en: '5. Height-Weight' },
-    '身高-体重分析': { zh: '身高-体重分析', en: 'Height-Weight Analysis' },
     '6.鞋码-GPA': { zh: '6.鞋码-GPA', en: '6. Shoe Size-GPA' },
     '7.计算机使用-学习效果': { zh: '7.计算机使用-学习效果', en: '7. Computer Use-Learning Effect' },
     '8.学习时长-考试成绩': { zh: '8.学习时长-考试成绩', en: '8. Study Hours-Exam Scores' }
