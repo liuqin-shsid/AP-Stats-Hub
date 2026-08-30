@@ -4,7 +4,7 @@ const chart = $('chart');
 const W = 1000, H = 610, M = { left:86, right:38, top:32, bottom:75 };
 let sheets = {}, original = [], current = [], xKey = '', yKey = '', dragging = null;
 
-// ---------- 多语言文本 ----------
+// ---------- 多语言词库（全部中/英对照） ----------
 const LANG = {
     zh: {
         brand: 'AP Stats 小站',
@@ -66,26 +66,23 @@ const LANG = {
 
 let currentLang = 'zh'; // 默认中文
 
-// 切换语言
+// 核心切换函数：更新所有静态文本 + 动态文本（重新渲染图表）
 function switchLanguage(lang) {
     currentLang = lang;
+    // 1. 更新所有带 data-i18n 的静态元素
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         if (LANG[lang][key]) {
-            if (el.tagName === 'INPUT' || el.tagName === 'SELECT') {
-                // 对于输入控件，可能需要特殊处理，但这里我们只处理纯文本
-            } else {
-                el.textContent = LANG[lang][key];
-            }
+            el.textContent = LANG[lang][key];
         }
     });
-    // 更新按钮文字
+    // 2. 切换按钮自身文字
     document.getElementById('langToggle').textContent = lang === 'zh' ? 'English' : '中文';
-    // 重新渲染图表及统计信息（因为内容动态）
+    // 3. 重新渲染图表和统计信息（让动态文字也切换）
     render();
 }
 
-// ---------- 原有功能 ----------
+// ---------- 原有功能函数 ----------
 function numericColumns(rows) {
     if (!rows.length) return [];
     return Object.keys(rows[0]).filter(k => rows.some(r => Number.isFinite(Number(r[k]))));
@@ -122,34 +119,22 @@ function regression(points) {
     if (n < 2) return null;
     const mx = points.reduce((s, p) => s + p.x, 0) / n,
         my = points.reduce((s, p) => s + p.y, 0) / n;
-    let sxx = 0,
-        syy = 0,
-        sxy = 0;
-    points.forEach(p => { const dx = p.x - mx,
-            dy = p.y - my;
-        sxx += dx * dx;
-        syy += dy * dy;
-        sxy += dx * dy; });
+    let sxx = 0, syy = 0, sxy = 0;
+    points.forEach(p => { const dx = p.x - mx, dy = p.y - my;
+        sxx += dx * dx; syy += dy * dy; sxy += dx * dy; });
     if (!sxx || !syy) return null;
-    const slope = sxy / sxx,
-        intercept = my - slope * mx,
-        r = sxy / Math.sqrt(sxx * syy);
+    const slope = sxy / sxx, intercept = my - slope * mx, r = sxy / Math.sqrt(sxx * syy);
     return { slope, intercept, r, r2: r * r };
 }
 
-function domain(values) { let lo = Math.min(...values),
-        hi = Math.max(...values); if (lo === hi) { lo -= 1;
-        hi += 1; } const pad = (hi - lo) * .1; return [lo - pad, hi + pad]; }
-
+function domain(values) { let lo = Math.min(...values), hi = Math.max(...values); if (lo === hi) { lo -= 1; hi += 1; } const pad = (hi - lo) * .1; return [lo - pad, hi + pad]; }
 function scale(v, d, a, b) { return a + (v - d[0]) * (b - a) / (d[1] - d[0]); }
-
 function fmt(v) { const a = Math.abs(v); return a >= 1000 ? v.toFixed(0) : a >= 10 ? v.toFixed(2) : v.toFixed(3); }
-
 function ticks(lo, hi, count = 6) { return Array.from({ length: count }, (_, i) => lo + (hi - lo) * i / (count - 1)); }
 
 function render() {
     const deleteMode = $('deleteToggle').checked;
-    // 更新提示
+    // 更新提示（动态文字，使用当前语言）
     const hintEl = $('hint');
     if (deleteMode) {
         hintEl.className = 'hint danger';
@@ -160,9 +145,10 @@ function render() {
     }
 
     const fit = regression(current);
-    const countEl = $('count');
-    countEl.textContent = LANG[currentLang].countPrefix + current.length;
+    // 更新数据点计数
+    $('count').textContent = LANG[currentLang].countPrefix + current.length;
 
+    // 更新拟合方程和统计指标
     const eqEl = $('equation');
     const metEl = $('metrics');
     if (fit && $('fitToggle').checked) {
@@ -174,15 +160,14 @@ function render() {
         metEl.textContent = current.length < 2 ? LANG[currentLang].metricsAtLeast : LANG[currentLang].fitHidden;
     }
 
+    // 画图
     if (!current.length) {
         chart.innerHTML = `<text x="500" y="300" text-anchor="middle" class="axis-label">${LANG[currentLang].noData}</text>`;
         return;
     }
 
-    const dx = domain(current.map(p => p.x)),
-        dy = domain(current.map(p => p.y));
-    const sx = v => scale(v, dx, M.left, W - M.right),
-        sy = v => scale(v, dy, H - M.bottom, M.top);
+    const dx = domain(current.map(p => p.x)), dy = domain(current.map(p => p.y));
+    const sx = v => scale(v, dx, M.left, W - M.right), sy = v => scale(v, dy, H - M.bottom, M.top);
 
     let html = '';
     ticks(dx[0], dx[1]).forEach(v => { const x = sx(v);
@@ -192,12 +177,11 @@ function render() {
     html += `<line class="axis" x1="${M.left}" y1="${H-M.bottom}" x2="${W-M.right}" y2="${H-M.bottom}"/><line class="axis" x1="${M.left}" y1="${M.top}" x2="${M.left}" y2="${H-M.bottom}"/>`;
 
     if (fit && $('fitToggle').checked) {
-        const x1 = dx[0],
-            x2 = dx[1];
+        const x1 = dx[0], x2 = dx[1];
         html += `<line class="fit-line" x1="${sx(x1)}" y1="${sy(fit.slope*x1+fit.intercept)}" x2="${sx(x2)}" y2="${sy(fit.slope*x2+fit.intercept)}"/>`;
     }
 
-    // 轴标签（使用当前变量名，不变）
+    // 轴标签（数据列名不受语言影响，保留原样）
     html += `<text class="axis-label" x="${(M.left+W-M.right)/2}" y="${H-18}" text-anchor="middle">${escapeHtml(xKey)}</text>
              <text class="axis-label" transform="translate(22 ${(M.top+H-M.bottom)/2}) rotate(-90)" text-anchor="middle">${escapeHtml(yKey)}</text>`;
 
@@ -205,11 +189,9 @@ function render() {
     chart.innerHTML = html;
 
     chart.querySelectorAll('.point').forEach(el => el.addEventListener('mousedown', event => {
-        event.preventDefault();
-        event.stopPropagation();
+        event.preventDefault(); event.stopPropagation();
         const i = Number(el.dataset.index);
-        if ($('deleteToggle').checked) { current.splice(i, 1);
-            render(); return; }
+        if ($('deleteToggle').checked) { current.splice(i, 1); render(); return; }
         dragging = { i, dx, dy };
     }));
 }
@@ -228,16 +210,15 @@ $('xSelect').addEventListener('change', updateVariables);
 $('ySelect').addEventListener('change', updateVariables);
 $('fitToggle').addEventListener('change', render);
 $('deleteToggle').addEventListener('change', render);
-$('resetButton').addEventListener('click', () => { current = original.map(p => ({ ...p }));
-    render(); });
+$('resetButton').addEventListener('click', () => { current = original.map(p => ({ ...p })); render(); });
 
-// 语言切换
+// 语言切换按钮监听
 document.getElementById('langToggle').addEventListener('click', function() {
     const nextLang = currentLang === 'zh' ? 'en' : 'zh';
     switchLanguage(nextLang);
 });
 
-// 读取数据
+// 读取 Excel 数据
 fetch('linear-regression-data.xlsx').then(r => r.arrayBuffer()).then(buffer => {
     const book = XLSX.read(buffer, { type: 'array' });
     book.SheetNames.forEach(name => { sheets[name] = XLSX.utils.sheet_to_json(book.Sheets[name], { defval: null }); });
@@ -246,8 +227,8 @@ fetch('linear-regression-data.xlsx').then(r => r.arrayBuffer()).then(buffer => {
     $('xSelect').disabled = false;
     $('ySelect').disabled = false;
     loadSheet(book.SheetNames[0]);
-    // 初始化语言显示
-    switchLanguage('zh'); // 默认为中文
+    // 初始化语言为中文（同时确保按钮文字正确）
+    switchLanguage('zh');
 }).catch(() => {
     $('sheetSelect').innerHTML = '<option>数据文件读取失败</option>';
     $('hint').className = 'hint danger';
