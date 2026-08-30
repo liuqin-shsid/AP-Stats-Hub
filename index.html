@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AP Stats 小站 · 线性回归教学</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header"><div class="brand">AP Stats 小站</div><div class="subtitle">统计学习互动工具</div></header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title">学习工具</div>
+      <button class="nav-item active" type="button">线性回归教学</button>
+    </aside>
+    <main class="content">
+      <div class="page-heading">
+        <div><h1>线性回归教学</h1><p>拖动数据点，观察最佳拟合线、相关系数与 R² 的变化。</p></div>
+      </div>
+      <section class="controls" aria-label="控制面板">
+        <label>选择案例
+          <select id="sheetSelect" disabled><option>正在读取数据…</option></select>
+        </label>
+        <label>X 变量
+          <select id="xSelect" disabled></select>
+        </label>
+        <label>Y 变量
+          <select id="ySelect" disabled></select>
+        </label>
+        <label class="check"><input id="fitToggle" type="checkbox" checked> 显示拟合直线</label>
+        <label class="check delete-check"><input id="deleteToggle" type="checkbox"> 删除模式</label>
+        <button id="resetButton" class="reset" type="button">重置数据</button>
+      </section>
+      <p id="hint" class="hint">提示：直接拖动蓝色数据点；开启删除模式后，点击数据点即可删除。</p>
+      <section class="stats" aria-live="polite">
+        <div id="equation" class="equation">Best Fit Line: —</div>
+        <div id="metrics">R: —　|　R²: —　|　Slope: —　|　Intercept: —</div>
+        <div id="count" class="count">数据点：0</div>
+      </section>
+      <section class="chart-card"><svg id="chart" viewBox="0 0 1000 610" role="img" aria-label="互动散点图"></svg></section>
+    </main>
+  </div>
+  <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>
