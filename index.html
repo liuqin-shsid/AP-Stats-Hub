@@ -1,70 +1,100 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AP Stats 小站 · 线性回归教学</title>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
-    </script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AP Stats Hub</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="site-header">
-        <div class="brand" data-i18n="brand">AP Stats 小站</div>
-        <div class="header-right">
-            <span class="subtitle" data-i18n="subtitle">统计学习互动工具</span>
-            <button id="langToggle" class="lang-btn">English</button>
+  <header class="site-header"><div class="brand" data-i18n="brand">AP Stats Hub</div><button id="langToggle" class="lang-toggle" type="button">EN</button></header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title" data-i18n="sidebar_title">学习工具</div>
+      <div class="nav-group" data-i18n="nav_linreg">线性回归教学</div>
+      <nav aria-label="线性回归教学" data-i18n-aria="nav_linreg">
+        <button id="correlationNav" class="nav-item tool-nav active" type="button" data-tool="correlation" data-i18n="heading_title" aria-current="page" aria-controls="correlationPage">相关关系探究</button>
+        <button id="scatterNav" class="nav-item tool-nav" type="button" data-tool="scatter" data-i18n="scatter_title" aria-controls="scatterPage">散点图</button>
+        <button id="outlierNav" class="nav-item tool-nav" type="button" data-tool="outlier" data-i18n="outlier_title" aria-controls="outlierPage">异常值点</button>
+      </nav>
+    </aside>
+    <main class="content">
+      <div id="correlationPage">
+      <div class="page-heading">
+        <div><h1 data-i18n="heading_title">相关关系探究</h1><p data-i18n="heading_desc">拖动数据点，观察最佳拟合线、相关系数与 R² 的变化。</p></div>
+      </div>
+      <section class="controls" data-i18n-aria="controls_aria" aria-label="控制面板">
+        <label><span data-i18n="label_sheet">选择案例</span>
+          <select id="sheetSelect" disabled><option data-i18n="loading">正在读取数据…</option></select>
+        </label>
+        <label><span data-i18n="label_x">X 变量</span>
+          <select id="xSelect" disabled></select>
+        </label>
+        <label><span data-i18n="label_y">Y 变量</span>
+          <select id="ySelect" disabled></select>
+        </label>
+        <label class="check"><input id="fitToggle" type="checkbox" checked> <span data-i18n="label_fit">显示拟合直线</span></label>
+        <label class="check delete-check"><input id="deleteToggle" type="checkbox"> <span data-i18n="label_delete">删除模式</span></label>
+        <button id="resetButton" class="reset" type="button" data-i18n="label_reset">重置数据</button>
+      </section>
+      <p id="hint" class="hint">提示：直接拖动蓝色数据点；开启删除模式后，点击数据点即可删除。</p>
+      <section class="stats" aria-live="polite">
+        <div id="equation" class="equation">Best Fit Line: —</div>
+        <div id="metrics">R: —　|　R²: —　|　Slope: —　|　Intercept: —</div>
+        <div id="count" class="count">数据点：0</div>
+      </section>
+      <section class="chart-card"><svg id="chart" viewBox="0 0 1000 610" role="img" data-i18n-aria="chart_aria" aria-label="互动散点图"></svg></section>
+      </div>
+      <div id="scatterPage" hidden>
+        <div class="page-heading"><div><h1 data-i18n="scatter_title">散点图</h1><p data-i18n="scatter_desc"></p></div></div>
+        <section class="controls" data-i18n-aria="controls_aria" aria-label="控制面板">
+          <label><span data-i18n="label_sheet">选择案例</span><select id="scatterSheet" disabled><option data-i18n="loading">正在读取数据…</option></select></label>
+          <label><span data-i18n="label_x">X 变量</span><select id="scatterX" disabled></select></label>
+          <label><span data-i18n="label_y">Y 变量</span><select id="scatterY" disabled></select></label>
+          <button id="scatterReset" class="reset" type="button" data-i18n="scatter_reset" disabled>重置调整</button>
+        </section>
+        <p id="scatterHint" class="hint" role="status"></p>
+        <section id="scatterSliders" class="scatter-sliders"></section>
+        <div class="scatter-comparison">
+          <section class="comparison-card" aria-labelledby="scatterOriginalTitle">
+            <h2 id="scatterOriginalTitle" data-i18n="scatter_original">原始数据</h2>
+            <p id="scatterOriginalStats" class="comparison-stats"></p>
+            <svg id="scatterOriginal" class="comparison-chart" viewBox="0 0 620 470" role="img" aria-label="原始数据散点图" data-i18n-aria="scatter_original_aria"></svg>
+          </section>
+          <section class="comparison-card" aria-labelledby="scatterAdjustedTitle">
+            <h2 id="scatterAdjustedTitle" data-i18n="scatter_adjusted">调整后</h2>
+            <p id="scatterAdjustedStats" class="comparison-stats" aria-live="polite"></p>
+            <svg id="scatterAdjusted" class="comparison-chart" viewBox="0 0 620 470" role="img" aria-label="调整后散点图" data-i18n-aria="scatter_adjusted_aria"></svg>
+          </section>
         </div>
-    </header>
+      </div>
+      <div id="outlierPage" hidden>
+        <div class="page-heading"><div><h1 data-i18n="outlier_title">异常值点</h1><p data-i18n="outlier_desc"></p></div></div>
+        <section class="controls" data-i18n-aria="controls_aria">
+          <button id="outlierUndo" type="button" class="secondary-button" data-i18n="outlier_undo" disabled>撤销上一步</button>
+          <button id="outlierClear" type="button" class="reset" data-i18n="outlier_clear" disabled>清空数据点</button>
 
-    <div class="layout">
-        <aside class="sidebar">
-            <div class="sidebar-title" data-i18n="sidebarTitle">学习工具</div>
-            <button class="nav-item active" type="button" data-i18n="navItem">线性回归教学</button>
-        </aside>
-        <main class="content">
-            <div class="page-heading">
-                <div>
-                    <h1 data-i18n="pageTitle">线性回归教学</h1>
-                    <p data-i18n="pageDesc">拖动数据点，观察最佳拟合线、相关系数与 R² 的变化。</p>
-                </div>
-            </div>
-
-            <section class="controls" aria-label="控制面板">
-                <label><span data-i18n="selectCase">选择案例</span>
-                    <select id="sheetSelect" disabled><option data-i18n="loadingData">正在读取数据…</option></select>
-                </label>
-                <label><span data-i18n="xVariable">X 变量</span>
-                    <select id="xSelect" disabled></select>
-                </label>
-                <label><span data-i18n="yVariable">Y 变量</span>
-                    <select id="ySelect" disabled></select>
-                </label>
-                <label class="check"><input id="fitToggle" type="checkbox" checked> <span data-i18n="showFitLine">显示拟合直线</span></label>
-                <label class="check delete-check"><input id="deleteToggle" type="checkbox"> <span data-i18n="deleteMode">删除模式</span></label>
-                <button id="resetButton" class="reset" type="button"><span data-i18n="resetData">重置数据</span></button>
-            </section>
-
-            <p id="hint" class="hint">提示：直接拖动蓝色数据点；开启删除模式后，点击数据点即可删除。</p>
-
-            <section class="stats" aria-live="polite">
-                <div id="equation" class="equation">Best Fit Line: —</div>
-                <div id="metrics">R: —　|　R²: —　|　Slope: —　|　Intercept: —</div>
-                <div id="count" class="count">数据点：0</div>
-            </section>
-
-            <section class="chart-card">
-                <svg id="chart" viewBox="0 0 1000 610" role="img" aria-label="互动散点图"></svg>
-            </section>
-        </main>
-    </div>
-
-    <footer>
-        <span data-i18n="footerCopyright">© 2026</span>
-        <span data-i18n="footerEmail">liuqin@shsid.org</span>
-    </footer>
-
-    <script src="app.js"></script>
+        </section>
+        <p class="hint" data-i18n="outlier_hint"></p>
+        <section class="outlier-stats" aria-live="polite" data-i18n-aria="outlier_stats_aria">
+          <div><span data-i18n="outlier_mean_x"></span><strong id="outlierMeanX">—</strong></div>
+          <div><span data-i18n="outlier_mean_y"></span><strong id="outlierMeanY">—</strong></div>
+          <div><span data-i18n="outlier_sd_x"></span><strong id="outlierSdX">—</strong></div>
+          <div><span data-i18n="outlier_sd_y"></span><strong id="outlierSdY">—</strong></div>
+          <div><span data-i18n="outlier_r"></span><strong id="outlierR">—</strong></div>
+          <div><span>R²</span><strong id="outlierR2">—</strong></div>
+        </section>
+        <p id="outlierStatus" class="hint" role="status"></p>
+        <section class="chart-card outlier-card"><svg id="outlierChart" viewBox="0 0 1000 610" role="group" data-i18n-aria="outlier_chart_aria"></svg></section>
+      </div>
+    </main>
+  </div>
+  <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
+  <script src="app.js"></script>
+  <script src="scatterplot.js"></script>
+  <script src="outliers.js"></script>
 </body>
 </html>
+
