@@ -2,7 +2,7 @@
 (() => {
   Object.assign(translations.zh, {
     outlier_title:'异常值点', outlier_desc:'自由添加、移动和删除数据点，观察异常值对均值、标准差和相关关系的影响。',
-    outlier_undo:'撤销上一步', outlier_clear:'清空数据点',
+    outlier_undo:'撤销上一步', outlier_clear:'清空数据点', outlier_fit:'显示最佳拟合线',
     outlier_hint:'点击坐标区域空白处添加点；再次点击已有点删除；按住点拖动可移动，拖动结束不会删除。',
     outlier_mean_x:'X 均值 x̄', outlier_mean_y:'Y 均值 ȳ', outlier_sd_x:'X 样本标准差 sₓ', outlier_sd_y:'Y 样本标准差 sᵧ',
     outlier_r:'相关系数 r', outlier_stats_aria:'实时统计量', outlier_chart_aria:'可添加、删除和拖动数据点的坐标图',
@@ -14,7 +14,7 @@
   });
   Object.assign(translations.en, {
     outlier_title:'Outliers', outlier_desc:'Add, move, and remove points to explore how outliers affect means, standard deviations, and correlation.',
-    outlier_undo:'Undo', outlier_clear:'Clear points',
+    outlier_undo:'Undo', outlier_clear:'Clear points', outlier_fit:'Show best fit line',
     outlier_hint:'Click empty plot space to add a point. Click an existing point to remove it. Drag a point to move it; releasing a drag does not delete it.',
     outlier_mean_x:'X mean x̄', outlier_mean_y:'Y mean ȳ', outlier_sd_x:'X sample standard deviation sₓ', outlier_sd_y:'Y sample standard deviation sᵧ',
     outlier_r:'Correlation r', outlier_stats_aria:'Live statistics', outlier_chart_aria:'Coordinate plot for adding, deleting, and dragging points',
@@ -36,18 +36,21 @@
 
   function statistics() {
     const n=points.length;
-    if(!n)return {n,mx:null,my:null,sdx:null,sdy:null,r:null,r2:null};
+    if(!n)return {n,mx:null,my:null,sdx:null,sdy:null,r:null,r2:null,b0:null,b1:null};
     const mx=points[0].x+points.reduce((s,p)=>s+p.x-points[0].x,0)/n;
     const my=points[0].y+points.reduce((s,p)=>s+p.y-points[0].y,0)/n;
     let xx=0,yy=0,xy=0;
     points.forEach(p=>{const x=p.x-mx,y=p.y-my;xx+=x*x;yy+=y*y;xy+=x*y;});
     const constantX=points.every(p=>p.x===points[0].x),constantY=points.every(p=>p.y===points[0].y);
     const r=n<2||constantX||constantY?null:Math.max(-1,Math.min(1,xy/Math.sqrt(xx*yy)));
-    return {n,mx,my,sdx:n<2?null:constantX?0:Math.sqrt(xx/(n-1)),sdy:n<2?null:constantY?0:Math.sqrt(yy/(n-1)),r,r2:r===null?null:r*r};
+    const b1=n<2||constantX?null:xy/xx,b0=b1===null?null:my-b1*mx;
+    return {n,mx,my,sdx:n<2?null:constantX?0:Math.sqrt(xx/(n-1)),sdy:n<2?null:constantY?0:Math.sqrt(yy/(n-1)),r,r2:r===null?null:r*r,b0,b1};
   }
   function renderOutliers() {
     const t=translations[lang],s=statistics();
     Object.entries({MeanX:s.mx,MeanY:s.my,SdX:s.sdx,SdY:s.sdy,R:s.r,R2:s.r2}).forEach(([id,value])=>$(`outlier${id}`).textContent=number(value));
+    $('outlierFitStats').hidden=!$('outlierFit').checked;
+    $('outlierFitStats').textContent=`b₀ = ${number(s.b0)}　b₁ = ${number(s.b1)}`;
     $('outlierClear').disabled=!points.length;$('outlierUndo').disabled=!history.length;
     $('outlierStatus').textContent=`${t.count_label}${s.n}　${!s.n?t.outlier_none:s.n<2?t.outlier_single:s.r===null?t.outlier_constant:t.outlier_note}`;
     let html=`<rect x="${bounds.left}" y="${bounds.top}" width="${bounds.right-bounds.left}" height="${bounds.bottom-bounds.top}" fill="#fff" stroke="#e4e9ee"/>`;
@@ -57,6 +60,9 @@
       html+=`<line class="axis" x1="${bounds.left-5}" x2="${bounds.left}" y1="${sy(v)}" y2="${sy(v)}"/><text class="tick" x="${bounds.left-14}" y="${sy(v)+5}" text-anchor="end">${v}</text>`;
     }
     html+=`<text class="axis-label" x="524" y="592" text-anchor="middle">X</text><text class="axis-label" transform="translate(24 284) rotate(-90)" text-anchor="middle">Y</text>`;
+    if($('outlierFit').checked&&s.b1!==null){
+      html+=`<defs><clipPath id="outlierFitClip"><rect x="${bounds.left}" y="${bounds.top}" width="${bounds.right-bounds.left}" height="${bounds.bottom-bounds.top}"/></clipPath></defs><line class="outlier-fit-line" clip-path="url(#outlierFitClip)" x1="${sx(0)}" y1="${sy(s.b0)}" x2="${sx(20)}" y2="${sy(s.b0+s.b1*20)}"/>`;
+    }
     if(!points.length)html+=`<text class="outlier-empty" x="524" y="248" text-anchor="middle">${escapeHtml(t.outlier_empty)}</text>`;
     points.forEach(p=>{
       const label=`${t.outlier_point} ${p.id}: X = ${p.x}, Y = ${p.y}. ${t.outlier_keyboard}`;
@@ -119,6 +125,7 @@
   });
   $('outlierUndo').addEventListener('click',()=>{cancel();if(history.length)points=history.pop();renderOutliers();});
   $('outlierClear').addEventListener('click',()=>{cancel();if(points.length){remember(copy());points=[];}renderOutliers();});
+  $('outlierFit').addEventListener('change',renderOutliers);
   document.addEventListener('apstats:language',renderOutliers);
   applyLang();
 })();

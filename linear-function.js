@@ -3,8 +3,8 @@
   Object.assign(translations.zh, {
     linear_title:'线性函数',
     linear_desc:'用自己选择的直线观察竖直残差、残差平方与平均残差平方。',
-    linear_standardize:'开启标准化模式', linear_reset:'重新选线',
-    linear_mean_point:'双均值点 (x̄, ȳ)', linear_equation:'当前直线',
+    linear_standardize:'开启标准化模式', linear_reset:'重新选线', linear_show_mean:'显示均值点', linear_hide_mean:'隐藏均值点',
+    linear_mean_x:'X 均值 x̄', linear_mean_y:'Y 均值 ȳ', linear_sd_x:'X 样本标准差 sₓ', linear_sd_y:'Y 样本标准差 sᵧ', linear_r:'相关系数 r', linear_equation:'当前直线',
     linear_raw_msr:'原始数据 MSR = Σ(y − ŷ)²/(n − 1)', linear_std_msr:'标准化 MSR = Σ(zᵧ − ẑᵧ)²/(n − 1)',
     linear_metrics_aria:'直线与平均残差平方统计',
     linear_raw_title:'原始数据：脂肪与蛋白质',
@@ -24,8 +24,8 @@
   Object.assign(translations.en, {
     linear_title:'Linear Function',
     linear_desc:'Use a line you choose to explore vertical residuals, residual squares, and their mean.',
-    linear_standardize:'Show standardized mode', linear_reset:'Choose a new line',
-    linear_mean_point:'Mean point (x̄, ȳ)', linear_equation:'Current line',
+    linear_standardize:'Show standardized mode', linear_reset:'Choose a new line', linear_show_mean:'Show mean point', linear_hide_mean:'Hide mean point',
+    linear_mean_x:'X mean x̄', linear_mean_y:'Y mean ȳ', linear_sd_x:'X sample standard deviation sₓ', linear_sd_y:'Y sample standard deviation sᵧ', linear_r:'Correlation r', linear_equation:'Current line',
     linear_raw_msr:'Raw MSR = Σ(y − ŷ)²/(n − 1)', linear_std_msr:'Standardized MSR = Σ(zᵧ − ẑᵧ)²/(n − 1)',
     linear_metrics_aria:'Line and mean squared residual statistics',
     linear_raw_title:'Raw data: fat and protein',
@@ -45,7 +45,7 @@
 
   const rawSvg=$('linearRawChart'), stdSvg=$('linearStdChart');
   const size={w:620,h:500,m:{left:70,right:20,top:25,bottom:66}};
-  let data=[], stats=null, line=null, loadState='loading', rotate=null, drawing=null;
+  let data=[], stats=null, line=null, loadState='loading', rotate=null, drawing=null, meanRevealed=false;
   let rawDomains={x:[0,1],y:[0,1]}, stdDomains={x:[-1,1],y:[-1,1]};
 
   const meanSd=(values)=>{
@@ -66,6 +66,10 @@
     snapped:line.snapped,
   }:null;
   const quadrantClass=p=>Math.abs(p.x)<=1e-12||Math.abs(p.y)<=1e-12?'quadrant-axis':(p.x>0)===(p.y>0)?'quadrant-same':'quadrant-opposite';
+  const correlation=()=>{
+    const sum=data.reduce((a,p)=>a+(p.x-stats.x.mean)*(p.y-stats.y.mean),0);
+    return sum/((data.length-1)*stats.x.sd*stats.y.sd);
+  };
   const msr=(points,currentLine)=>points.reduce((sum,p)=>sum+(p.y-(currentLine.intercept+currentLine.slope*p.x))**2,0)/(points.length-1);
   const lineEquation=currentLine=>{
     if(!currentLine)return '—';
@@ -78,11 +82,20 @@
   }
   function updateMetrics() {
     const t=translations[lang];
-    $('linearMean').textContent=stats&&line?.snapped?`(${compact(stats.x.mean)}, ${compact(stats.y.mean)})`:'—';
+    $('linearMeanX').textContent=stats?compact(stats.x.mean):'—';
+    $('linearMeanY').textContent=stats?compact(stats.y.mean):'—';
+    $('linearSdX').textContent=stats?compact(stats.x.sd):'—';
+    $('linearSdY').textContent=stats?compact(stats.y.sd):'—';
+    $('linearR').textContent=stats?compact(correlation()):'—';
     $('linearEquation').textContent=lineEquation(line);
     $('linearRawMsr').textContent=line?.snapped?compact(msr(data,line)):t.linear_msr_wait;
     const zLine=standardizedLine();
     $('linearStdMsr').textContent=zLine?.snapped?compact(msr(standardized(),zLine)):t.linear_msr_wait;
+  }
+  function updateMeanToggle() {
+    const button=$('linearMeanToggle');
+    button.textContent=translations[lang][meanRevealed?'linear_hide_mean':'linear_show_mean'];
+    button.setAttribute('aria-pressed',String(meanRevealed));
   }
   function rotationHandle(currentLine,dx,dy,standard) {
     if(!currentLine?.snapped)return null;
@@ -121,7 +134,7 @@
       });
       html+=`<line class="student-line" x1="${sx(dx[0])}" y1="${sy(currentLine.intercept+currentLine.slope*dx[0])}" x2="${sx(dx[1])}" y2="${sy(currentLine.intercept+currentLine.slope*dx[1])}"/></g>`;
     }
-    if(currentLine?.snapped){
+    if(meanRevealed||currentLine?.snapped){
       const mean=standard?{x:0,y:0}:{x:stats.x.mean,y:stats.y.mean};
       html+=`<rect class="linear-mean-point" x="${sx(mean.x)-6}" y="${sy(mean.y)-6}" width="12" height="12" transform="rotate(45 ${sx(mean.x)} ${sy(mean.y)})"><title>${t.linear_mean_label}: (${compact(mean.x)}, ${compact(mean.y)})</title></rect>`;
     }
@@ -226,8 +239,10 @@
     document.querySelector('.linear-metrics').classList.toggle('standardized',on);
     $('linearCharts').classList.toggle('standardized',on);renderLinear();
   });
+  $('linearMeanToggle').addEventListener('click',()=>{meanRevealed=!meanRevealed;updateMeanToggle();renderLinear();});
   $('linearReset').addEventListener('click',()=>{line=null;rotate=null;drawing=null;updateHint('linear_choose_first');renderLinear();});
   document.addEventListener('apstats:language',()=>{
+    updateMeanToggle();
     if(loadState==='ready'){
       if(line?.snapped)updateHint('linear_snapped');else if(line)updateHint('linear_residuals');else updateHint('linear_choose_first');
     }
@@ -244,5 +259,6 @@
     stats={x:meanSd(data.map(p=>p.x)),y:meanSd(data.map(p=>p.y))};
     loadState='ready';updateHint('linear_choose_first');renderLinear();
   }).catch(()=>{loadState='error';renderLinear();});
+  updateMeanToggle();
   applyLang();
 })();

@@ -43,7 +43,7 @@
       <p id="hint" class="hint">提示：直接拖动蓝色数据点；开启删除模式后，点击数据点即可删除。</p>
       <section class="stats" aria-live="polite">
         <div id="equation" class="equation">Best Fit Line: —</div>
-        <div id="metrics">R: —　|　R²: —　|　Slope: —　|　Intercept: —</div>
+        <div id="metrics">r: —　|　R²: —　|　Slope: —　|　Intercept: —</div>
         <div id="count" class="count">数据点：0</div>
       </section>
       <section class="chart-card"><svg id="chart" viewBox="0 0 1000 610" role="img" data-i18n-aria="chart_aria" aria-label="互动散点图"></svg></section>
@@ -76,7 +76,8 @@
         <section class="controls" data-i18n-aria="controls_aria">
           <button id="outlierUndo" type="button" class="secondary-button" data-i18n="outlier_undo" disabled>撤销上一步</button>
           <button id="outlierClear" type="button" class="reset" data-i18n="outlier_clear" disabled>清空数据点</button>
-
+          <label class="check"><input id="outlierFit" type="checkbox"> <span data-i18n="outlier_fit">显示最佳拟合线</span></label>
+          <span id="outlierFitStats" class="outlier-fit-stats" hidden aria-live="polite">b₀ = —　b₁ = —</span>
         </section>
         <p class="hint" data-i18n="outlier_hint"></p>
         <section class="outlier-stats" aria-live="polite" data-i18n-aria="outlier_stats_aria">
@@ -94,14 +95,19 @@
         <div class="page-heading"><div><h1 data-i18n="linear_title">线性函数</h1><p data-i18n="linear_desc"></p></div></div>
         <section class="controls" data-i18n-aria="controls_aria">
           <label class="check"><input id="linearStandardize" type="checkbox"> <span data-i18n="linear_standardize">开启标准化模式</span></label>
+          <button id="linearMeanToggle" class="secondary-button" type="button" aria-pressed="false" data-i18n="linear_show_mean">显示均值点</button>
           <button id="linearReset" class="reset" type="button" data-i18n="linear_reset">重新选线</button>
         </section>
         <p id="linearHint" class="hint" role="status"></p>
         <section class="linear-metrics" aria-live="polite" data-i18n-aria="linear_metrics_aria">
-          <div><span data-i18n="linear_mean_point"></span><strong id="linearMean">—</strong></div>
-          <div><span data-i18n="linear_equation"></span><strong id="linearEquation">—</strong></div>
-          <div><span data-i18n="linear_raw_msr"></span><strong id="linearRawMsr">—</strong></div>
-          <div id="linearStdMetric" hidden><span data-i18n="linear_std_msr"></span><strong id="linearStdMsr">—</strong></div>
+          <div><span data-i18n="linear_mean_x"></span><strong id="linearMeanX">—</strong></div>
+          <div><span data-i18n="linear_mean_y"></span><strong id="linearMeanY">—</strong></div>
+          <div><span data-i18n="linear_sd_x"></span><strong id="linearSdX">—</strong></div>
+          <div><span data-i18n="linear_sd_y"></span><strong id="linearSdY">—</strong></div>
+          <div class="linear-r-metric"><span data-i18n="linear_r"></span><strong id="linearR">—</strong></div>
+          <div class="linear-equation-metric"><span data-i18n="linear_equation"></span><strong id="linearEquation">—</strong></div>
+          <div class="linear-raw-msr-metric"><span data-i18n="linear_raw_msr"></span><strong id="linearRawMsr">—</strong></div>
+          <div id="linearStdMetric" class="linear-std-msr-metric" hidden><span data-i18n="linear_std_msr"></span><strong id="linearStdMsr">—</strong></div>
         </section>
         <div id="linearCharts" class="linear-charts">
           <section class="linear-chart-panel" aria-labelledby="linearRawTitle">

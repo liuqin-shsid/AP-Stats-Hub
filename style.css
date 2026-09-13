@@ -58,14 +58,25 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .outlier-point:hover,.outlier-point:focus { fill:#c17b23; stroke:var(--navy); stroke-width:2; outline:none; }
 .outlier-point:active { cursor:grabbing; }
 .outlier-empty { fill:#64717d; font-size:17px; pointer-events:none; }
+.outlier-fit-stats { align-self:center; color:var(--navy); font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
+.outlier-fit-line { stroke:#c73932; stroke-width:3; pointer-events:none; }
 
-.linear-metrics { display:grid; grid-template-columns:1.15fr 1.65fr 1fr; border:1px solid var(--line); border-radius:8px; background:#f7fafc; }
-.linear-metrics.standardized { grid-template-columns:1.15fr 1.65fr 1fr 1fr; }
-.linear-metrics>div { min-width:0; padding:14px 16px; border-right:1px solid var(--line); }
-.linear-metrics>div:last-child { border-right:0; }
+.linear-metrics { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:1px; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:var(--line); }
+.linear-metrics>div { min-width:0; padding:14px 16px; background:#f7fafc; }
+.linear-metrics>div:nth-child(-n+4) { grid-column:span 3; }
+.linear-metrics .linear-r-metric { grid-column:span 2; }
+.linear-metrics .linear-equation-metric { grid-column:span 6; }
+.linear-metrics .linear-raw-msr-metric { grid-column:span 4; }
+.linear-metrics.standardized .linear-r-metric { grid-column:span 2; }
+.linear-metrics.standardized .linear-equation-metric { grid-column:span 4; }
+.linear-metrics.standardized .linear-raw-msr-metric,
+.linear-metrics.standardized .linear-std-msr-metric { grid-column:span 3; }
 .linear-metrics span { display:block; min-height:20px; margin-bottom:5px; color:#64717d; font-size:12px; }
 .linear-metrics strong { display:block; color:var(--navy); font-size:17px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.linear-equation-metric strong { white-space:nowrap; overflow-wrap:normal; }
 .linear-charts { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; margin-top:18px; }
+.linear-charts:not(.standardized) { justify-items:start; }
+.linear-charts:not(.standardized) .linear-chart-panel { width:min(100%,600px); }
 .linear-charts.standardized { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
 .linear-chart-panel { min-width:0; padding:16px 10px 8px; border:1px solid var(--line); border-radius:8px; background:#fff; }
 .linear-chart-panel h2 { margin:0 8px 4px; color:var(--navy); font-size:17px; }
