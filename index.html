@@ -18,6 +18,7 @@
         <button id="correlationNav" class="nav-item tool-nav active" type="button" data-tool="correlation" data-i18n="heading_title" aria-current="page" aria-controls="correlationPage">相关关系探究</button>
         <button id="scatterNav" class="nav-item tool-nav" type="button" data-tool="scatter" data-i18n="scatter_title" aria-controls="scatterPage">散点图</button>
         <button id="outlierNav" class="nav-item tool-nav" type="button" data-tool="outlier" data-i18n="outlier_title" aria-controls="outlierPage">异常值点</button>
+        <button id="linearNav" class="nav-item tool-nav" type="button" data-tool="linear" data-i18n="linear_title" aria-controls="linearPage">线性函数</button>
       </nav>
     </aside>
     <main class="content">
@@ -89,12 +90,37 @@
         <p id="outlierStatus" class="hint" role="status"></p>
         <section class="chart-card outlier-card"><svg id="outlierChart" viewBox="0 0 1000 610" role="group" data-i18n-aria="outlier_chart_aria"></svg></section>
       </div>
+      <div id="linearPage" hidden>
+        <div class="page-heading"><div><h1 data-i18n="linear_title">线性函数</h1><p data-i18n="linear_desc"></p></div></div>
+        <section class="controls" data-i18n-aria="controls_aria">
+          <label class="check"><input id="linearStandardize" type="checkbox"> <span data-i18n="linear_standardize">开启标准化模式</span></label>
+          <button id="linearReset" class="reset" type="button" data-i18n="linear_reset">重新选线</button>
+        </section>
+        <p id="linearHint" class="hint" role="status"></p>
+        <section class="linear-metrics" aria-live="polite" data-i18n-aria="linear_metrics_aria">
+          <div><span data-i18n="linear_mean_point"></span><strong id="linearMean">—</strong></div>
+          <div><span data-i18n="linear_equation"></span><strong id="linearEquation">—</strong></div>
+          <div><span data-i18n="linear_raw_msr"></span><strong id="linearRawMsr">—</strong></div>
+          <div id="linearStdMetric" hidden><span data-i18n="linear_std_msr"></span><strong id="linearStdMsr">—</strong></div>
+        </section>
+        <div id="linearCharts" class="linear-charts">
+          <section class="linear-chart-panel" aria-labelledby="linearRawTitle">
+            <h2 id="linearRawTitle" data-i18n="linear_raw_title">原始数据：脂肪与蛋白质</h2>
+            <svg id="linearRawChart" class="linear-chart" viewBox="0 0 620 500" role="group" data-i18n-aria="linear_raw_aria"></svg>
+          </section>
+          <section id="linearStdPanel" class="linear-chart-panel" aria-labelledby="linearStdTitle" hidden>
+            <h2 id="linearStdTitle" data-i18n="linear_std_title">标准化数据</h2>
+            <svg id="linearStdChart" class="linear-chart" viewBox="0 0 620 500" role="group" data-i18n-aria="linear_std_aria"></svg>
+          </section>
+        </div>
+      </div>
     </main>
   </div>
   <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
   <script src="app.js"></script>
   <script src="scatterplot.js"></script>
   <script src="outliers.js"></script>
+  <script src="linear-function.js"></script>
 </body>
 </html>
 

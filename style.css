@@ -39,6 +39,11 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .comparison-chart { display:block; width:100%; height:auto; }
 .comparison-chart .point { cursor:default; }
 .comparison-chart .adjusted-point { fill:#c17b23; }
+.comparison-chart .quadrant-same { fill:#f28c18; }
+.comparison-chart .quadrant-opposite { fill:#22a06b; }
+.comparison-chart .quadrant-axis { fill:#2276dc; }
+.standardized-axes line { stroke:#50606d; stroke-width:1.8; }
+.zero-axis-label { fill:#263844; font-size:12px; paint-order:stroke; stroke:white; stroke-width:3px; }
 .comparison-chart .axis-label { font-size:13px; }
 .comparison-chart .tick { font-size:12px; }
 .secondary-button { border:1px solid #c9d2da; border-radius:5px; padding:7px 12px; background:white; color:var(--navy); cursor:pointer; font:inherit; font-size:12px; }
@@ -53,3 +58,31 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .outlier-point:hover,.outlier-point:focus { fill:#c17b23; stroke:var(--navy); stroke-width:2; outline:none; }
 .outlier-point:active { cursor:grabbing; }
 .outlier-empty { fill:#64717d; font-size:17px; pointer-events:none; }
+
+.linear-metrics { display:grid; grid-template-columns:1.15fr 1.65fr 1fr; border:1px solid var(--line); border-radius:8px; background:#f7fafc; }
+.linear-metrics.standardized { grid-template-columns:1.15fr 1.65fr 1fr 1fr; }
+.linear-metrics>div { min-width:0; padding:14px 16px; border-right:1px solid var(--line); }
+.linear-metrics>div:last-child { border-right:0; }
+.linear-metrics span { display:block; min-height:20px; margin-bottom:5px; color:#64717d; font-size:12px; }
+.linear-metrics strong { display:block; color:var(--navy); font-size:17px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.linear-charts { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; margin-top:18px; }
+.linear-charts.standardized { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.linear-chart-panel { min-width:0; padding:16px 10px 8px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.linear-chart-panel h2 { margin:0 8px 4px; color:var(--navy); font-size:17px; }
+.linear-chart { display:block; width:100%; height:auto; touch-action:none; user-select:none; cursor:crosshair; }
+.linear-data-point { fill:#2878b8; stroke:#fff; stroke-width:1.5; pointer-events:none; }
+.linear-data-point.quadrant-same { fill:#f28c18; }
+.linear-data-point.quadrant-opposite { fill:#22a06b; }
+.linear-data-point.quadrant-axis { fill:#2276dc; }
+.linear-mean-point { fill:#8655ad; stroke:#fff; stroke-width:1.5; pointer-events:none; }
+.student-line { stroke:#17324d; stroke-width:2.5; }
+.drawing-line { stroke:#2878b8; stroke-width:3; stroke-linecap:round; stroke-dasharray:7 5; pointer-events:none; }
+.residual-line { stroke:#d34b3f; stroke-width:1.6; }
+.residual-square { fill:rgba(211,75,63,.08); stroke:rgba(211,75,63,.4); stroke-width:1; }
+.rotation-handle-arm { stroke:#8655ad; stroke-width:1.5; stroke-dasharray:4 4; }
+.rotation-handle { fill:#fff; stroke:#8655ad; stroke-width:3; cursor:grab; }
+.rotation-handle:active { cursor:grabbing; }
+.zero-line { stroke:#50606d; stroke-width:1.5; }
+.linear-axis-title { fill:#263844; font-size:13px; font-weight:600; }
+.linear-empty { fill:#64717d; font-size:16px; }
+
