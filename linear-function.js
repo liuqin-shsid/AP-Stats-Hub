@@ -7,10 +7,10 @@
     linear_mean_x:'X 均值 x̄', linear_mean_y:'Y 均值 ȳ', linear_sd_x:'X 样本标准差 sₓ', linear_sd_y:'Y 样本标准差 sᵧ', linear_r:'相关系数 r', linear_equation:'当前直线',
     linear_raw_msr:'原始数据 MSR = Σ(y − ŷ)²/(n − 1)', linear_std_msr:'标准化 MSR = Σ(zᵧ − ẑᵧ)²/(n − 1)',
     linear_metrics_aria:'直线与平均残差平方统计',
-    linear_raw_title:'原始数据：脂肪与蛋白质',
+    linear_raw_title:'原始数据：蛋白质与脂肪',
     linear_std_title:'标准化数据',
-    linear_raw_aria:'汉堡王餐品脂肪和蛋白质散点图',
-    linear_std_aria:'标准化脂肪和蛋白质散点图',
+    linear_raw_aria:'汉堡王餐品蛋白质和脂肪散点图',
+    linear_std_aria:'标准化蛋白质和脂肪散点图',
     linear_loading:'正在读取汉堡王数据…',
     linear_load_error:'无法读取 burger-king-menu-items.xls。',
     linear_choose_first:'请在图内按住鼠标并拖出一小段，松开后生成完整直线。',
@@ -28,10 +28,10 @@
     linear_mean_x:'X mean x̄', linear_mean_y:'Y mean ȳ', linear_sd_x:'X sample standard deviation sₓ', linear_sd_y:'Y sample standard deviation sᵧ', linear_r:'Correlation r', linear_equation:'Current line',
     linear_raw_msr:'Raw MSR = Σ(y − ŷ)²/(n − 1)', linear_std_msr:'Standardized MSR = Σ(zᵧ − ẑᵧ)²/(n − 1)',
     linear_metrics_aria:'Line and mean squared residual statistics',
-    linear_raw_title:'Raw data: fat and protein',
+    linear_raw_title:'Raw data: protein and fat',
     linear_std_title:'Standardized data',
-    linear_raw_aria:'Burger King menu fat and protein scatterplot',
-    linear_std_aria:'Standardized fat and protein scatterplot',
+    linear_raw_aria:'Burger King menu protein and fat scatterplot',
+    linear_std_aria:'Standardized protein and fat scatterplot',
     linear_loading:'Loading Burger King data…',
     linear_load_error:'Could not read burger-king-menu-items.xls.',
     linear_choose_first:'Press and drag a short segment anywhere in the plot; release to create the full line.',
@@ -142,13 +142,13 @@
       const classes=['linear-data-point'];
       if(standard)classes.push(quadrantClass(p));
       const name=escapeHtml(p.name);
-      html+=`<circle class="${classes.join(' ')}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="5.5"><title>${t.linear_point}: ${name}; X (${t.linear_fat}) = ${compact(p.x)}, Y (${t.linear_protein}) = ${compact(p.y)}</title></circle>`;
+      html+=`<circle class="${classes.join(' ')}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="5.5"><title>${t.linear_point}: ${name}; X (${t.linear_protein}) = ${compact(p.x)}, Y (${t.linear_fat}) = ${compact(p.y)}</title></circle>`;
     });
     const handle=rotationHandle(currentLine,dx,dy,standard);
     if(handle){
       html+=`<line class="rotation-handle-arm" x1="${sx(handle.cx)}" y1="${sy(handle.cy)}" x2="${sx(handle.x)}" y2="${sy(handle.y)}"/><circle class="rotation-handle" data-role="rotate" cx="${sx(handle.x)}" cy="${sy(handle.y)}" r="10" tabindex="0"><title>${t.linear_rotate}</title></circle>`;
     }
-    html+=`<text class="linear-axis-title" x="${(m.left+w-m.right)/2}" y="${h-18}" text-anchor="middle">${standard?'z Fat / z 脂肪':`${t.linear_fat} (g)`}</text><text class="linear-axis-title" transform="translate(17 ${(m.top+h-m.bottom)/2}) rotate(-90)" text-anchor="middle">${standard?'z Protein / z 蛋白质':`${t.linear_protein} (g)`}</text>`;
+    html+=`<text class="linear-axis-title" x="${(m.left+w-m.right)/2}" y="${h-18}" text-anchor="middle">${standard?'z Protein / z 蛋白质':`${t.linear_protein} (g)`}</text><text class="linear-axis-title" transform="translate(17 ${(m.top+h-m.bottom)/2}) rotate(-90)" text-anchor="middle">${standard?'z Fat / z 脂肪':`${t.linear_fat} (g)`}</text>`;
     svg.innerHTML=html;
   }
   function renderLinear() {
@@ -254,7 +254,7 @@
     const book=XLSX.read(buffer,{type:'array'}),sheet=book.Sheets['第二节数据'];
     if(!sheet)throw new Error('Lesson 2 sheet missing');
     const rows=XLSX.utils.sheet_to_json(sheet,{defval:null});
-    data=rows.map((row,index)=>({id:index+1,name:String(row['餐品名称']||''),x:Number(row['脂肪（g）']),y:Number(row['蛋白质（g）'])})).filter(p=>p.name&&Number.isFinite(p.x)&&Number.isFinite(p.y));
+    data=rows.map((row,index)=>({id:index+1,name:String(row['餐品名称']||''),x:Number(row['蛋白质（g）']),y:Number(row['脂肪（g）'])})).filter(p=>p.name&&Number.isFinite(p.x)&&Number.isFinite(p.y));
     if(data.length<2)throw new Error('Not enough numeric rows');
     stats={x:meanSd(data.map(p=>p.x)),y:meanSd(data.map(p=>p.y))};
     loadState='ready';updateHint('linear_choose_first');renderLinear();
