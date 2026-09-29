@@ -19,6 +19,7 @@
         <button id="scatterNav" class="nav-item tool-nav" type="button" data-tool="scatter" data-i18n="scatter_title" aria-controls="scatterPage">散点图</button>
         <button id="outlierNav" class="nav-item tool-nav" type="button" data-tool="outlier" data-i18n="outlier_title" aria-controls="outlierPage">异常值点</button>
         <button id="linearNav" class="nav-item tool-nav" type="button" data-tool="linear" data-i18n="linear_title" aria-controls="linearPage">线性函数</button>
+        <button id="samplingNav" class="nav-item tool-nav" type="button" data-tool="sampling" data-i18n="sampling_title" aria-controls="samplingPage">抽样分布</button>
       </nav>
     </aside>
     <main class="content">
@@ -120,6 +121,63 @@
           </section>
         </div>
       </div>
+      <div id="samplingPage" hidden>
+        <div class="page-heading">
+          <div>
+            <h1 data-i18n="sampling_title">抽样分布</h1>
+            <p data-i18n="sampling_desc">从总体中反复抽样，观察样本均值的抽样分布如何趋近正态。</p>
+          </div>
+        </div>
+        <section class="controls sampling-controls" data-i18n-aria="controls_aria">
+          <label>
+            <span data-i18n="sampling_population">总体分布</span>
+            <select id="samplingPopulation">
+              <option value="normal" data-i18n="sampling_normal">正态分布</option>
+              <option value="uniform" data-i18n="sampling_uniform">均匀分布</option>
+              <option value="custom" data-i18n="sampling_custom">自定义（手绘）</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="sampling_sample_size">样本量 n</span>
+            <span class="sampling-slider-wrap">
+              <input id="samplingN" type="range" min="2" max="100" step="1" value="30">
+              <output id="samplingNValue">30</output>
+            </span>
+          </label>
+          <label>
+            <span data-i18n="sampling_draws">每次抽样次数</span>
+            <select id="samplingDraws">
+              <option value="1">×1</option>
+              <option value="10">×10</option>
+              <option value="20">×20</option>
+              <option value="50">×50</option>
+              <option value="100">×100</option>
+              <option value="1000">×1000</option>
+              <option value="10000">×10000</option>
+            </select>
+          </label>
+          <button id="samplingRun" class="reset" type="button" data-i18n="sampling_run">开始抽样</button>
+          <button id="samplingReset" class="secondary-button" type="button" data-i18n="sampling_reset">重置</button>
+        </section>
+        <p id="samplingHint" class="hint" role="status"></p>
+        <div class="sampling-charts">
+          <section class="sampling-chart-panel">
+            <h2 data-i18n="sampling_pop_title">(1) 总体分布</h2>
+            <svg id="samplingPopChart" class="sampling-chart" viewBox="0 0 620 420" role="img" data-i18n-aria="sampling_pop_aria"></svg>
+            <div id="samplingPopStats" class="sampling-stats" aria-live="polite"></div>
+          </section>
+          <section class="sampling-chart-panel">
+            <h2 data-i18n="sampling_sample_title">(2) 最近一次样本</h2>
+            <svg id="samplingSampleChart" class="sampling-chart" viewBox="0 0 620 420" role="img" data-i18n-aria="sampling_sample_aria"></svg>
+            <div id="samplingSampleStats" class="sampling-stats" aria-live="polite"></div>
+          </section>
+          <section class="sampling-chart-panel">
+            <h2 data-i18n="sampling_means_title">(3) 样本均值的抽样分布</h2>
+            <svg id="samplingMeansChart" class="sampling-chart" viewBox="0 0 620 420" role="img" data-i18n-aria="sampling_means_aria"></svg>
+            <div id="samplingMeansStats" class="sampling-stats" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
     </main>
   </div>
   <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
@@ -127,6 +185,6 @@
   <script src="scatterplot.js"></script>
   <script src="outliers.js"></script>
   <script src="linear-function.js"></script>
+  <script src="sampling-distribution.js"></script>
 </body>
 </html>
-

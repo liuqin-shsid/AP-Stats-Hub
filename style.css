@@ -97,3 +97,58 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .linear-axis-title { fill:#263844; font-size:13px; font-weight:600; }
 .linear-empty { fill:#64717d; font-size:16px; }
 
+/* ---------- Sampling Distribution ---------- */
+.sampling-controls .sampling-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+}
+.sampling-controls input[type="range"] {
+  width: 180px;
+  accent-color: var(--blue);
+}
+.sampling-controls output {
+  min-width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  font-weight: 600;
+}
+.sampling-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+.sampling-chart-panel {
+  min-width: 0;
+  padding: 16px 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.sampling-chart-panel h2 {
+  margin: 0 6px 8px;
+  color: var(--navy);
+  font-size: 16px;
+}
+.sampling-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+}
+#samplingPopChart { cursor: crosshair; }
+.sampling-stats {
+  margin: 8px 6px 0;
+  color: #42515e;
+  font-size: 13px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1200px) {
+  .sampling-charts { grid-template-columns: 1fr; }
+}
