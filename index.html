@@ -181,10 +181,12 @@
     </main>
   </div>
   <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
+  <!-- 关键：sampling-distribution.js 放在 app.js 之前，
+       这样它的翻译会在 app.js 末尾的 applyLang() 运行前注册好。 -->
+  <script src="sampling-distribution.js"></script>
   <script src="app.js"></script>
   <script src="scatterplot.js"></script>
   <script src="outliers.js"></script>
   <script src="linear-function.js"></script>
-  <script src="sampling-distribution.js"></script>
 </body>
 </html>
