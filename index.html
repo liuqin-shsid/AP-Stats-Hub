@@ -8,7 +8,6 @@
   <meta name="CocoaVersion" content="2685.7">
   <style type="text/css">
     p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Songti SC'; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Songti SC'; -webkit-text-stroke: #000000; min-height: 17.0px}
     span.s1 {font-kerning: none}
   </style>
 </head>
@@ -138,89 +137,71 @@
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div id="samplingPage" hidden&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="page-heading"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;&lt;h1 data-i18n="sampling_title"&gt;抽样分布&lt;/h1&gt;&lt;p data-i18n="sampling_desc"&gt;&lt;/p&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h1 data-i18n="sampling_title"&gt;抽样分布&lt;/h1&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;p data-i18n="sampling_desc"&gt;从总体中反复抽样，观察样本均值的抽样分布如何趋近正态。&lt;/p&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section class="controls" data-i18n-aria="sampling_chart_aria"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="sd-radio-group"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;label class="check"&gt;&lt;input type="radio" name="samplingDist" id="samplingRadioCustom"&gt; &lt;span data-i18n="sampling_custom"&gt;自定义绘制&lt;/span&gt;&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;label class="check"&gt;&lt;input type="radio" name="samplingDist" id="samplingRadioNormal" checked&gt; &lt;span data-i18n="sampling_normal"&gt;正态分布&lt;/span&gt;&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;label class="check"&gt;&lt;input type="radio" name="samplingDist" id="samplingRadioUniform"&gt; &lt;span data-i18n="sampling_uniform"&gt;均匀分布&lt;/span&gt;&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;label class="sd-slider-label"&gt;&lt;span data-i18n="sampling_size"&gt;样本量 n&lt;/span&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;input id="samplingSliderN" type="range" min="2" max="100" step="1" value="30"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;output id="samplingSliderNValue"&gt;30&lt;/output&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section class="controls sampling-controls" data-i18n-aria="controls_aria"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;span data-i18n="sampling_population"&gt;总体分布&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;select id="samplingPopulation"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="normal" data-i18n="sampling_normal"&gt;正态分布&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="uniform" data-i18n="sampling_uniform"&gt;均匀分布&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="custom" data-i18n="sampling_custom"&gt;自定义（手绘）&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/select&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="sd-btn-row"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn1" <span class="Apple-converted-space">    </span>class="secondary-button" type="button"&gt;x1&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn10"<span class="Apple-converted-space">    </span>class="secondary-button" type="button"&gt;x10&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn20"<span class="Apple-converted-space">    </span>class="secondary-button" type="button"&gt;x20&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn50"<span class="Apple-converted-space">    </span>class="secondary-button" type="button"&gt;x50&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn100" <span class="Apple-converted-space">  </span>class="secondary-button" type="button"&gt;x100&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn1000"<span class="Apple-converted-space">  </span>class="secondary-button" type="button"&gt;x1000&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingBtn10000" class="secondary-button" type="button"&gt;x10000&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button id="samplingReset"<span class="Apple-converted-space">    </span>class="reset" <span class="Apple-converted-space">            </span>type="button" data-i18n="sampling_reset"&gt;重置&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;span data-i18n="sampling_sample_size"&gt;样本量 n&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;span class="sampling-slider-wrap"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;input id="samplingN" type="range" min="2" max="100" step="1" value="30"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;output id="samplingNValue"&gt;30&lt;/output&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;span data-i18n="sampling_draws"&gt;每次抽样次数&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;select id="samplingDraws"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="1"&gt;×1&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="10"&gt;×10&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="20"&gt;×20&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="50"&gt;×50&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="100"&gt;×100&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="1000"&gt;×1000&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;option value="10000"&gt;×10000&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/select&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;button id="samplingRun" class="reset" type="button" data-i18n="sampling_run"&gt;开始抽样&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;button id="samplingReset" class="secondary-button" type="button" data-i18n="sampling_reset"&gt;重置&lt;/button&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/section&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;p id="samplingHint" class="hint"&gt;&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="sd-charts"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="sd-chart-card"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h2 data-i18n="sampling_pop_title"&gt;(1) 总体分布 Population Distribution&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;svg id="samplingPopChart"<span class="Apple-converted-space">  </span>class="sd-chart" viewBox="0 0 340 260"&gt;&lt;/svg&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="samplingPopStats" class="sd-stats"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="sd-chart-card"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h2 data-i18n="sampling_samp_title"&gt;(2) 样本分布 Sample Distribution&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;svg id="samplingSampChart" class="sd-chart" viewBox="0 0 340 260"&gt;&lt;/svg&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="samplingSampStats" class="sd-stats"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="sd-chart-card sd-chart-wide"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h2 data-i18n="sampling_mean_title"&gt;(3) 样本均值的抽样分布 Sampling Distribution of the Sample Mean&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;svg id="samplingMeanChart" class="sd-chart" viewBox="0 0 720 260"&gt;&lt;/svg&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="samplingMeanStats" class="sd-stats"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;p id="samplingHint" class="hint" role="status"&gt;&lt;/p&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="sampling-charts"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;section class="sampling-chart-panel"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h2 data-i18n="sampling_pop_title"&gt;(1) 总体分布&lt;/h2&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;svg id="samplingPopChart" class="sampling-chart" viewBox="0 0 620 420" role="img" data-i18n-aria="sampling_pop_aria"&gt;&lt;/svg&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="samplingPopStats" class="sampling-stats" aria-live="polite"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/section&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;section class="sampling-chart-panel"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h2 data-i18n="sampling_sample_title"&gt;(2) 最近一次样本&lt;/h2&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;svg id="samplingSampleChart" class="sampling-chart" viewBox="0 0 620 420" role="img" data-i18n-aria="sampling_sample_aria"&gt;&lt;/svg&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="samplingSampleStats" class="sampling-stats" aria-live="polite"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/section&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;section class="sampling-chart-panel"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;h2 data-i18n="sampling_means_title"&gt;(3) 样本均值的抽样分布&lt;/h2&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;svg id="samplingMeansChart" class="sampling-chart" viewBox="0 0 620 420" role="img" data-i18n-aria="sampling_means_aria"&gt;&lt;/svg&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="samplingMeansStats" class="sampling-stats" aria-live="polite"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/section&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/main&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;footer&gt;&lt;span&gt;© 2026&lt;/span&gt;&lt;span&gt;liuqin@shsid.org&lt;/span&gt;&lt;/footer&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- 关键：sampling-distribution.js 放在 app.js 之前，</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">       </span>这样它的翻译会在 app.js 末尾的 applyLang() 运行前注册好。 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="sampling-distribution.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="app.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="scatterplot.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="outliers.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="linear-function.js"&gt;&lt;/script&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- 不修改 scatterplot.js 的前提下，让 samplingPage 能切换显示 --&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>(function () {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>function activate(tool) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>var pages = ['correlationPage','scatterPage','outlierPage','linearPage','samplingPage'];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>pages.forEach(function (id) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>var el = document.getElementById(id);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (el) el.hidden = (id !== tool + 'Page');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.querySelectorAll('[data-tool]').forEach(function (btn) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>var active = btn.dataset.tool === tool;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>btn.classList.toggle('active', active);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (active) btn.setAttribute('aria-current','page');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>else btn.removeAttribute('aria-current');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>var map = { correlation:'heading_title', scatter:'scatter_title', outlier:'outlier_title', linear:'linear_title', sampling:'sampling_title' };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>try {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (typeof translations !== 'undefined' &amp;&amp; typeof lang !== 'undefined') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.title = 'AP Stats Hub · ' + (translations[lang][map[tool]] || '');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} catch (e) {}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.dispatchEvent(new CustomEvent('apstats:tool', { detail: tool }));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.addEventListener('DOMContentLoaded', function () {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.querySelectorAll('[data-tool]').forEach(function (btn) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>btn.addEventListener('click', function () { activate(btn.dataset.tool); });</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>})();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="sampling-distribution.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1">&lt;/body&gt;</span></p>
 <p class="p1"><span class="s1">&lt;/html&gt;</span></p>
 </body>
