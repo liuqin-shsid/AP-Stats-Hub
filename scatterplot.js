@@ -84,13 +84,12 @@
     $('scatterPage').hidden=tool!=='scatter';
     $('outlierPage').hidden=tool!=='outlier';
     $('linearPage').hidden=tool!=='linear';
-    $('samplingPage').hidden=tool!=='sampling';
     document.querySelectorAll('[data-tool]').forEach(button=>{
       const active=button.dataset.tool===tool;
       button.classList.toggle('active',active);
       if (active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
     });
-    document.title=`AP Stats Hub · ${translations[lang][{scatter:'scatter_title',outlier:'outlier_title',linear:'linear_title',sampling:'sampling_title',correlation:'heading_title'}[tool]]}`;
+    document.title=`AP Stats Hub · ${translations[lang][{scatter:'scatter_title',outlier:'outlier_title',linear:'linear_title',correlation:'heading_title'}[tool]]}`;
     document.dispatchEvent(new CustomEvent('apstats:tool',{detail:tool}));
   }
   document.querySelectorAll('[data-tool]').forEach(button=>button.addEventListener('click',()=>showTool(button.dataset.tool)));
@@ -234,3 +233,4 @@
   if (Object.keys(sheets).length) initData();
   applyLang();
 })();
+
