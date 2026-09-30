@@ -8,6 +8,7 @@
   <meta name="CocoaVersion" content="2685.7">
   <style type="text/css">
     p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Songti SC'; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Songti SC'; -webkit-text-stroke: #000000; min-height: 17.0px}
     span.s1 {font-kerning: none}
   </style>
 </head>
@@ -186,6 +187,39 @@
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="scatterplot.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="outliers.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="linear-function.js"&gt;&lt;/script&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- 不修改 scatterplot.js 的前提下，让 samplingPage 能切换显示 --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>(function () {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>function activate(tool) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>var pages = ['correlationPage','scatterPage','outlierPage','linearPage','samplingPage'];</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>pages.forEach(function (id) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>var el = document.getElementById(id);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (el) el.hidden = (id !== tool + 'Page');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.querySelectorAll('[data-tool]').forEach(function (btn) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>var active = btn.dataset.tool === tool;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>btn.classList.toggle('active', active);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (active) btn.setAttribute('aria-current','page');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>else btn.removeAttribute('aria-current');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>var map = { correlation:'heading_title', scatter:'scatter_title', outlier:'outlier_title', linear:'linear_title', sampling:'sampling_title' };</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>try {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (typeof translations !== 'undefined' &amp;&amp; typeof lang !== 'undefined') {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.title = 'AP Stats Hub · ' + (translations[lang][map[tool]] || '');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} catch (e) {}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.dispatchEvent(new CustomEvent('apstats:tool', { detail: tool }));</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.addEventListener('DOMContentLoaded', function () {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.querySelectorAll('[data-tool]').forEach(function (btn) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>btn.addEventListener('click', function () { activate(btn.dataset.tool); });</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>})();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
 <p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="sampling-distribution.js"&gt;&lt;/script&gt;</span></p>
 <p class="p1"><span class="s1">&lt;/body&gt;</span></p>
 <p class="p1"><span class="s1">&lt;/html&gt;</span></p>
