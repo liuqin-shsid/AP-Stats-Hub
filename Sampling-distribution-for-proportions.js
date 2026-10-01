@@ -398,7 +398,7 @@
         const h = (sz.h - sz.m.bottom) - y;
         svg.appendChild(svgEl('rect', {
           x, y, width: w, height: h,
-          fill: COLORS.sampling, stroke: '#000', 'stroke-width': 0.3, 'fill-opacity': 0.8,
+          fill: COLORS.sampling, 'fill-opacity': 0.85,
         }));
       }
       svg.appendChild(svgEl('line', {
