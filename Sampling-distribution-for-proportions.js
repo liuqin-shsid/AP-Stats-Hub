@@ -373,11 +373,13 @@
         xTicks: 6, yTicks: 5,
       });
     } else {
-      const bins = Math.min(30, Math.max(5, Math.floor(data.length / 5) + 5));
-      const binW = 1 / bins;
+      // p̂ 是离散取值：0, 1/n, 2/n, …, 1
+      const n = state.n;
+      const bins = n + 1;
+      const binW = 1 / n;
       const counts = new Array(bins).fill(0);
       for (const v of data) {
-        let idx = Math.floor(v / binW);
+        let idx = Math.round(v * n);
         if (idx >= bins) idx = bins - 1;
         if (idx < 0) idx = 0;
         counts[idx]++;
@@ -390,14 +392,17 @@
       });
       const sx = makeScale(xDomain, [sz.m.left, sz.w - sz.m.right]);
       const sy = makeScale([0, yMax], [sz.h - sz.m.bottom, sz.m.top]);
+      // 柱宽略小于取值间距，避免视觉上完全黏连；中心对准 k/n
+      const fullW = sx(binW) - sx(0);
+      const barW = fullW * 0.85;
       for (let i = 0; i < bins; i++) {
         if (!counts[i]) continue;
-        const x = sx(i * binW);
-        const w = sx((i + 1) * binW) - x;
+        const cx = sx(i * binW);
+        const x = cx - barW / 2;
         const y = sy(counts[i]);
         const h = (sz.h - sz.m.bottom) - y;
         svg.appendChild(svgEl('rect', {
-          x, y, width: w, height: h,
+          x, y, width: barW, height: h,
           fill: COLORS.sampling, 'fill-opacity': 0.85,
         }));
       }
