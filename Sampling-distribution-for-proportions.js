@@ -1,7 +1,8 @@
 /* Sampling Distribution for Proportions — 浏览器版
  * 对应原 Python 文件 sampling-distribution-for-proportions.py。
- * 布局仿照“样本均值的抽样分布”：顶部控制栏 + 三张等宽图 + 每图下方统计面板。
- * 样式全部以 #proportionPage 作用域，不影响其它页面。
+ * 布局：顶部控制栏（p 滑块 → n 滑块 2–40 → 模拟次数按钮组 → 清除样本 / 重置）
+ *        + 一行提示 + 三张等宽等高图（每图下方为该图统计面板）。
+ * 所有样式选择器都以 #proportionPage 作用域，避免影响其它页面。
  */
 (() => {
   /* ---------- i18n ---------- */
@@ -12,12 +13,8 @@
     proportion_sample: '(2) 单次样本分布',
     proportion_sampling: '(3) 样本比例 p̂ 的累积抽样分布',
     proportion_pop_title: '总体 p = {p}（红 {success} / 蓝 {failure}）',
-    proportion_sample_size: '样本量 n',
     proportion_population_p: '总体比例 p',
-    proportion_preset: '总体比例预设',
-    proportion_preset_low: '偏低 0.20',
-    proportion_preset_mid: '中等 0.50',
-    proportion_preset_high: '偏高 0.80',
+    proportion_sample_size: '样本量 n',
     proportion_simulations: '模拟次数',
     proportion_reset_samples: '清除样本',
     proportion_reset: '重置',
@@ -41,8 +38,6 @@
     proportion_no_sample: '暂无样本。',
     proportion_no_sampling: '暂无抽样。',
     proportion_click_sample: '点击上方按钮进行抽样。',
-    proportion_invalid_p: 'p 必须是 0 到 1 之间的数。',
-    proportion_invalid_n: 'n 必须是正整数。',
   });
   Object.assign(translations.en, {
     proportion_title: 'Sampling Distribution for Proportions',
@@ -51,12 +46,8 @@
     proportion_sample: '(2) Single-Sample Distribution',
     proportion_sampling: '(3) Sampling Distribution of p̂ (accumulated)',
     proportion_pop_title: 'Population p = {p} (red {success} / blue {failure})',
-    proportion_sample_size: 'Sample size n',
     proportion_population_p: 'Population p',
-    proportion_preset: 'Population p preset',
-    proportion_preset_low: 'Low 0.20',
-    proportion_preset_mid: 'Mid 0.50',
-    proportion_preset_high: 'High 0.80',
+    proportion_sample_size: 'Sample size n',
     proportion_simulations: 'Number of simulations',
     proportion_reset_samples: 'Clear samples',
     proportion_reset: 'Reset',
@@ -80,8 +71,6 @@
     proportion_no_sample: 'No sample yet.',
     proportion_no_sampling: 'No sampling yet.',
     proportion_click_sample: 'Click a sampling button above.',
-    proportion_invalid_p: 'p must be a number between 0 and 1.',
-    proportion_invalid_n: 'n must be a positive integer.',
   });
 
   /* ---------- 常量 ---------- */
@@ -103,7 +92,7 @@
     n: 20,
     batch: 5,
     accumulated: [],
-    lastSample: null,   // 最近一次样本的成功次数（用于 (2) 面板）
+    lastSample: null,
   };
 
   /* ---------- 工具函数 ---------- */
@@ -128,16 +117,15 @@
       </div>
       <section class="prop-controls">
         <label class="prop-slider">
+          <span data-i18n="proportion_population_p"></span>
+          <input id="propP" type="range" min="0" max="1" step="0.01" value="0.20">
+          <output id="propPValue">0.20</output>
+        </label>
+        <label class="prop-slider">
           <span data-i18n="proportion_sample_size"></span>
-          <input id="propN" type="range" min="1" max="200" step="1" value="20">
+          <input id="propN" type="range" min="2" max="40" step="1" value="20">
           <output id="propNValue">20</output>
         </label>
-        <fieldset class="prop-radio">
-          <legend data-i18n="proportion_preset"></legend>
-          <label><input type="radio" name="propPreset" value="0.2" checked> <span data-i18n="proportion_preset_low"></span></label>
-          <label><input type="radio" name="propPreset" value="0.5"> <span data-i18n="proportion_preset_mid"></span></label>
-          <label><input type="radio" name="propPreset" value="0.8"> <span data-i18n="proportion_preset_high"></span></label>
-        </fieldset>
         <div class="prop-sim-row">
           <span class="prop-sim-label" data-i18n="proportion_simulations"></span>
           <div class="prop-buttons">
@@ -151,31 +139,36 @@
       <div class="prop-charts">
         <section class="prop-chart-card">
           <h2 data-i18n="proportion_population"></h2>
-          <svg id="propPopChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
+          <div class="prop-chart-wrap">
+            <svg id="propPopChart" class="prop-chart" viewBox="0 0 460 340" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+          </div>
           <div id="propPopStats" class="prop-card-stats"></div>
         </section>
         <section class="prop-chart-card">
           <h2 data-i18n="proportion_sample"></h2>
-          <svg id="propSampleChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
+          <div class="prop-chart-wrap">
+            <svg id="propSampleChart" class="prop-chart" viewBox="0 0 460 340" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+          </div>
           <div id="propSampleStats" class="prop-card-stats"></div>
         </section>
         <section class="prop-chart-card">
           <h2 data-i18n="proportion_sampling"></h2>
-          <svg id="propSamplingChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
+          <div class="prop-chart-wrap">
+            <svg id="propSamplingChart" class="prop-chart" viewBox="0 0 460 340" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+          </div>
           <div id="propSamplingStats" class="prop-card-stats"></div>
         </section>
       </div>
     `;
+    document.getElementById('propP').addEventListener('input', e => {
+      state.p = Number(e.target.value);
+      document.getElementById('propPValue').textContent = state.p.toFixed(2);
+      state.accumulated = []; state.lastSample = null; renderAll();
+    });
     document.getElementById('propN').addEventListener('input', e => {
       state.n = Number(e.target.value);
       document.getElementById('propNValue').textContent = String(state.n);
       state.accumulated = []; state.lastSample = null; renderAll();
-    });
-    document.querySelectorAll('input[name="propPreset"]').forEach(r => {
-      r.addEventListener('change', () => {
-        state.p = Number(r.value);
-        state.accumulated = []; state.lastSample = null; renderAll();
-      });
     });
     document.querySelectorAll('.prop-sim-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -195,11 +188,12 @@
       state.accumulated = []; state.lastSample = null; renderAll();
     });
     document.getElementById('propResetAll').addEventListener('click', () => {
-      state.p = 0.2; state.n = 20; state.batch = 5;
+      state.p = 0.20; state.n = 20; state.batch = 5;
       state.accumulated = []; state.lastSample = null;
+      document.getElementById('propP').value = '0.20';
+      document.getElementById('propPValue').textContent = '0.20';
       document.getElementById('propN').value = '20';
       document.getElementById('propNValue').textContent = '20';
-      document.querySelector('input[name="propPreset"][value="0.2"]').checked = true;
       renderAll();
     });
   }
@@ -307,9 +301,9 @@
     clearSvg(svg);
     const sz = SIZE;
     const n = state.n;
-    const success = state.lastSample === null ? 0 : state.lastSample;
-    const failure = n - success;
     const hasSample = state.lastSample !== null;
+    const success = hasSample ? state.lastSample : 0;
+    const failure = n - success;
     const counts = [success, failure];
     const labels = [translations[lang].proportion_success, translations[lang].proportion_failure];
     const maxC = Math.max(success, failure, 1);
@@ -450,9 +444,8 @@
 
   /* ---------- 提示行 ---------- */
   function renderHint() {
-    const t = translations[lang];
     const el = document.getElementById('propHint');
-    el.textContent = t.proportion_click_sample;
+    el.textContent = translations[lang].proportion_click_sample;
   }
 
   /* ---------- 统一渲染 ---------- */
