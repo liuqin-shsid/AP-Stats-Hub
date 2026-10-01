@@ -19,6 +19,8 @@
         <button id="scatterNav" class="nav-item tool-nav" type="button" data-tool="scatter" data-i18n="scatter_title" aria-controls="scatterPage">散点图</button>
         <button id="outlierNav" class="nav-item tool-nav" type="button" data-tool="outlier" data-i18n="outlier_title" aria-controls="outlierPage">异常值点</button>
         <button id="linearNav" class="nav-item tool-nav" type="button" data-tool="linear" data-i18n="linear_title" aria-controls="linearPage">线性函数</button>
+        <!-- 新增 -->
+        <button id="samplingNav" class="nav-item tool-nav" type="button" data-tool="sampling" data-i18n="sampling_title" aria-controls="samplingPage">样本均值的抽样分布</button>
       </nav>
     </aside>
     <main class="content">
@@ -120,6 +122,8 @@
           </section>
         </div>
       </div>
+      <!-- 新增页面容器：内容由 Sampling-distribution-for-means.js 动态注入 -->
+      <div id="samplingPage" hidden></div>
     </main>
   </div>
   <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
@@ -127,6 +131,6 @@
   <script src="scatterplot.js"></script>
   <script src="outliers.js"></script>
   <script src="linear-function.js"></script>
+  <script src="Sampling-distribution-for-means.js"></script>
 </body>
 </html>
-
