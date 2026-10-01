@@ -2,7 +2,7 @@
  * 对应原 Python 文件 sampling-distribution-for-proportions.py。
  * 不依赖任何外部库；使用 SVG + 原生 JS。
  * 通过 apstats:tool / apstats:language 事件与现有工具协作。
- * 注意：此脚本自行处理 proportionPage 的显隐，因此无需修改 scatterplot.js。
+ * 本脚本自行处理 proportionPage 的显隐，无需修改 scatterplot.js。
  */
 (() => {
   /* ---------- i18n ---------- */
@@ -13,20 +13,16 @@
     proportion_sample: '(2) 单次样本分布',
     proportion_sampling: '(3) 样本比例 p̂ 的累积抽样分布',
     proportion_pop_title: '总体 p = {p}（红 {success} / 蓝 {failure}）',
-    proportion_sample_title: '样本分布（单次抽样）',
-    proportion_sampling_title: '样本比例 p̂ 的抽样分布（累积）',
-    proportion_sample_size: '样本量 n',
-    proportion_population_p: '总体比例 p',
-    proportion_batch: '每次模拟次数',
-    proportion_simulations: '模拟次数',
-    proportion_reset: '重置',
     proportion_sample_n: 'n = {n}，p̂ = {phat}',
     proportion_accum_n: 'n = {n}，累计模拟次数 = {total}',
+    proportion_sample_size: '样本量 n',
+    proportion_population_p: '总体比例 p',
+    proportion_simulations: '模拟次数',
+    proportion_reset: '重置',
     proportion_count: '频数',
     proportion_sample_proportion: '样本比例 p̂',
     proportion_success: '成功 (1)',
     proportion_failure: '失败 (0)',
-    proportion_stats: '统计量',
     proportion_pop_p: '总体比例 p',
     proportion_sample_size_label: '样本量 n',
     proportion_batch_size: '批量大小',
@@ -35,10 +31,10 @@
     proportion_theory_mean: '理论 E[p̂]',
     proportion_std_phat: 'p̂ 的标准差',
     proportion_theory_se: '理论 SE',
+    proportion_red_balls: '红球',
+    proportion_blue_balls: '蓝球',
     proportion_invalid_p: 'p 必须是 0 到 1 之间的数。',
     proportion_invalid_n: 'n 必须是正整数。',
-    proportion_click_btn: '点击上方数字按钮自动添加一批样本。',
-    proportion_draw_ball: '小球',
   });
   Object.assign(translations.en, {
     proportion_title: 'Sampling Distribution for Proportions',
@@ -47,20 +43,16 @@
     proportion_sample: '(2) Single-Sample Distribution',
     proportion_sampling: '(3) Sampling Distribution of p̂ (accumulated)',
     proportion_pop_title: 'Population p = {p} (red {success} / blue {failure})',
-    proportion_sample_title: 'Sample Distribution (one sample)',
-    proportion_sampling_title: 'Sampling Distribution of p̂ (accumulated)',
-    proportion_sample_size: 'Sample size n',
-    proportion_population_p: 'Population p',
-    proportion_batch: 'Batch size',
-    proportion_simulations: 'Number of simulations',
-    proportion_reset: 'Reset',
     proportion_sample_n: 'n = {n}, p̂ = {phat}',
     proportion_accum_n: 'n = {n}, total simulations = {total}',
+    proportion_sample_size: 'Sample size n',
+    proportion_population_p: 'Population p',
+    proportion_simulations: 'Number of simulations',
+    proportion_reset: 'Reset',
     proportion_count: 'Count',
     proportion_sample_proportion: 'Sample proportion p̂',
     proportion_success: 'Success (1)',
     proportion_failure: 'Failure (0)',
-    proportion_stats: 'Statistics',
     proportion_pop_p: 'Population p',
     proportion_sample_size_label: 'Sample size n',
     proportion_batch_size: 'Batch size',
@@ -69,10 +61,10 @@
     proportion_theory_mean: 'Theory E[p̂]',
     proportion_std_phat: 'Std of p̂',
     proportion_theory_se: 'Theory SE',
+    proportion_red_balls: 'Red balls',
+    proportion_blue_balls: 'Blue balls',
     proportion_invalid_p: 'p must be a number between 0 and 1.',
     proportion_invalid_n: 'n must be a positive integer.',
-    proportion_click_btn: 'Click a number button above to add a batch of samples.',
-    proportion_draw_ball: 'Ball',
   });
 
   /* ---------- 常量 ---------- */
@@ -132,24 +124,23 @@
         </div>
         <button id="propReset" class="reset" type="button" data-i18n="proportion_reset"></button>
       </section>
-      <p id="propHint" class="hint" role="status"></p>
       <div class="prop-charts">
-        <section class="prop-chart-card">
+        <section class="prop-chart-card prop-chart-pop">
           <h2 data-i18n="proportion_population"></h2>
-          <svg id="propPopChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
+          <svg id="propPopChart" class="prop-chart prop-chart-pop-svg" viewBox="0 0 300 300" role="img"></svg>
+          <div id="propPopStats" class="prop-card-stats"></div>
         </section>
-        <section class="prop-chart-card">
+        <section class="prop-chart-card prop-chart-sample">
           <h2 data-i18n="proportion_sample"></h2>
           <svg id="propSampleChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
+          <div id="propSampleStats" class="prop-card-stats"></div>
         </section>
-        <section class="prop-chart-card prop-chart-wide">
+        <section class="prop-chart-card prop-chart-sampling">
           <h2 data-i18n="proportion_sampling"></h2>
           <svg id="propSamplingChart" class="prop-chart" viewBox="0 0 620 340" role="img"></svg>
+          <div id="propSamplingStats" class="prop-card-stats prop-card-stats-two-row"></div>
         </section>
       </div>
-      <section class="prop-stats">
-        <div id="propStatsText" class="prop-stats-text"></div>
-      </section>
     `;
     // 事件
     document.getElementById('propP').addEventListener('change', e => {
@@ -166,7 +157,6 @@
       btn.addEventListener('click', () => {
         const k = Number(btn.dataset.batch);
         state.batch = k;
-        // 立即添加一批 p̂
         for (let i = 0; i < k; i++) {
           state.accumulated.push(binomial(state.n, state.p) / state.n);
         }
@@ -226,14 +216,12 @@
     }
   }
 
-  /* ---------- 三个面板渲染 ---------- */
-  // (1) 总体分布：彩色小球阵列
+  /* ---------- (1) 总体分布：彩色小球阵列（较小） ---------- */
   function renderPopulation() {
     const svg = document.getElementById('propPopChart');
     clearSvg(svg);
     const success = Math.round(state.p * TOTAL_BALLS);
     const failure = TOTAL_BALLS - success;
-    // 生成顺序并打乱
     const colors = [];
     for (let i = 0; i < success; i++) colors.push('success');
     for (let i = 0; i < failure; i++) colors.push('failure');
@@ -241,12 +229,10 @@
       const j = (Math.random() * (i + 1)) | 0;
       [colors[i], colors[j]] = [colors[j], colors[i]];
     }
-    const spacing = 1.0, radius = 0.38;
     const rows = Math.ceil(TOTAL_BALLS / BALL_COLS);
     const cols = BALL_COLS;
-    // 视口按 viewBox 460x340
-    const vbW = 460, vbH = 340;
-    const padX = 6, padY = 26, padBottom = 8;
+    const vbW = 300, vbH = 300;
+    const padX = 4, padY = 20, padBottom = 6;
     const availW = vbW - padX * 2, availH = vbH - padY - padBottom;
     const cellW = availW / cols, cellH = availH / rows;
     for (let i = 0; i < colors.length; i++) {
@@ -257,22 +243,28 @@
       svg.appendChild(svgEl('circle', {
         cx, cy, r: rr,
         fill: colors[i] === 'success' ? COLORS.success : COLORS.failure,
-        stroke: '#000', 'stroke-width': 0.2,
+        stroke: '#000', 'stroke-width': 0.15,
       }));
     }
-    // 标题
     const title = svgEl('text', {
-      x: vbW / 2, y: 16, 'text-anchor': 'middle',
-      fill: '#17324d', 'font-size': 13, 'font-weight': 700,
+      x: vbW / 2, y: 13, 'text-anchor': 'middle',
+      fill: '#17324d', 'font-size': 11, 'font-weight': 700,
     });
     title.textContent = translations[lang].proportion_pop_title
       .replace('{p}', state.p.toFixed(2))
       .replace('{success}', String(success))
       .replace('{failure}', String(failure));
     svg.appendChild(title);
+    // 图下统计：p、红球、蓝球
+    const t = translations[lang];
+    document.getElementById('propPopStats').innerHTML = `
+      <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_pop_p)}</span><b>${state.p.toFixed(4)}</b></div>
+      <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_red_balls)}</span><b>${success}</b></div>
+      <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_blue_balls)}</span><b>${failure}</b></div>
+    `;
   }
 
-  // (2) 单次样本分布：柱状图
+  /* ---------- (2) 单次样本分布：柱状图 ---------- */
   function renderSample() {
     const svg = document.getElementById('propSampleChart');
     clearSvg(svg);
@@ -315,17 +307,14 @@
       svg.appendChild(lb);
     }
     const phat = success / n;
-    const title = svgEl('text', {
-      x: sz.w / 2, y: 16, 'text-anchor': 'middle',
-      fill: '#17324d', 'font-size': 12, 'font-weight': 700,
-    });
-    title.textContent = translations[lang].proportion_sample_n
-      .replace('{n}', String(n))
-      .replace('{phat}', phat.toFixed(4));
-    svg.appendChild(title);
+    // 图下统计：n 与 p̂
+    document.getElementById('propSampleStats').innerHTML = `
+      <div class="prop-card-stats-line"><span>n</span><b>${n}</b></div>
+      <div class="prop-card-stats-line"><span>p̂</span><b>${phat.toFixed(4)}</b></div>
+    `;
   }
 
-  // (3) 累积抽样分布：直方图 + p、均值参考线
+  /* ---------- (3) 累积抽样分布 ---------- */
   function renderSampling() {
     const svg = document.getElementById('propSamplingChart');
     clearSvg(svg);
@@ -338,98 +327,68 @@
         ylabel: translations[lang].proportion_count,
         xTicks: 6, yTicks: 5,
       });
-      const title = svgEl('text', {
-        x: sz.w / 2, y: 16, 'text-anchor': 'middle',
-        fill: '#17324d', 'font-size': 12, 'font-weight': 700,
+    } else {
+      const bins = Math.min(50, Math.max(5, Math.floor(data.length / 5) + 5));
+      const binW = 1 / bins;
+      const counts = new Array(bins).fill(0);
+      for (const v of data) {
+        let idx = Math.floor(v / binW);
+        if (idx >= bins) idx = bins - 1;
+        if (idx < 0) idx = 0;
+        counts[idx]++;
+      }
+      const yMax = Math.max(...counts, 1) * 1.05;
+      drawAxes(svg, sz, xDomain, [0, yMax], {
+        xlabel: translations[lang].proportion_sample_proportion,
+        ylabel: translations[lang].proportion_count,
+        xTicks: 6, yTicks: 5,
       });
-      title.textContent = translations[lang].proportion_accum_n
-        .replace('{n}', String(state.n)).replace('{total}', '0');
-      svg.appendChild(title);
-      return;
-    }
-    // 分箱
-    const bins = Math.min(50, Math.max(5, Math.floor(data.length / 5) + 5));
-    const binW = 1 / bins;
-    const counts = new Array(bins).fill(0);
-    for (const v of data) {
-      let idx = Math.floor(v / binW);
-      if (idx >= bins) idx = bins - 1;
-      if (idx < 0) idx = 0;
-      counts[idx]++;
-    }
-    const yMax = Math.max(...counts, 1) * 1.05;
-    drawAxes(svg, sz, xDomain, [0, yMax], {
-      xlabel: translations[lang].proportion_sample_proportion,
-      ylabel: translations[lang].proportion_count,
-      xTicks: 6, yTicks: 5,
-    });
-    const sx = makeScale(xDomain, [sz.m.left, sz.w - sz.m.right]);
-    const sy = makeScale([0, yMax], [sz.h - sz.m.bottom, sz.m.top]);
-    for (let i = 0; i < bins; i++) {
-      if (!counts[i]) continue;
-      const x = sx(i * binW);
-      const w = sx((i + 1) * binW) - x;
-      const y = sy(counts[i]);
-      const h = (sz.h - sz.m.bottom) - y;
-      svg.appendChild(svgEl('rect', {
-        x, y, width: w, height: h,
-        fill: COLORS.sampling, stroke: '#000', 'stroke-width': 0.3, 'fill-opacity': 0.8,
+      const sx = makeScale(xDomain, [sz.m.left, sz.w - sz.m.right]);
+      const sy = makeScale([0, yMax], [sz.h - sz.m.bottom, sz.m.top]);
+      for (let i = 0; i < bins; i++) {
+        if (!counts[i]) continue;
+        const x = sx(i * binW);
+        const w = sx((i + 1) * binW) - x;
+        const y = sy(counts[i]);
+        const h = (sz.h - sz.m.bottom) - y;
+        svg.appendChild(svgEl('rect', {
+          x, y, width: w, height: h,
+          fill: COLORS.sampling, stroke: '#000', 'stroke-width': 0.3, 'fill-opacity': 0.8,
+        }));
+      }
+      // 参考线
+      svg.appendChild(svgEl('line', {
+        x1: sx(state.p), x2: sx(state.p),
+        y1: sz.m.top, y2: sz.h - sz.m.bottom,
+        stroke: COLORS.p, 'stroke-width': 2, 'stroke-dasharray': '6 4',
+      }));
+      const m = mean(data);
+      svg.appendChild(svgEl('line', {
+        x1: sx(m), x2: sx(m),
+        y1: sz.m.top, y2: sz.h - sz.m.bottom,
+        stroke: COLORS.mean, 'stroke-width': 2, 'stroke-dasharray': '2 4',
       }));
     }
-    // 参考线
-    svg.appendChild(svgEl('line', {
-      x1: sx(state.p), x2: sx(state.p),
-      y1: sz.m.top, y2: sz.h - sz.m.bottom,
-      stroke: COLORS.p, 'stroke-width': 2, 'stroke-dasharray': '6 4',
-    }));
-    const m = mean(data);
-    svg.appendChild(svgEl('line', {
-      x1: sx(m), x2: sx(m),
-      y1: sz.m.top, y2: sz.h - sz.m.bottom,
-      stroke: COLORS.mean, 'stroke-width': 2, 'stroke-dasharray': '2 4',
-    }));
-    const title = svgEl('text', {
-      x: sz.w / 2, y: 16, 'text-anchor': 'middle',
-      fill: '#17324d', 'font-size': 12, 'font-weight': 700,
-    });
-    title.textContent = translations[lang].proportion_accum_n
-      .replace('{n}', String(state.n)).replace('{total}', String(data.length));
-    svg.appendChild(title);
-    // 图例
-    const legend = svgEl('text', {
-      x: sz.w - sz.m.right - 4, y: 16, 'text-anchor': 'end',
-      fill: '#263844', 'font-size': 11,
-    });
-    legend.textContent = `p = ${state.p.toFixed(2)}　mean p̂ = ${m.toFixed(4)}`;
-    svg.appendChild(legend);
-  }
-
-  /* ---------- 统计面板 ---------- */
-  function renderStats() {
-    const el = document.getElementById('propStatsText');
+    // 图下统计：两行
     const t = translations[lang];
-    const total = state.accumulated.length;
-    const m = total ? mean(state.accumulated) : NaN;
-    const s = total > 1 ? sd(state.accumulated, 1) : NaN;
+    const total = data.length;
+    const m = total ? mean(data) : NaN;
+    const s = total > 1 ? sd(data, 1) : NaN;
     const se = Math.sqrt(state.p * (1 - state.p) / state.n);
-    el.innerHTML = `
-      <div class="prop-stats-title">${escapeHtml(t.proportion_stats)}</div>
-      <div class="prop-stats-grid">
-        <div><span>${escapeHtml(t.proportion_pop_p)}</span><b>${state.p.toFixed(4)}</b></div>
-        <div><span>${escapeHtml(t.proportion_sample_size_label)}</span><b>${state.n}</b></div>
-        <div><span>${escapeHtml(t.proportion_batch_size)}</span><b>${state.batch}</b></div>
-        <div><span>${escapeHtml(t.proportion_accum_total)}</span><b>${total}</b></div>
-        <div><span>${escapeHtml(t.proportion_mean_phat)}</span><b>${fmt(m)}</b></div>
-        <div><span>${escapeHtml(t.proportion_theory_mean)}</span><b>${state.p.toFixed(4)}</b></div>
-        <div><span>${escapeHtml(t.proportion_std_phat)}</span><b>${fmt(s)}</b></div>
-        <div><span>${escapeHtml(t.proportion_theory_se)}</span><b>${fmt(se)}</b></div>
+    document.getElementById('propSamplingStats').innerHTML = `
+      <div class="prop-card-stats-row">
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_pop_p)}</span><b>${state.p.toFixed(4)}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_sample_size_label)}</span><b>${state.n}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_batch_size)}</span><b>${state.batch}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_accum_total)}</span><b>${total}</b></div>
+      </div>
+      <div class="prop-card-stats-row">
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_mean_phat)}</span><b>${fmt(m)}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_theory_mean)}</span><b>${state.p.toFixed(4)}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_std_phat)}</span><b>${fmt(s)}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_theory_se)}</span><b>${fmt(se)}</b></div>
       </div>
     `;
-  }
-
-  function renderHint() {
-    const el = document.getElementById('propHint');
-    el.textContent = translations[lang].proportion_click_btn;
   }
 
   /* ---------- 统一渲染 ---------- */
@@ -437,16 +396,13 @@
     renderPopulation();
     renderSample();
     renderSampling();
-    renderStats();
-    renderHint();
   }
 
-  /* ---------- 页面显隐：补充 scatterplot.js 未覆盖的 proportion 工具 ---------- */
+  /* ---------- 页面显隐 ---------- */
   function showProportionPage(show) {
     const myPage = document.getElementById('proportionPage');
     if (!myPage) return;
     if (show) {
-      // 隐藏其它工具页面
       ['correlationPage', 'scatterPage', 'outlierPage', 'linearPage', 'samplingPage'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.hidden = true;
@@ -466,15 +422,12 @@
   function init() {
     buildUI();
     renderAll();
-    // 监听导航按钮（在 scatterplot.js 的 showTool 之后执行，覆盖它的隐藏逻辑）
     const nav = document.getElementById('proportionNav');
     if (nav) {
       nav.addEventListener('click', () => {
-        // 用 setTimeout 让 scatterplot.js 的 showTool 先跑完，再覆盖
         setTimeout(() => showProportionPage(true), 0);
       });
     }
-    // 切到其它工具时，隐藏本页
     document.addEventListener('apstats:tool', e => {
       if (e.detail !== 'proportion') {
         const myPage = document.getElementById('proportionPage');
@@ -483,11 +436,7 @@
         showProportionPage(true);
       }
     });
-    // 语言切换时刷新文本与统计面板
-    document.addEventListener('apstats:language', () => {
-      // applyLang 已处理 data-i18n；这里刷新 JS 生成的文本
-      renderAll();
-    });
+    document.addEventListener('apstats:language', () => { renderAll(); });
   }
 
   init();

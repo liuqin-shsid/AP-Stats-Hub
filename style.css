@@ -7,25 +7,37 @@
 .prop-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .prop-sim-btn { min-width: 52px; padding: 7px 10px; font-size: 13px; }
 .prop-sim-btn[aria-pressed="true"] { border-color: var(--blue); background: #dfeef9; }
-.prop-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 18px; }
-.prop-chart-card { min-width: 0; padding: 12px 10px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
-.prop-chart-card h2 { margin: 0 6px 6px; color: var(--navy); font-size: 14px; font-weight: 700; }
-.prop-chart-wide { grid-column: 1 / -1; }
+
+/* 三图并排：Population 窄，Sample 与 Sampling 宽 */
+.prop-charts {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 14px;
+  margin-top: 18px;
+  align-items: start;
+}
+.prop-chart-card { min-width: 0; padding: 10px 8px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; display: flex; flex-direction: column; }
+.prop-chart-card h2 { margin: 0 4px 6px; color: var(--navy); font-size: 13px; font-weight: 700; }
 .prop-chart { display: block; width: 100%; height: auto; user-select: none; }
 .prop-chart .grid { stroke: #dfe6eb; stroke-width: 1; }
 .prop-chart .axis { stroke: #50606d; stroke-width: 1.2; }
 .prop-chart .tick { fill: #5b6874; font-size: 10px; }
 .prop-chart .axis-label { fill: #263844; font-size: 11px; font-weight: 600; }
-.prop-stats { margin-top: 16px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 8px; background: #f7fafc; }
-.prop-stats-title { margin-bottom: 8px; color: var(--navy); font-size: 14px; font-weight: 700; }
-.prop-stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 24px; font-size: 13px; }
-.prop-stats-grid > div { display: flex; justify-content: space-between; gap: 10px; }
-.prop-stats-grid span { color: #64717d; }
-.prop-stats-grid b { color: var(--navy); font-variant-numeric: tabular-nums; }
-@media (max-width: 1100px) {
-  .prop-charts { grid-template-columns: minmax(0, 1fr); }
-  .prop-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* 图下统计 */
+.prop-card-stats { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: #f7fafc; font-size: 12px; color: var(--navy); }
+.prop-card-stats-line { display: flex; justify-content: space-between; gap: 8px; line-height: 1.55; }
+.prop-card-stats-line span { color: #64717d; }
+.prop-card-stats-line b { color: var(--navy); font-variant-numeric: tabular-nums; }
+.prop-card-stats-two-row { display: flex; flex-direction: column; gap: 4px; }
+.prop-card-stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 10px; }
+.prop-card-stats-row .prop-card-stats-line { justify-content: space-between; }
+
+@media (max-width: 1200px) {
+  .prop-charts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .prop-chart-sampling { grid-column: 1 / -1; }
 }
-@media (max-width: 700px) {
-  .prop-stats-grid { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 800px) {
+  .prop-charts { grid-template-columns: minmax(0, 1fr); }
+  .prop-card-stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
