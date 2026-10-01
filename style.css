@@ -97,31 +97,7 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .linear-axis-title { fill:#263844; font-size:13px; font-weight:600; }
 .linear-empty { fill:#64717d; font-size:16px; }
 
-/* ---- Sampling Distribution tool (new) ---- */
-.sd-radio-group { display:flex; gap:18px; align-items:center; }
-.sd-slider-label { display:flex; align-items:center; gap:10px; color:#42515e; font-size:13px; font-weight:600; }
-.sd-slider-label input[type=range] { width:180px; accent-color:var(--blue); cursor:pointer; }
-.sd-slider-label output { min-width:32px; text-align:right; font-variant-numeric:tabular-nums; }
-.sd-btn-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.sd-btn-row .secondary-button { min-width:52px; padding:7px 10px; font-size:13px; }
-.sd-btn-row .reset { min-width:64px; }
-.sd-charts { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr); gap:16px; margin-top:18px; }
-.sd-chart-card { min-width:0; padding:14px 12px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
-.sd-chart-card h2 { margin:0 4px 10px; color:var(--navy); font-size:14px; font-weight:700; }
-.sd-chart { display:block; width:100%; height:auto; user-select:none; }
-.sd-chart .grid { stroke:#dfe6eb; stroke-width:1; }
-.sd-chart .axis { stroke:#50606d; stroke-width:1.2; }
-.sd-chart .tick { fill:#5b6874; font-size:9px; }
-.sd-chart .axis-label { fill:#263844; font-size:10px; font-weight:600; }
-#samplingPopChart { cursor: crosshair; }
-.sd-stats { margin-top:10px; padding:10px 12px; border-radius:6px; background:#f7fafc; font-size:12px; color:var(--navy); }
-.sd-stats .sd-card-title { font-weight:700; color:var(--navy); margin-bottom:6px; }
-.sd-stats .sd-line { display:flex; justify-content:space-between; gap:10px; line-height:1.7; }
-.sd-stats .sd-line span { color:#64717d; }
-.sd-stats .sd-line b { color:var(--navy); font-variant-numeric:tabular-nums; }
-.sd-stats .sd-line.muted { color:#64717d; font-style:italic; }
-@media (max-width: 1100px) { .sd-charts { grid-template-columns:1fr; } }
-/* ===== Sampling Distribution for Means ===== */
+/* ===== Sampling Distribution for Means (existing) ===== */
 .sampling-controls { align-items: center; }
 .sampling-slider { display: flex; flex-direction: row; align-items: center; gap: 10px; color: #42515e; font-size: 13px; font-weight: 600; }
 .sampling-slider input[type="range"] { width: 180px; accent-color: var(--blue); }
@@ -144,4 +120,81 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 }
 @media (max-width: 800px) {
   .sampling-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ===== Sampling Distribution for Proportions (isolated) ===== */
+#proportionPage .prop-page-heading { margin-bottom: 16px; }
+#proportionPage .prop-page-heading h1 { margin: 0 0 6px; color: #17324d; font-size: 25px; }
+#proportionPage .prop-page-heading p { margin: 0; color: #64717d; font-size: 14px; }
+
+#proportionPage .prop-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 18px 22px;
+  padding: 18px 20px; border: 1px solid #e4e9ee; border-radius: 8px; background: #fff;
+}
+#proportionPage .prop-slider {
+  display: flex; flex-direction: row; align-items: center; gap: 10px;
+  color: #42515e; font-size: 13px; font-weight: 600;
+}
+#proportionPage .prop-slider input[type="range"] { width: 180px; accent-color: #2878b8; }
+#proportionPage .prop-slider output { min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+#proportionPage .prop-radio {
+  display: flex; align-items: center; gap: 14px;
+  margin: 0; padding: 6px 12px;
+  border: 1px solid #e4e9ee; border-radius: 6px;
+  background: #fff; color: #42515e; font-size: 13px; font-weight: 600;
+}
+#proportionPage .prop-radio legend { padding: 0 4px; color: #64717d; font-size: 12px; font-weight: 600; }
+#proportionPage .prop-radio label { display: flex; align-items: center; gap: 4px; font-weight: 600; cursor: pointer; }
+#proportionPage .prop-sim-row { display: flex; align-items: center; gap: 10px; }
+#proportionPage .prop-sim-label { color: #42515e; font-size: 13px; font-weight: 600; }
+#proportionPage .prop-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+#proportionPage .prop-sim-btn {
+  min-width: 56px; height: 34px; padding: 0 12px;
+  border: 1px solid #c9d2da; border-radius: 5px;
+  background: #fff; color: #17324d; cursor: pointer; font: inherit; font-size: 13px;
+}
+#proportionPage .prop-sim-btn:hover { background: #eaf1f6; }
+#proportionPage .prop-reset-btn {
+  height: 34px; padding: 0 16px; border: 0; border-radius: 5px;
+  background: #2878b8; color: #fff; cursor: pointer; font: 600 14px inherit;
+}
+#proportionPage .prop-reset-btn:hover { background: #1d679f; }
+#proportionPage .prop-hint { margin: 12px 2px 18px; color: #687581; font-size: 13px; }
+
+#proportionPage .prop-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px; align-items: start;
+}
+#proportionPage .prop-chart-card {
+  min-width: 0; padding: 12px 10px 10px;
+  border: 1px solid #e4e9ee; border-radius: 8px; background: #fff;
+  display: flex; flex-direction: column;
+}
+#proportionPage .prop-chart-card h2 {
+  margin: 0 4px 8px; color: #17324d; font-size: 15px; font-weight: 700;
+}
+#proportionPage .prop-chart { display: block; width: 100%; height: auto; user-select: none; }
+#proportionPage .prop-chart .grid { stroke: #dfe6eb; stroke-width: 1; }
+#proportionPage .prop-chart .axis { stroke: #50606d; stroke-width: 1.2; }
+#proportionPage .prop-chart .tick { fill: #5b6874; font-size: 10px; }
+#proportionPage .prop-chart .axis-label { fill: #263844; font-size: 11px; font-weight: 600; }
+
+#proportionPage .prop-card-stats {
+  margin-top: 8px; padding: 10px 12px; border-radius: 6px;
+  background: #f7fafc; font-size: 13px; color: #17324d;
+}
+#proportionPage .prop-card-stats-title { margin-bottom: 6px; font-weight: 700; color: #17324d; }
+#proportionPage .prop-card-stats-line {
+  display: flex; justify-content: space-between; gap: 8px; line-height: 1.7;
+}
+#proportionPage .prop-card-stats-line span { color: #64717d; }
+#proportionPage .prop-card-stats-line b { color: #17324d; font-variant-numeric: tabular-nums; }
+#proportionPage .prop-card-stats-line.muted { color: #64717d; font-style: italic; }
+
+@media (max-width: 1200px) {
+  #proportionPage .prop-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 800px) {
+  #proportionPage .prop-charts { grid-template-columns: minmax(0, 1fr); }
 }

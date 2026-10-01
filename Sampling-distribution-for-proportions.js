@@ -1,8 +1,7 @@
 /* Sampling Distribution for Proportions — 浏览器版
  * 对应原 Python 文件 sampling-distribution-for-proportions.py。
- * 不依赖任何外部库；使用 SVG + 原生 JS。
- * 通过 apstats:tool / apstats:language 事件与现有工具协作。
- * 本脚本自行处理 proportionPage 的显隐，无需修改 scatterplot.js。
+ * 布局仿照“样本均值的抽样分布”：顶部控制栏 + 三张等宽图 + 每图下方统计面板。
+ * 样式全部以 #proportionPage 作用域，不影响其它页面。
  */
 (() => {
   /* ---------- i18n ---------- */
@@ -13,16 +12,22 @@
     proportion_sample: '(2) 单次样本分布',
     proportion_sampling: '(3) 样本比例 p̂ 的累积抽样分布',
     proportion_pop_title: '总体 p = {p}（红 {success} / 蓝 {failure}）',
-    proportion_sample_n: 'n = {n}，p̂ = {phat}',
-    proportion_accum_n: 'n = {n}，累计模拟次数 = {total}',
     proportion_sample_size: '样本量 n',
     proportion_population_p: '总体比例 p',
+    proportion_preset: '总体比例预设',
+    proportion_preset_low: '偏低 0.20',
+    proportion_preset_mid: '中等 0.50',
+    proportion_preset_high: '偏高 0.80',
     proportion_simulations: '模拟次数',
+    proportion_reset_samples: '清除样本',
     proportion_reset: '重置',
     proportion_count: '频数',
     proportion_sample_proportion: '样本比例 p̂',
     proportion_success: '成功 (1)',
     proportion_failure: '失败 (0)',
+    proportion_pop_params: '总体参数',
+    proportion_sample_stats: '样本统计量（最近一次）',
+    proportion_sampling_stats: '样本比例 p̂ 的抽样分布',
     proportion_pop_p: '总体比例 p',
     proportion_sample_size_label: '样本量 n',
     proportion_batch_size: '批量大小',
@@ -33,6 +38,9 @@
     proportion_theory_se: '理论 SE',
     proportion_red_balls: '红球',
     proportion_blue_balls: '蓝球',
+    proportion_no_sample: '暂无样本。',
+    proportion_no_sampling: '暂无抽样。',
+    proportion_click_sample: '点击上方按钮进行抽样。',
     proportion_invalid_p: 'p 必须是 0 到 1 之间的数。',
     proportion_invalid_n: 'n 必须是正整数。',
   });
@@ -43,16 +51,22 @@
     proportion_sample: '(2) Single-Sample Distribution',
     proportion_sampling: '(3) Sampling Distribution of p̂ (accumulated)',
     proportion_pop_title: 'Population p = {p} (red {success} / blue {failure})',
-    proportion_sample_n: 'n = {n}, p̂ = {phat}',
-    proportion_accum_n: 'n = {n}, total simulations = {total}',
     proportion_sample_size: 'Sample size n',
     proportion_population_p: 'Population p',
+    proportion_preset: 'Population p preset',
+    proportion_preset_low: 'Low 0.20',
+    proportion_preset_mid: 'Mid 0.50',
+    proportion_preset_high: 'High 0.80',
     proportion_simulations: 'Number of simulations',
+    proportion_reset_samples: 'Clear samples',
     proportion_reset: 'Reset',
-    proportion_count: 'Count',
+    proportion_count: 'Frequency',
     proportion_sample_proportion: 'Sample proportion p̂',
     proportion_success: 'Success (1)',
     proportion_failure: 'Failure (0)',
+    proportion_pop_params: 'Population Parameters',
+    proportion_sample_stats: 'Sample Statistics (latest)',
+    proportion_sampling_stats: 'Sampling Distribution of p̂',
     proportion_pop_p: 'Population p',
     proportion_sample_size_label: 'Sample size n',
     proportion_batch_size: 'Batch size',
@@ -63,6 +77,9 @@
     proportion_theory_se: 'Theory SE',
     proportion_red_balls: 'Red balls',
     proportion_blue_balls: 'Blue balls',
+    proportion_no_sample: 'No sample yet.',
+    proportion_no_sampling: 'No sampling yet.',
+    proportion_click_sample: 'Click a sampling button above.',
     proportion_invalid_p: 'p must be a number between 0 and 1.',
     proportion_invalid_n: 'n must be a positive integer.',
   });
@@ -86,6 +103,7 @@
     n: 20,
     batch: 5,
     accumulated: [],
+    lastSample: null,   // 最近一次样本的成功次数（用于 (2) 面板）
   };
 
   /* ---------- 工具函数 ---------- */
@@ -104,67 +122,85 @@
   function buildUI() {
     const root = document.getElementById('proportionPage');
     root.innerHTML = `
-      <div class="page-heading">
-        <div><h1 data-i18n="proportion_title"></h1><p data-i18n="proportion_desc"></p></div>
+      <div class="prop-page-heading">
+        <h1 data-i18n="proportion_title"></h1>
+        <p data-i18n="proportion_desc"></p>
       </div>
-      <section class="controls prop-controls">
-        <label class="prop-text-label">
-          <span data-i18n="proportion_population_p"></span>
-          <input id="propP" type="number" min="0" max="1" step="0.01" value="0.2">
-        </label>
-        <label class="prop-text-label">
+      <section class="prop-controls">
+        <label class="prop-slider">
           <span data-i18n="proportion_sample_size"></span>
-          <input id="propN" type="number" min="1" step="1" value="20">
+          <input id="propN" type="range" min="1" max="200" step="1" value="20">
+          <output id="propNValue">20</output>
         </label>
+        <fieldset class="prop-radio">
+          <legend data-i18n="proportion_preset"></legend>
+          <label><input type="radio" name="propPreset" value="0.2" checked> <span data-i18n="proportion_preset_low"></span></label>
+          <label><input type="radio" name="propPreset" value="0.5"> <span data-i18n="proportion_preset_mid"></span></label>
+          <label><input type="radio" name="propPreset" value="0.8"> <span data-i18n="proportion_preset_high"></span></label>
+        </fieldset>
         <div class="prop-sim-row">
           <span class="prop-sim-label" data-i18n="proportion_simulations"></span>
           <div class="prop-buttons">
-            ${SIM_OPTIONS.map(v => `<button type="button" class="secondary-button prop-sim-btn" data-batch="${v}">${v}</button>`).join('')}
+            ${SIM_OPTIONS.map(v => `<button type="button" class="prop-sim-btn" data-batch="${v}">×${v}</button>`).join('')}
           </div>
         </div>
-        <button id="propReset" class="reset" type="button" data-i18n="proportion_reset"></button>
+        <button id="propResetSamples" class="prop-reset-btn" type="button" data-i18n="proportion_reset_samples"></button>
+        <button id="propResetAll" class="prop-reset-btn" type="button" data-i18n="proportion_reset"></button>
       </section>
+      <p id="propHint" class="prop-hint" role="status"></p>
       <div class="prop-charts">
-        <section class="prop-chart-card prop-chart-pop">
+        <section class="prop-chart-card">
           <h2 data-i18n="proportion_population"></h2>
-          <svg id="propPopChart" class="prop-chart prop-chart-pop-svg" viewBox="0 0 300 300" role="img"></svg>
+          <svg id="propPopChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
           <div id="propPopStats" class="prop-card-stats"></div>
         </section>
-        <section class="prop-chart-card prop-chart-sample">
+        <section class="prop-chart-card">
           <h2 data-i18n="proportion_sample"></h2>
           <svg id="propSampleChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
           <div id="propSampleStats" class="prop-card-stats"></div>
         </section>
-        <section class="prop-chart-card prop-chart-sampling">
+        <section class="prop-chart-card">
           <h2 data-i18n="proportion_sampling"></h2>
-          <svg id="propSamplingChart" class="prop-chart" viewBox="0 0 620 340" role="img"></svg>
-          <div id="propSamplingStats" class="prop-card-stats prop-card-stats-two-row"></div>
+          <svg id="propSamplingChart" class="prop-chart" viewBox="0 0 460 340" role="img"></svg>
+          <div id="propSamplingStats" class="prop-card-stats"></div>
         </section>
       </div>
     `;
-    // 事件
-    document.getElementById('propP').addEventListener('change', e => {
-      const v = Number(e.target.value);
-      if (!Number.isFinite(v) || v < 0 || v > 1) { alert(translations[lang].proportion_invalid_p); return; }
-      state.p = v; state.accumulated = []; renderAll();
+    document.getElementById('propN').addEventListener('input', e => {
+      state.n = Number(e.target.value);
+      document.getElementById('propNValue').textContent = String(state.n);
+      state.accumulated = []; state.lastSample = null; renderAll();
     });
-    document.getElementById('propN').addEventListener('change', e => {
-      const v = parseInt(e.target.value, 10);
-      if (!Number.isFinite(v) || v < 1) { alert(translations[lang].proportion_invalid_n); return; }
-      state.n = v; state.accumulated = []; renderAll();
+    document.querySelectorAll('input[name="propPreset"]').forEach(r => {
+      r.addEventListener('change', () => {
+        state.p = Number(r.value);
+        state.accumulated = []; state.lastSample = null; renderAll();
+      });
     });
     document.querySelectorAll('.prop-sim-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const k = Number(btn.dataset.batch);
         state.batch = k;
+        let last = null;
         for (let i = 0; i < k; i++) {
-          state.accumulated.push(binomial(state.n, state.p) / state.n);
+          const s = binomial(state.n, state.p);
+          state.accumulated.push(s / state.n);
+          last = s;
         }
+        state.lastSample = last;
         renderAll();
       });
     });
-    document.getElementById('propReset').addEventListener('click', () => {
-      state.accumulated = []; renderAll();
+    document.getElementById('propResetSamples').addEventListener('click', () => {
+      state.accumulated = []; state.lastSample = null; renderAll();
+    });
+    document.getElementById('propResetAll').addEventListener('click', () => {
+      state.p = 0.2; state.n = 20; state.batch = 5;
+      state.accumulated = []; state.lastSample = null;
+      document.getElementById('propN').value = '20';
+      document.getElementById('propNValue').textContent = '20';
+      document.querySelector('input[name="propPreset"][value="0.2"]').checked = true;
+      renderAll();
     });
   }
 
@@ -179,7 +215,6 @@
     return v => range[0] + (v - domain[0]) * (range[1] - range[0]) / (domain[1] - domain[0] || 1);
   }
   const SIZE = { w: 460, h: 340, m: { left: 56, right: 18, top: 18, bottom: 48 } };
-  const SIZE_WIDE = { w: 620, h: 340, m: { left: 56, right: 18, top: 18, bottom: 48 } };
   function drawAxes(svg, sz, xDomain, yDomain, opts = {}) {
     const { xlabel, ylabel, xTicks = 5, yTicks = 5 } = opts;
     const sx = makeScale(xDomain, [sz.m.left, sz.w - sz.m.right]);
@@ -216,7 +251,7 @@
     }
   }
 
-  /* ---------- (1) 总体分布：彩色小球阵列（较小） ---------- */
+  /* ---------- (1) 总体分布：彩色小球阵列 ---------- */
   function renderPopulation() {
     const svg = document.getElementById('propPopChart');
     clearSvg(svg);
@@ -231,8 +266,8 @@
     }
     const rows = Math.ceil(TOTAL_BALLS / BALL_COLS);
     const cols = BALL_COLS;
-    const vbW = 300, vbH = 300;
-    const padX = 4, padY = 20, padBottom = 6;
+    const vbW = SIZE.w, vbH = SIZE.h;
+    const padX = 8, padY = 22, padBottom = 8;
     const availW = vbW - padX * 2, availH = vbH - padY - padBottom;
     const cellW = availW / cols, cellH = availH / rows;
     for (let i = 0; i < colors.length; i++) {
@@ -247,20 +282,22 @@
       }));
     }
     const title = svgEl('text', {
-      x: vbW / 2, y: 13, 'text-anchor': 'middle',
-      fill: '#17324d', 'font-size': 11, 'font-weight': 700,
+      x: vbW / 2, y: 14, 'text-anchor': 'middle',
+      fill: '#17324d', 'font-size': 12, 'font-weight': 700,
     });
     title.textContent = translations[lang].proportion_pop_title
       .replace('{p}', state.p.toFixed(2))
       .replace('{success}', String(success))
       .replace('{failure}', String(failure));
     svg.appendChild(title);
-    // 图下统计：p、红球、蓝球
+
     const t = translations[lang];
     document.getElementById('propPopStats').innerHTML = `
+      <div class="prop-card-stats-title">${escapeHtml(t.proportion_pop_params)}</div>
       <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_pop_p)}</span><b>${state.p.toFixed(4)}</b></div>
       <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_red_balls)}</span><b>${success}</b></div>
       <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_blue_balls)}</span><b>${failure}</b></div>
+      <div class="prop-card-stats-line"><span>N</span><b>${TOTAL_BALLS.toLocaleString()}</b></div>
     `;
   }
 
@@ -270,8 +307,9 @@
     clearSvg(svg);
     const sz = SIZE;
     const n = state.n;
-    const success = binomial(n, state.p);
+    const success = state.lastSample === null ? 0 : state.lastSample;
     const failure = n - success;
+    const hasSample = state.lastSample !== null;
     const counts = [success, failure];
     const labels = [translations[lang].proportion_success, translations[lang].proportion_failure];
     const maxC = Math.max(success, failure, 1);
@@ -284,21 +322,25 @@
     const sx = makeScale(xDomain, [sz.m.left, sz.w - sz.m.right]);
     const sy = makeScale(yDomain, [sz.h - sz.m.bottom, sz.m.top]);
     const barW = (sz.w - sz.m.left - sz.m.right) / 3;
+    if (hasSample) {
+      for (let i = 0; i < 2; i++) {
+        const x = sx(i + 0.5) - barW / 2;
+        const y = sy(counts[i]);
+        const h = (sz.h - sz.m.bottom) - y;
+        svg.appendChild(svgEl('rect', {
+          x, y, width: barW, height: h,
+          fill: i === 0 ? COLORS.success : COLORS.failure,
+          stroke: '#000', 'stroke-width': 0.6, 'fill-opacity': 0.85,
+        }));
+        const t = svgEl('text', {
+          x: sx(i + 0.5), y: y - 4, 'text-anchor': 'middle',
+          fill: '#17324d', 'font-size': 12, 'font-weight': 700,
+        });
+        t.textContent = String(counts[i]);
+        svg.appendChild(t);
+      }
+    }
     for (let i = 0; i < 2; i++) {
-      const x = sx(i + 0.5) - barW / 2;
-      const y = sy(counts[i]);
-      const h = (sz.h - sz.m.bottom) - y;
-      svg.appendChild(svgEl('rect', {
-        x, y, width: barW, height: h,
-        fill: i === 0 ? COLORS.success : COLORS.failure,
-        stroke: '#000', 'stroke-width': 0.6, 'fill-opacity': 0.85,
-      }));
-      const t = svgEl('text', {
-        x: sx(i + 0.5), y: y - 4, 'text-anchor': 'middle',
-        fill: '#17324d', 'font-size': 12, 'font-weight': 700,
-      });
-      t.textContent = String(counts[i]);
-      svg.appendChild(t);
       const lb = svgEl('text', {
         x: sx(i + 0.5), y: sz.h - sz.m.bottom + 18, 'text-anchor': 'middle',
         fill: '#263844', 'font-size': 11,
@@ -306,19 +348,28 @@
       lb.textContent = labels[i];
       svg.appendChild(lb);
     }
-    const phat = success / n;
-    // 图下统计：n 与 p̂
-    document.getElementById('propSampleStats').innerHTML = `
-      <div class="prop-card-stats-line"><span>n</span><b>${n}</b></div>
-      <div class="prop-card-stats-line"><span>p̂</span><b>${phat.toFixed(4)}</b></div>
-    `;
+    const t = translations[lang];
+    if (hasSample) {
+      const phat = success / n;
+      document.getElementById('propSampleStats').innerHTML = `
+        <div class="prop-card-stats-title">${escapeHtml(t.proportion_sample_stats)}</div>
+        <div class="prop-card-stats-line"><span>n</span><b>${n}</b></div>
+        <div class="prop-card-stats-line"><span>p̂</span><b>${phat.toFixed(4)}</b></div>
+      `;
+    } else {
+      document.getElementById('propSampleStats').innerHTML = `
+        <div class="prop-card-stats-title">${escapeHtml(t.proportion_sample_stats)}</div>
+        <div class="prop-card-stats-line muted">${escapeHtml(t.proportion_no_sample)}</div>
+        <div class="prop-card-stats-line muted">${escapeHtml(t.proportion_click_sample)}</div>
+      `;
+    }
   }
 
   /* ---------- (3) 累积抽样分布 ---------- */
   function renderSampling() {
     const svg = document.getElementById('propSamplingChart');
     clearSvg(svg);
-    const sz = SIZE_WIDE;
+    const sz = SIZE;
     const data = state.accumulated;
     const xDomain = [0, 1];
     if (data.length === 0) {
@@ -328,7 +379,7 @@
         xTicks: 6, yTicks: 5,
       });
     } else {
-      const bins = Math.min(50, Math.max(5, Math.floor(data.length / 5) + 5));
+      const bins = Math.min(30, Math.max(5, Math.floor(data.length / 5) + 5));
       const binW = 1 / bins;
       const counts = new Array(bins).fill(0);
       for (const v of data) {
@@ -356,7 +407,6 @@
           fill: COLORS.sampling, stroke: '#000', 'stroke-width': 0.3, 'fill-opacity': 0.8,
         }));
       }
-      // 参考线
       svg.appendChild(svgEl('line', {
         x1: sx(state.p), x2: sx(state.p),
         y1: sz.m.top, y2: sz.h - sz.m.bottom,
@@ -369,26 +419,40 @@
         stroke: COLORS.mean, 'stroke-width': 2, 'stroke-dasharray': '2 4',
       }));
     }
-    // 图下统计：两行
     const t = translations[lang];
     const total = data.length;
     const m = total ? mean(data) : NaN;
     const s = total > 1 ? sd(data, 1) : NaN;
     const se = Math.sqrt(state.p * (1 - state.p) / state.n);
-    document.getElementById('propSamplingStats').innerHTML = `
-      <div class="prop-card-stats-row">
+    if (total === 0) {
+      document.getElementById('propSamplingStats').innerHTML = `
+        <div class="prop-card-stats-title">${escapeHtml(t.proportion_sampling_stats)}</div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_pop_p)}</span><b>${state.p.toFixed(4)}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_sample_size_label)}</span><b>${state.n}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_accum_total)}</span><b>0</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_theory_mean)}</span><b>${state.p.toFixed(4)}</b></div>
+        <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_theory_se)}</span><b>${fmt(se)}</b></div>
+      `;
+    } else {
+      document.getElementById('propSamplingStats').innerHTML = `
+        <div class="prop-card-stats-title">${escapeHtml(t.proportion_sampling_stats)}</div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_pop_p)}</span><b>${state.p.toFixed(4)}</b></div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_sample_size_label)}</span><b>${state.n}</b></div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_batch_size)}</span><b>${state.batch}</b></div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_accum_total)}</span><b>${total}</b></div>
-      </div>
-      <div class="prop-card-stats-row">
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_mean_phat)}</span><b>${fmt(m)}</b></div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_theory_mean)}</span><b>${state.p.toFixed(4)}</b></div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_std_phat)}</span><b>${fmt(s)}</b></div>
         <div class="prop-card-stats-line"><span>${escapeHtml(t.proportion_theory_se)}</span><b>${fmt(se)}</b></div>
-      </div>
-    `;
+      `;
+    }
+  }
+
+  /* ---------- 提示行 ---------- */
+  function renderHint() {
+    const t = translations[lang];
+    const el = document.getElementById('propHint');
+    el.textContent = t.proportion_click_sample;
   }
 
   /* ---------- 统一渲染 ---------- */
@@ -396,6 +460,7 @@
     renderPopulation();
     renderSample();
     renderSampling();
+    renderHint();
   }
 
   /* ---------- 页面显隐 ---------- */
