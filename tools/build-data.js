@@ -34,6 +34,7 @@ const MANIFEST = {
    描述写在 tools/datasets.categorical.js。 */
 const CATEGORICAL = require('./datasets.categorical.js');
 const QUANTITATIVE = require('./datasets.quantitative.js');
+const GROUPED = require('./datasets.grouped.js');
 
 /* ---------- 工具 ---------- */
 function readWorkbook(relPath, onlySheets) {
@@ -115,14 +116,15 @@ function buildCategorical() {
   }
 
   const quant = buildQuantitative();
+  const grouped = buildGrouped();
   const out =
     `/* 本文件由 tools/build-data.js 自动生成，请勿手改。\n` +
     `   数据源见 data/source/，改完 Excel 后执行： npm run build:data */\n` +
     `window.APSTATS_DATA = window.APSTATS_DATA || {};\n` +
-    `window.APSTATS_DATA.display = ${JSON.stringify({ categorical: { order, sets }, quantitative: quant.payload })};\n`;
+    `window.APSTATS_DATA.display = ${JSON.stringify({ categorical: { order, sets }, quantitative: quant.payload, grouped: grouped.payload })};\n`;
   fs.writeFileSync(path.join(ROOT, 'data', 'display.js'), out, 'utf8');
   console.log(`  \u2192 data/display.js  (${(out.length / 1024).toFixed(0)} KB)\n`);
-  return failed || quant.failed;
+  return failed || quant.failed || grouped.failed;
 }
 
 /* ---------- 定量数据集 ---------- */
@@ -145,7 +147,8 @@ function buildQuantitative() {
     }
     if (!values.length) { console.error(`  \u2717 ${cfg.id} 没有取到任何数值`); failed = true; continue; }
 
-    sets[cfg.id] = { name: cfg.name, note: cfg.note, variable: cfg.variable, n: values.length, values };
+    sets[cfg.id] = { name: cfg.name, note: cfg.note, variable: cfg.variable,
+                     displays: cfg.displays, n: values.length, values };
     if (cfg.label) sets[cfg.id].labels = labels;
     order.push(cfg.id);
     const lo = Math.min(...values), hi = Math.max(...values);
@@ -154,9 +157,38 @@ function buildQuantitative() {
   return { failed, payload: { order, sets } };
 }
 
+/* ---------- 分组数据（比较分布） ---------- */
+function buildGrouped() {
+  const sets = {}, order = [];
+  let failed = false;
+  for (const cfg of GROUPED) {
+    const abs = path.join(ROOT, cfg.file);
+    if (!fs.existsSync(abs)) { console.error(`  \u2717 找不到 ${cfg.file}`); failed = true; continue; }
+    const book = XLSX.read(fs.readFileSync(abs), { type: 'buffer' });
+    const raw = XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]], { defval: null });
+
+    const groups = cfg.levels.map(l => ({ zh: l.zh, en: l.en, values: [] }));
+    const index = new Map(cfg.levels.map((l, i) => [String(l.v), i]));
+    let dropped = 0;
+    for (const r of raw) {
+      const v = cfg.value(r), gi = index.get(String(cfg.group(r)));
+      if (v === null || gi === undefined) { dropped++; continue; }
+      groups[gi].values.push(v);
+    }
+    const unknown = [...new Set(raw.map(r => String(cfg.group(r))))].filter(g => !index.has(g) && g !== 'null');
+    if (unknown.length) { console.error(`  \u2717 ${cfg.id} 有未声明的分组：${unknown.join('、')}`); failed = true; }
+
+    sets[cfg.id] = { name: cfg.name, note: cfg.note, variable: cfg.variable, groupName: cfg.groupName, groups };
+    order.push(cfg.id);
+    console.log(`  \u2713 ${cfg.id.padEnd(16)} ` + groups.map(g => `${g.zh} n=${g.values.length}`).join('  ')
+                + (dropped ? `（丢弃 ${dropped} 行）` : ''));
+  }
+  return { failed, payload: { order, sets } };
+}
+
 /* ---------- 主流程 ---------- */
 let failed = false;
-console.log('[display · 分类数据 + 定量数据]');
+console.log('[display · 分类 / 定量 / 分组数据]');
 if (buildCategorical()) failed = true;
 
 for (const [bundle, sources] of Object.entries(MANIFEST)) {
