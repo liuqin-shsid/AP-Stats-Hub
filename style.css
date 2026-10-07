@@ -284,7 +284,10 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .stem-table .leaf-right { text-align:left; }
 .stem-table .stem-col { border-left:1px solid var(--line); border-right:1px solid var(--line); text-align:center; font-weight:700; background:#f7fafc; }
 
-/* 相关关系探究：散点图与残差图并排 */
+/* 相关关系探究：散点图在上、残差图在下。
+   限个最大宽度，否则在宽屏上按 1000×610 的比例会高得离谱。 */
+.corr-charts { display:grid; gap:14px; max-width:900px; margin-top:18px; }
+/* 相关关系探究：残差图样式 */
 .zero-resid-line { stroke:#c73932; stroke-width:2.5; }
 .resid-drop { stroke:#c73932; stroke-width:1.2; opacity:.5; }
 .resid-point { fill:#2878b8; stroke:#fff; stroke-width:1.5; }

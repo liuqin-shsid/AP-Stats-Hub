@@ -1,6 +1,7 @@
 /* 相关关系探究 —— 拖动数据点，实时观察最佳拟合线、r 与 R²。 */
 const chart = $('chart'), residChart = $('residChart');
 const W = 1000, H = 610, M = { left:86, right:38, top:32, bottom:75 };
+const RH = 400;   // 残差图比主图矮，与 index.html 里 #residChart 的 viewBox 一致
 let original = [], current = [], xKey = '', yKey = '', dragging = null;
 
 function refreshSelectLabels() {
@@ -63,28 +64,28 @@ function render() {
 function renderResiduals(fit, dx) {
   const t = translations[lang];
   if (!fit) {
-    residChart.innerHTML = `<text x="500" y="300" text-anchor="middle" class="resid-empty">${escapeHtml(t.resid_need_points)}</text>`;
+    residChart.innerHTML = `<text x="500" y="${RH/2}" text-anchor="middle" class="resid-empty">${escapeHtml(t.resid_need_points)}</text>`;
     return;
   }
   const res = current.map(p => ({ x: p.x, d: p.y - (fit.slope * p.x + fit.intercept) }));
   const maxAbs = Math.max(...res.map(r => Math.abs(r.d))) || 1;
   const dy = [-maxAbs * 1.15, maxAbs * 1.15];                 // 让零线正好在中间
   const sx = v => scale(v, dx, M.left, W - M.right);
-  const sy = v => scale(v, dy, H - M.bottom, M.top);
+  const sy = v => scale(v, dy, RH - M.bottom, M.top);
   let html = '';
   ticks(dx[0], dx[1]).forEach(v => { const x = sx(v);
-    html += `<line class="grid" x1="${x}" y1="${M.top}" x2="${x}" y2="${H-M.bottom}"/>` +
-            `<text class="tick" x="${x}" y="${H-M.bottom+24}" text-anchor="middle">${fmt(v)}</text>`; });
+    html += `<line class="grid" x1="${x}" y1="${M.top}" x2="${x}" y2="${RH-M.bottom}"/>` +
+            `<text class="tick" x="${x}" y="${RH-M.bottom+24}" text-anchor="middle">${fmt(v)}</text>`; });
   ticks(dy[0], dy[1]).forEach(v => { const y = sy(v);
     html += `<line class="grid" x1="${M.left}" y1="${y}" x2="${W-M.right}" y2="${y}"/>` +
             `<text class="tick" x="${M.left-12}" y="${y+5}" text-anchor="end">${fmt(v)}</text>`; });
-  html += `<line class="axis" x1="${M.left}" y1="${H-M.bottom}" x2="${W-M.right}" y2="${H-M.bottom}"/>` +
-          `<line class="axis" x1="${M.left}" y1="${M.top}" x2="${M.left}" y2="${H-M.bottom}"/>`;
+  html += `<line class="axis" x1="${M.left}" y1="${RH-M.bottom}" x2="${W-M.right}" y2="${RH-M.bottom}"/>` +
+          `<line class="axis" x1="${M.left}" y1="${M.top}" x2="${M.left}" y2="${RH-M.bottom}"/>`;
   // 每个点到零线的竖直短线：这段长度就是左图里的残差
   res.forEach(r => html += `<line class="resid-drop" x1="${sx(r.x)}" y1="${sy(0)}" x2="${sx(r.x)}" y2="${sy(r.d)}"/>`);
   html += `<line class="zero-resid-line" x1="${M.left}" y1="${sy(0)}" x2="${W-M.right}" y2="${sy(0)}"/>`;
-  html += `<text class="axis-label" x="${(M.left+W-M.right)/2}" y="${H-18}" text-anchor="middle">${escapeHtml(displayVariableName(xKey))}</text>` +
-          `<text class="axis-label" transform="translate(22 ${(M.top+H-M.bottom)/2}) rotate(-90)" text-anchor="middle">${escapeHtml(t.resid_axis)}</text>`;
+  html += `<text class="axis-label" x="${(M.left+W-M.right)/2}" y="${RH-18}" text-anchor="middle">${escapeHtml(displayVariableName(xKey))}</text>` +
+          `<text class="axis-label" transform="translate(22 ${(M.top+RH-M.bottom)/2}) rotate(-90)" text-anchor="middle">${escapeHtml(t.resid_axis)}</text>`;
   res.forEach(r => html += `<circle class="resid-point" cx="${sx(r.x)}" cy="${sy(r.d)}" r="6"><title>${escapeHtml(displayVariableName(xKey))}: ${fmt(r.x)}　${escapeHtml(t.resid_axis)}: ${fmt(r.d)}</title></circle>`);
   residChart.innerHTML = html;
 }
