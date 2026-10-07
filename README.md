@@ -5,8 +5,8 @@
 ```
 index.html           网页入口
 style.css            样式
-app.js / scatterplot.js / outliers.js / linear-function.js    线性回归教学四个页面
-Sampling-distribution-for-means.js / ...-for-proportions.js   抽样分布两个页面
+core/                共用层：DOM 工具、绘图基础、统计、中英双语、页面清单、路由
+pages/               每个页面一个文件（新增页面 = 新建一个文件 + 在 core/pages.js 加一条）
 vendor/              第三方库（SheetJS、PapaParse、jStat、KaTeX），已本地化
 data/                网页实际读取的数据（.js），由脚本自动生成
 data/source/         数据源 Excel —— 你要改数据就改这里

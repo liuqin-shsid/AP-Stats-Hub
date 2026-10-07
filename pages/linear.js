@@ -12,7 +12,7 @@
     linear_raw_aria:'汉堡王餐品脂肪和蛋白质散点图',
     linear_std_aria:'标准化脂肪和蛋白质散点图',
     linear_loading:'正在读取汉堡王数据…',
-    linear_load_error:'无法读取 burger-king-menu-items.xls。',
+    linear_load_error:'无法读取数据 data/regression.js。请执行 npm run build:data 重新生成。',
     linear_choose_first:'请在图内按住鼠标并拖出一小段，松开后生成完整直线。',
     linear_vertical:'线段太接近竖直，不能表示为 y = a + bx；请横向多拖一些。',
     linear_residuals:'直线已经形成。红色竖线是残差 d；可以在任意位置重新拖出一条直线。',
@@ -33,7 +33,7 @@
     linear_raw_aria:'Burger King menu fat and protein scatterplot',
     linear_std_aria:'Standardized fat and protein scatterplot',
     linear_loading:'Loading Burger King data…',
-    linear_load_error:'Could not read burger-king-menu-items.xls.',
+    linear_load_error:'Could not read data/regression.js. Run "npm run build:data" to regenerate it.',
     linear_choose_first:'Press and drag a short segment anywhere in the plot; release to create the full line.',
     linear_vertical:'That segment is too close to vertical for y = a + bx. Drag farther sideways.',
     linear_residuals:'The line is drawn. Red vertical segments are residuals d. Drag anywhere to replace it with another line.',
@@ -165,13 +165,20 @@
     if($('linearStandardize').checked)drawChart(stdSvg,z,stdDomains.x,stdDomains.y,standardizedLine(),{standard:true});
     updateMetrics();
   }
-  // 用 getBoundingClientRect + viewBox 线性换算，避免 getScreenCTM 在带 padding /
-  // 非等比容器下产生的偏移和留白误差。
+  // 处理 preserveAspectRatio="xMidYMid meet" 下的居中留白：
+  // 内容实际绘制区域是等比缩放到 rect 内的最大矩形，并居中。
+  // 这样无论容器宽高比如何变化，鼠标坐标都能正确映射到 viewBox 坐标。
   function clientToViewBox(event,svg) {
     const rect=svg.getBoundingClientRect();
+    const vbW=size.w, vbH=size.h;
+    // 注意：不要把这个局部变量叫 scale —— 会遮蔽 core/plot.js 的全局 scale()
+    const k=Math.min(rect.width/vbW, rect.height/vbH)||0;
+    const drawW=vbW*k, drawH=vbH*k;
+    const offsetX=(rect.width-drawW)/2;
+    const offsetY=(rect.height-drawH)/2;
     return {
-      x:(event.clientX-rect.left)*size.w/(rect.width||1),
-      y:(event.clientY-rect.top)*size.h/(rect.height||1),
+      x:((event.clientX-rect.left)-offsetX)/k,
+      y:((event.clientY-rect.top)-offsetY)/k,
     };
   }
   function pointerData(event,svg,domains) {
@@ -258,17 +265,15 @@
     }
     renderLinear();
   });
-  fetch('burger-king-menu-items.xls').then(response=>{
-    if(!response.ok)throw new Error('Data request failed');return response.arrayBuffer();
-  }).then(buffer=>{
-    const book=XLSX.read(buffer,{type:'array'}),sheet=book.Sheets['第二节数据'];
-    if(!sheet)throw new Error('Lesson 2 sheet missing');
-    const rows=XLSX.utils.sheet_to_json(sheet,{defval:null});
+  // 数据来自 data/regression.js（由 tools/build-data.js 生成），不再 fetch —— 双击 index.html 也能用。
+  try{
+    const rows=(window.APSTATS_DATA||{}).regression?.burgerKing?.sheets?.['第二节数据'];
+    if(!rows)throw new Error('Lesson 2 sheet missing');
     data=rows.map((row,index)=>({id:index+1,name:String(row['餐品名称']||''),x:Number(row['脂肪（g）']),y:Number(row['蛋白质（g）'])})).filter(p=>p.name&&Number.isFinite(p.x)&&Number.isFinite(p.y));
     if(data.length<2)throw new Error('Not enough numeric rows');
     stats={x:meanSd(data.map(p=>p.x)),y:meanSd(data.map(p=>p.y))};
     loadState='ready';updateHint('linear_choose_first');renderLinear();
-  }).catch(()=>{loadState='error';renderLinear();});
+  }catch{loadState='error';renderLinear();}
   updateMeanToggle();
   applyLang();
 })();
