@@ -1,6 +1,6 @@
 # AP Stats Hub
 
-AP Stats小站，**双击 `index.html` 就能用，不需要服务器或联网。数据已经预先转成 JS 放在 `data/` 里，第三方库也都在 `vendor/` 里。右上角可以切换中文 / English。
+AP Stats小站，双击 `index.html` 就能用，不需要服务器或联网。数据已经预先转成 JS 放在 `data/` 里，第三方库也都在 `vendor/` 里。右上角可以切换中文 / English。
 
 ---
 
