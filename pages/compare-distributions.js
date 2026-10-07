@@ -32,7 +32,8 @@
 
   const DATA = (window.APSTATS_DATA || {}).display?.grouped;
   const W = 560, H = 300, M = { left: 54, right: 20, top: 18, bottom: 54 };
-  const BOX_H = 230;
+  /* 并排箱线图占满整行，画布同比加宽，让它按约 1:1 渲染而不是被放大两倍 */
+  const BOX_W = 1120, BOX_H = 250;
   const state = { ds: null, binW: null };
 
   const set = () => DATA.sets[state.ds];
@@ -125,16 +126,16 @@
     const pow = Math.pow(10, Math.floor(Math.log10(rawMax || 1)));
     return [1, 2, 2.5, 5, 10].map(m => m * pow).find(s => rawMax / s <= 5) || 10 * pow;
   };
-  const X = (v, lo, hi) => M.left + (W - M.right - M.left) * (v - lo) / ((hi - lo) || 1);
-  function xTicks(lo, hi, h) {
-    const xs = niceStep((hi - lo) / 5), d = decimalsFor(xs);
+  const X = (v, lo, hi, w = W) => M.left + (w - M.right - M.left) * (v - lo) / ((hi - lo) || 1);
+  function xTicks(lo, hi, h, w = W) {
+    const xs = niceStep((hi - lo) / (w > 800 ? 8 : 5)), d = decimalsFor(xs);
     let g = '';
     for (let x = Math.ceil(lo / xs) * xs; x <= hi + 1e-9; x += xs) {
-      const p = X(x, lo, hi);
+      const p = X(x, lo, hi, w);
       g += `<line class="tickmark" x1="${p}" y1="${h - M.bottom}" x2="${p}" y2="${h - M.bottom + 5}"/>` +
            `<text class="val-label" x="${p}" y="${h - M.bottom + 19}" text-anchor="middle">${x.toFixed(d)}</text>`;
     }
-    g += `<text class="axis-title" x="${(M.left + W - M.right) / 2}" y="${h - 10}" text-anchor="middle">${escapeHtml(varName())}</text>`;
+    g += `<text class="axis-title" x="${(M.left + w - M.right) / 2}" y="${h - 10}" text-anchor="middle">${escapeHtml(varName())}</text>`;
     return g;
   }
 
@@ -146,14 +147,14 @@
     const lo = Math.min(...all) - pad, hi = Math.max(...all) + pad;
     const d = range() < 10 ? 2 : 1;
     const band = (h - M.bottom - M.top) / groups().length;
-    let g = `<line class="baseline" x1="${M.left}" y1="${h - M.bottom}" x2="${W - M.right}" y2="${h - M.bottom}"/>` + xTicks(lo, hi, h);
+    let g = `<line class="baseline" x1="${M.left}" y1="${h - M.bottom}" x2="${BOX_W - M.right}" y2="${h - M.bottom}"/>` + xTicks(lo, hi, h, BOX_W);
     groups().forEach((grp, i) => {
       const f = stats[i].f;
-      const cy = M.top + band * i + band / 2 + 8, half = Math.min(24, band / 2 - 16);
+      const cy = M.top + band * i + band / 2 + 7, half = Math.min(22, band / 2 - 15);
       const inside = f.sorted.filter(v => v >= f.lowerFence && v <= f.upperFence);
       const wLo = inside.length ? inside[0] : f.q1, wHi = inside.length ? inside[inside.length - 1] : f.q3;
       const outs = f.sorted.filter(v => v < f.lowerFence || v > f.upperFence);
-      const x = v => X(v, lo, hi);
+      const x = v => X(v, lo, hi, BOX_W);
       // 组名标在盒子正上方：左边距放不下中文组名，标在外侧会被截断
       g += `<text class="cat-label" x="${M.left}" y="${cy - half - 7}">${escapeHtml(gLabel(grp))}</text>`;
       g += `<line class="box-whisker" x1="${x(wLo)}" y1="${cy}" x2="${x(f.q1)}" y2="${cy}"/>` +
@@ -249,11 +250,11 @@
     const panel = (title, inner, note, span) =>
       `<section class="chart-panel${span ? ' span-2' : ''}"><h2>${escapeHtml(title)}</h2>${inner}` +
       (note ? `<p class="panel-note">${escapeHtml(note)}</p>` : '') + `</section>`;
-    const svg = (body, h, label) =>
-      `<svg class="cat-chart" viewBox="0 0 ${W} ${h}" role="img" aria-label="${escapeHtml(label)}">${body}</svg>`;
+    const svg = (body, h, label, w = W) =>
+      `<svg class="cat-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${escapeHtml(label)}">${body}</svg>`;
 
     $('cmpCharts').innerHTML =
-      panel(t.cmp_box, svg(drawBoxes(stats), BOX_H, varName() + ' — ' + t.cmp_box), t.cmp_box_note, true) +
+      panel(t.cmp_box, svg(drawBoxes(stats), BOX_H, varName() + ' — ' + t.cmp_box, BOX_W), t.cmp_box_note, true) +
       groups().map((g, i) =>
         panel(`${t.cmp_hist} · ${gLabel(g)}`, svg(drawHist(i, bins, yTop), H, gLabel(g) + ' — ' + t.cmp_hist),
               i === 0 ? t.cmp_hist_note : '')).join('') +

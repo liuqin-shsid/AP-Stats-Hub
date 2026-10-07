@@ -46,7 +46,7 @@
 
   const DATA = (window.APSTATS_DATA || {}).display?.quantitative;
   const W = 560, H = 320, M = { left: 58, right: 20, top: 18, bottom: 54 };
-  const BOX_H = 200;                                  // 箱线图矮一些
+  const BOX_H = 200;   // 基准高度；刻度标签换行时会自动加高                                  // 箱线图矮一些
   const state = { ds: null, rel: false, binW: null, markers: true };
 
   const set = () => DATA.sets[state.ds];
@@ -234,23 +234,50 @@
     return g;
   }
 
+  /* 箱线图的横轴只标五数概括这五个值——常规等距刻度在这里只会让图变乱。
+     两个标签靠得太近时，后一个挪到第二行，避免叠字。 */
+  function fiveNumberTicks(f, lo, hi, h, d) {
+    const marks = [f.min, f.q1, f.median, f.q3, f.max]
+      .map(v => ({ v, x: X(v, lo, hi) }))
+      .sort((a, b) => a.x - b.x);
+    // 每行各自记住上一个标签的右边界，挑第一个放得下的行。
+    // 只在两行之间交替是不够的：连续三个标签都挤时，第三个会转回第一行撞上第一个。
+    // 行数按需增加（最多 5 行＝每个标签各占一行），画布高度随之自适应。
+    const rightEdge = [];
+    let g = '';
+    for (const m of marks) {
+      const label = m.v.toFixed(d);
+      const halfW = label.length * 3.4 + 3;          // 估算标签半宽
+      let row = rightEdge.findIndex(e => m.x - halfW > e);
+      if (row < 0) { row = rightEdge.length; rightEdge.push(-Infinity); }
+      rightEdge[row] = m.x + halfW;
+      g += `<line class="tickmark" x1="${m.x}" y1="${h - M.bottom}" x2="${m.x}" y2="${h - M.bottom + 5}"/>` +
+           `<text class="val-label" x="${m.x}" y="${h - M.bottom + 17 + row * 13}" text-anchor="middle">${label}</text>`;
+    }
+    return { svg: g, rows: Math.max(1, rightEdge.length) };
+  }
+
   /* 箱线图（教材 Ch5 的画法）：
      盒子 Q₁–Q₃、中位数一条线；围栏 Q₁−1.5×IQR 与 Q₃+1.5×IQR 只用于判定、不画出来；
      须线延伸到围栏以内最远的数据点；超出围栏的点单独画出。 */
   function drawBox(f) {
-    const t = translations[lang], h = BOX_H;
+    const t = translations[lang];
     const pad = (f.max - f.min) * 0.04 || 1;
     const lo = f.min - pad, hi = f.max + pad;
     const inside = f.sorted.filter(v => v >= f.lowerFence && v <= f.upperFence);
     const whiskLo = inside.length ? inside[0] : f.q1;
     const whiskHi = inside.length ? inside[inside.length - 1] : f.q3;
     const outliers = f.sorted.filter(v => v < f.lowerFence || v > f.upperFence);
-    const cy = M.top + (h - M.bottom - M.top) / 2, half = 30;
     const d = Math.max(decimalsFor(state.binW), 1);
     const x = v => X(v, lo, hi);
+    // 先排一遍刻度看要几行，再据此定高度 —— 强偏的数据五个数会挤在一起，要换行
+    const rows = fiveNumberTicks(f, lo, hi, BOX_H, d).rows;
+    const h = BOX_H + (rows - 1) * 13;
+    const ticks = fiveNumberTicks(f, lo, hi, h, d);
+    const cy = M.top + (h - M.bottom - (rows - 1) * 13 - M.top) / 2, half = 30;
     let g = `<line class="baseline" x1="${M.left}" y1="${h - M.bottom}" x2="${W - M.right}" y2="${h - M.bottom}"/>`;
-    g += xTicks(lo, hi, h);
-    g += `<text class="axis-title" x="${(M.left + W - M.right) / 2}" y="${h - 10}" text-anchor="middle">${escapeHtml(varName())}</text>`;
+    g += ticks.svg;
+    g += `<text class="axis-title" x="${(M.left + W - M.right) / 2}" y="${h - 4}" text-anchor="middle">${escapeHtml(varName())}</text>`;
     g += `<line class="box-whisker" x1="${x(whiskLo)}" y1="${cy}" x2="${x(f.q1)}" y2="${cy}"/>` +
          `<line class="box-whisker" x1="${x(f.q3)}" y1="${cy}" x2="${x(whiskHi)}" y2="${cy}"/>` +
          `<line class="box-whisker" x1="${x(whiskLo)}" y1="${cy - 11}" x2="${x(whiskLo)}" y2="${cy + 11}"/>` +
@@ -262,7 +289,7 @@
       g += `<circle class="box-outlier" cx="${x(v)}" cy="${cy}" r="3.5"><title>${escapeHtml(t.quant_outliers)}: ${v.toFixed(d)}</title></circle>`;
     if (outliers.length)
       g += `<text class="val-label" x="${W - M.right}" y="${M.top + 12}" text-anchor="end">${escapeHtml(t.quant_outliers)}: ${outliers.length}</text>`;
-    return g;
+    return { svg: g, h };
   }
 
   /* ---------- 茎叶图 ---------- */
@@ -328,8 +355,9 @@
         case 'hist':  return panel(t.chart_hist,  svgOf('hist', drawHist(bins, lo, hi, n, f, ms)));
         case 'dot':   return panel(t.chart_dot,   svgOf('dot', drawDot(bins, lo, hi, f, ms)));
         case 'ogive': return panel(t.chart_ogive, svgOf('ogive', drawOgive(bins, lo, hi, n)));
-        case 'box':   return panel(t.chart_box,   svgOf('box', drawBox(f), BOX_H),
-                                   `<p class="panel-note">${escapeHtml(t.quant_box_note)}</p>`);
+        case 'box': { const b = drawBox(f);
+                      return panel(t.chart_box, svgOf('box', b.svg, b.h),
+                                   `<p class="panel-note">${escapeHtml(t.quant_box_note)}</p>`); }
         case 'stem':  return panel(t.chart_stem,  `<pre class="stem-plot">${escapeHtml(drawStem())}</pre>`);
         default:      return '';
       }
