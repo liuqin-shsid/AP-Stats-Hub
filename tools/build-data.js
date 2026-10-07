@@ -33,6 +33,7 @@ const MANIFEST = {
 /* 分类数据集单独处理：需要把 Excel 里的代号翻成课堂上用的中英文标签，
    描述写在 tools/datasets.categorical.js。 */
 const CATEGORICAL = require('./datasets.categorical.js');
+const QUANTITATIVE = require('./datasets.quantitative.js');
 
 /* ---------- 工具 ---------- */
 function readWorkbook(relPath, onlySheets) {
@@ -113,19 +114,49 @@ function buildCategorical() {
     console.log(`  \u2713 ${cfg.file}  ${rows.length} 行` + (dropped ? `（丢弃 ${dropped} 行缺失值）` : ''));
   }
 
+  const quant = buildQuantitative();
   const out =
     `/* 本文件由 tools/build-data.js 自动生成，请勿手改。\n` +
     `   数据源见 data/source/，改完 Excel 后执行： npm run build:data */\n` +
     `window.APSTATS_DATA = window.APSTATS_DATA || {};\n` +
-    `window.APSTATS_DATA.display = ${JSON.stringify({ categorical: { order, sets } })};\n`;
+    `window.APSTATS_DATA.display = ${JSON.stringify({ categorical: { order, sets }, quantitative: quant.payload })};\n`;
   fs.writeFileSync(path.join(ROOT, 'data', 'display.js'), out, 'utf8');
   console.log(`  \u2192 data/display.js  (${(out.length / 1024).toFixed(0)} KB)\n`);
-  return failed;
+  return failed || quant.failed;
+}
+
+/* ---------- 定量数据集 ---------- */
+function buildQuantitative() {
+  const sets = {}, order = [];
+  let failed = false;
+
+  for (const cfg of QUANTITATIVE) {
+    const abs = path.join(ROOT, cfg.file);
+    if (!fs.existsSync(abs)) { console.error(`  \u2717 找不到 ${cfg.file}`); failed = true; continue; }
+    const book = XLSX.read(fs.readFileSync(abs), { type: 'buffer' });
+    const raw = XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]], { defval: null });
+
+    const values = [], labels = [];
+    for (const r of raw) {
+      const v = cfg.pick(r);
+      if (v === null) continue;
+      values.push(v);
+      if (cfg.label) labels.push(String(cfg.label(r) ?? ''));
+    }
+    if (!values.length) { console.error(`  \u2717 ${cfg.id} 没有取到任何数值`); failed = true; continue; }
+
+    sets[cfg.id] = { name: cfg.name, note: cfg.note, variable: cfg.variable, n: values.length, values };
+    if (cfg.label) sets[cfg.id].labels = labels;
+    order.push(cfg.id);
+    const lo = Math.min(...values), hi = Math.max(...values);
+    console.log(`  \u2713 ${cfg.id.padEnd(14)} n=${String(values.length).padStart(5)}  范围 ${lo} – ${hi}`);
+  }
+  return { failed, payload: { order, sets } };
 }
 
 /* ---------- 主流程 ---------- */
 let failed = false;
-console.log('[display · 分类数据]');
+console.log('[display · 分类数据 + 定量数据]');
 if (buildCategorical()) failed = true;
 
 for (const [bundle, sources] of Object.entries(MANIFEST)) {

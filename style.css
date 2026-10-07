@@ -236,3 +236,22 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .cat-legend { display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 4px 2px; color:#42515e; font-size:13px; }
 .cat-legend span { display:flex; align-items:center; gap:7px; }
 .cat-legend i { width:12px; height:12px; border-radius:2px; }
+
+/* ---------- 定量数据的展示 ---------- */
+.bin-control { display:grid; grid-template-columns:auto minmax(160px,340px) auto; align-items:center; gap:14px; margin:16px 0 4px; color:#42515e; font-size:13px; font-weight:600; }
+.bin-control input { margin:0; accent-color:var(--blue); cursor:pointer; }
+.bin-control output { color:var(--navy); font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+.quant-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:1px; margin-top:14px; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:var(--line); }
+.quant-stats>div { min-width:0; padding:12px 14px; background:#f7fafc; }
+.quant-stats span { display:block; margin-bottom:4px; color:#64717d; font-size:12px; }
+.quant-stats strong { display:block; color:var(--navy); font-size:17px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+/* 直方图的条必须相接：空隙只能来自数据本身。用深色描边分隔，不留白缝。 */
+.cat-chart .hist-bar { fill:var(--cat-1); stroke:#004f7d; stroke-width:.75; }
+.cat-chart .dot { fill:var(--cat-1); }
+.cat-chart .tickmark { stroke:#50606d; stroke-width:1; }
+.cat-chart .marker-median { stroke:#c73932; stroke-width:2; stroke-dasharray:6 4; }
+.cat-chart .marker-mean { stroke:#D55E00; stroke-width:2; stroke-dasharray:2 3; }
+.cat-chart .marker-label { font-size:12px; font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px; }
+.cat-chart .marker-median-text { fill:#c73932; }
+.cat-chart .marker-mean-text { fill:#D55E00; }
+.stem-plot { margin:0; padding:16px 18px; color:var(--navy); font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; white-space:pre; overflow-x:auto; }
