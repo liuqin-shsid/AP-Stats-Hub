@@ -225,10 +225,17 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .freq-caption { margin:0 0 8px; color:#64717d; font-size:13px; }
 
 .cat-chart-card { margin-top:14px; padding:10px 8px 6px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+/* 两张图并排：每页就两种图，不用点击切换，也省掉一屏的纵向滚动 */
+.chart-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:14px; }
+.chart-panel { min-width:0; padding:10px 10px 6px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.chart-panel h2 { margin:0 2px 4px; color:var(--navy); font-size:15px; font-weight:700; }
+@media (max-width:980px) { .chart-pair { grid-template-columns:minmax(0,1fr); } }
 .cat-chart { display:block; width:100%; height:auto; }
 .cat-chart .bar { stroke:#fff; stroke-width:2; }          /* 2px 同色描边 = 色块之间的间隙 */
 .cat-chart .slice { stroke:#fff; stroke-width:2; }
 .cat-chart .val-label { fill:#42515e; font-size:12px; font-variant-numeric:tabular-nums; }
+/* 压在彩色扇区上的文字：白字 + 深色描边，保证任何底色下都读得清 */
+.cat-chart .pie-label { fill:#fff; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:3px; }
 .cat-chart .cat-label { fill:#42515e; font-size:13px; }
 .cat-chart .axis-title { fill:#263844; font-size:13px; font-weight:600; }
 .cat-chart .baseline { stroke:#50606d; stroke-width:1.2; }

@@ -41,8 +41,8 @@
   const PALETTE = ['var(--cat-1)','var(--cat-2)','var(--cat-3)','var(--cat-4)','var(--cat-5)'];
   const colorOf = i => i < PALETTE.length ? PALETTE[i] : 'var(--cat-other)';
 
-  const W = 900, H = 520, M = { left: 84, right: 28, top: 26, bottom: 96 };
-  const state = { ds: null, v1: 0, v2: -1, basis: 'count', chart: 'bar' };
+  const W = 560, H = 400, M = { left: 62, right: 20, top: 22, bottom: 78 };
+  const state = { ds: null, v1: 0, v2: -1, basis: 'count' };
 
   /* ---------- 取数 ---------- */
   const set = () => DATA.sets[state.ds];
@@ -83,11 +83,13 @@
       </section>
       <p id="catHint" class="hint" role="status"></p>
       <div id="catTable" class="freq-table-wrap"></div>
-      <div id="catChartSwitch" class="chart-switch"></div>
-      <section class="cat-chart-card">
-        <svg id="catChart" class="cat-chart" viewBox="0 0 ${W} ${H}" role="img"></svg>
-        <div id="catLegend" class="cat-legend"></div>
-      </section>`;
+      <div class="chart-pair">
+        <section class="chart-panel"><h2 id="catTitleA"></h2>
+          <svg id="catChartA" class="cat-chart" viewBox="0 0 ${W} ${H}" role="img"></svg></section>
+        <section class="chart-panel"><h2 id="catTitleB"></h2>
+          <svg id="catChartB" class="cat-chart" viewBox="0 0 ${W} ${H}" role="img"></svg></section>
+      </div>
+      <div id="catLegend" class="cat-legend"></div>`;
 
     setOptions($('catDataset'), DATA.order, state.ds, id => DATA.sets[id].name[lang]);
     $('catDataset').addEventListener('change', e => { state.ds = e.target.value; state.v1 = 0; state.v2 = -1; syncVars(); render(); });
@@ -99,6 +101,8 @@
 
   /* 变量下拉：变量二多一个「不选」。切换数据集后要重建。 */
   function syncVars() {
+    // 数据集下拉也要跟着语言重新标注，否则切英文后这里还是中文
+    setOptions($('catDataset'), DATA.order, state.ds, id => DATA.sets[id].name[lang]);
     const cols = set().columns.map((c, i) => i);
     setOptions($('catVar1'), cols, state.v1, i => colName(i));
     setOptions($('catVar2'), [-1, ...cols], state.v2, i => i < 0 ? translations[lang].cat_none : colName(i));
@@ -115,13 +119,6 @@
     if (!opts.some(o => o[0] === state.basis)) state.basis = 'count';
     $('catBasis').innerHTML = opts.map(([v, l]) => `<option value="${v}">${escapeHtml(l)}</option>`).join('');
     $('catBasis').value = state.basis;
-
-    const charts = twoVar() ? ['grouped', 'segmented'] : ['bar', 'pie'];
-    if (!charts.includes(state.chart)) state.chart = charts[0];
-    $('catChartSwitch').innerHTML = charts.map(c =>
-      `<button type="button" data-chart="${c}" aria-pressed="${c === state.chart}">${escapeHtml(t['chart_' + c])}</button>`).join('');
-    $('catChartSwitch').querySelectorAll('[data-chart]').forEach(b =>
-      b.addEventListener('click', () => { state.chart = b.dataset.chart; render(); }));
   }
 
   /* ---------- 表格 ---------- */
@@ -236,7 +233,7 @@
           `<title>${escapeHtml(labels[i])}: ${v} (${fmtPct(pct(v, n))})</title></path>`;
       if (v / n > 0.04) {
         const [lx, ly] = p((a0 + a1) / 2);
-        g += `<text class="val-label" x="${cx + (lx - cx) * 0.68}" y="${cy + (ly - cy) * 0.68 + 4}" text-anchor="middle">${fmtPct(pct(v, n))}</text>`;
+        g += `<text class="pie-label" x="${cx + (lx - cx) * 0.68}" y="${cy + (ly - cy) * 0.68 + 4}" text-anchor="middle">${fmtPct(pct(v, n))}</text>`;
       }
       a0 = a1;
     });
@@ -287,33 +284,33 @@
     const t = translations[lang];
     renderTable();
     $('catHint').textContent = twoVar() ? t.cat_hint_2 : t.cat_hint_1;
-    let svg = '';
+    const put = (slot, title, svg) => {
+      $('catTitle' + slot).textContent = title;
+      $('catChart' + slot).innerHTML = svg;
+      $('catChart' + slot).setAttribute('aria-label',
+        `${colName(state.v1)}${twoVar() ? ' × ' + colName(state.v2) : ''} — ${title}`);
+    };
+
     if (!twoVar()) {
       const c = counts1(state.v1), n = sum(c);
       const asPct = state.basis === 'rel';
-      const vals = asPct ? c.map(v => +pct(v, n).toFixed(1)) : c;
+      const values = asPct ? c.map(v => +pct(v, n).toFixed(1)) : c;
       const labels = col(state.v1).levels.map(l => l[lang]);
-      const axis = asPct ? t.cat_pct_axis : t.cat_count_axis;
-      svg = state.chart === 'pie' ? drawPie(c, labels) : drawBar(vals, labels, axis, asPct);
+      put('A', t.chart_bar, drawBar(values, labels, asPct ? t.cat_pct_axis : t.cat_count_axis, asPct));
+      put('B', t.chart_pie, drawPie(c, labels));
       legend(labels);
     } else {
       const T = counts2(state.v1, state.v2);
       const rowLabels = col(state.v1).levels.map(l => l[lang]);
       const colLabels = col(state.v2).levels.map(l => l[lang]);
-      if (state.chart === 'segmented') {
-        svg = drawSegmented(T, rowLabels, colLabels);
-      } else {
-        const rowTot = T.map(sum), colTot = colLabels.map((_, j) => sum(T.map(r => r[j]))), n = sum(rowTot);
-        const asPct = state.basis !== 'count';
-        const V = T.map((row, i) => row.map((v, j) => !asPct ? v
-          : +pct(v, state.basis === 'row' ? rowTot[i] : state.basis === 'col' ? colTot[j] : n).toFixed(1)));
-        svg = drawGrouped(V, rowLabels, colLabels, asPct ? t.cat_pct_axis : t.cat_count_axis, asPct);
-      }
+      const rowTot = T.map(sum), colTot = colLabels.map((_, j) => sum(T.map(r => r[j]))), n = sum(rowTot);
+      const asPct = state.basis !== 'count';
+      const V = T.map((row, i) => row.map((v, j) => !asPct ? v
+        : +pct(v, state.basis === 'row' ? rowTot[i] : state.basis === 'col' ? colTot[j] : n).toFixed(1)));
+      put('A', t.chart_grouped, drawGrouped(V, rowLabels, colLabels, asPct ? t.cat_pct_axis : t.cat_count_axis, asPct));
+      put('B', t.chart_segmented, drawSegmented(T, rowLabels, colLabels));
       legend(colLabels);
     }
-    $('catChart').innerHTML = svg;
-    $('catChart').setAttribute('aria-label',
-      `${colName(state.v1)}${twoVar() ? ' × ' + colName(state.v2) : ''} — ${t['chart_' + state.chart]}`);
   }
 
   /* ---------- 启动 ---------- */

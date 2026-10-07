@@ -41,7 +41,7 @@
   });
 
   const DATA = (window.APSTATS_DATA || {}).display?.quantitative;
-  const W = 900, H = 460, M = { left: 76, right: 28, top: 26, bottom: 64 };
+  const W = 820, H = 340, M = { left: 66, right: 22, top: 20, bottom: 58 };
   const state = { ds: null, chart: 'hist', rel: false, binW: null, markers: true };
 
   const set = () => DATA.sets[state.ds];
@@ -113,7 +113,7 @@
       </section>
       <p id="quantHint" class="hint"></p>`;
 
-    setOptions($('quantDataset'), DATA.order, state.ds, id => DATA.sets[id].name[lang]);
+    syncDataset();
     $('quantDataset').addEventListener('change', e => { state.ds = e.target.value; state.binW = null; syncBin(); render(); });
     $('quantShow').addEventListener('change', e => { state.rel = e.target.value === 'rel'; render(); });
     $('quantMarkers').addEventListener('change', e => { state.markers = e.target.checked; render(); });
@@ -127,6 +127,11 @@
   }
   const range = () => Math.max(...vals()) - Math.min(...vals());
 
+  /* 数据集下拉要跟着语言重新标注，否则切英文后这里还是中文 */
+  function syncDataset() {
+    setOptions($('quantDataset'), DATA.order, state.ds, id => DATA.sets[id].name[lang]);
+    $('quantDataset').value = state.ds;
+  }
   function syncShow() {
     const t = translations[lang];
     $('quantShow').innerHTML = `<option value="freq">${escapeHtml(t.quant_freq)}</option><option value="rel">${escapeHtml(t.quant_relfreq)}</option>`;
@@ -321,5 +326,5 @@
   buildUI();
   render();
   document.addEventListener('apstats:tool', e => { if (e.detail === 'quantitative') render(); });
-  document.addEventListener('apstats:language', () => { syncShow(); syncChartSwitch(); render(); });
+  document.addEventListener('apstats:language', () => { syncDataset(); syncShow(); syncChartSwitch(); render(); });
 })();
