@@ -292,9 +292,3 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .resid-drop { stroke:#c73932; stroke-width:1.2; opacity:.5; }
 .resid-point { fill:#2878b8; stroke:#fff; stroke-width:1.5; }
 .resid-empty { fill:#64717d; font-size:20px; }
-
-/* 可拖动的点图 */
-.cat-chart .dot.draggable { cursor:grab; }
-.cat-chart .dot.draggable:hover { fill:#c17b23; }
-.cat-chart .dot.draggable:active { cursor:grabbing; }
-#quantDotChart { touch-action:none; user-select:none; }

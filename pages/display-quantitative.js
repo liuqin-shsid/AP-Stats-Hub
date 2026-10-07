@@ -12,9 +12,6 @@
     chart_hist: '直方图', chart_dot: '点图', chart_stem: '茎叶图',
     chart_ogive: '累积频率曲线（肩形图）', chart_box: '箱线图',
     quant_markers: '标出均值与中位数',
-    quant_reset: '恢复原始数据',
-    quant_drag_hint: '试试把最右边那个点往右拖 —— 均值会跟着跑，中位数几乎不动。这就是「均值不稳健、中位数稳健」。',
-    quant_edited: '数据已被拖动修改',
     quant_n: '个数 n', quant_mean: '均值 x̄', quant_median: '中位数 M', quant_sd: '样本标准差 s',
     quant_min: '最小值', quant_q1: 'Q₁', quant_q3: 'Q₃', quant_max: '最大值',
     quant_range: '全距', quant_iqr: '四分位距 IQR',
@@ -35,9 +32,6 @@
     chart_hist: 'Histogram', chart_dot: 'Dotplot', chart_stem: 'Stem-and-leaf',
     chart_ogive: 'Ogive (cumulative relative frequency)', chart_box: 'Boxplot',
     quant_markers: 'Mark mean and median',
-    quant_reset: 'Restore original data',
-    quant_drag_hint: 'Try dragging the right-most dot further right — the mean chases it while the median barely moves. That is what "the mean is not resistant, the median is" means.',
-    quant_edited: 'Data has been changed by dragging',
     quant_n: 'Count n', quant_mean: 'Mean x̄', quant_median: 'Median M', quant_sd: 'Sample SD s',
     quant_min: 'Min', quant_q1: 'Q₁', quant_q3: 'Q₃', quant_max: 'Max',
     quant_range: 'Range', quant_iqr: 'IQR',
@@ -53,14 +47,10 @@
   const DATA = (window.APSTATS_DATA || {}).display?.quantitative;
   const W = 560, H = 320, M = { left: 58, right: 20, top: 18, bottom: 54 };
   const BOX_H = 200;   // 基准高度；刻度标签换行时会自动加高                                  // 箱线图矮一些
-  const state = { ds: null, rel: false, binW: null, markers: true,
-                  values: null,      // 被拖动修改过的工作副本；null 表示还是原始数据
-                  dotDomain: null }; // 点图的横轴域，拖动期间固定，否则点会「跑掉」
-  let dragIdx = null;
+  const state = { ds: null, rel: false, binW: null, markers: true };
 
   const set = () => DATA.sets[state.ds];
-  const vals = () => state.values || set().values;
-  const canDrag = () => (set().displays || []).includes('dot');
+  const vals = () => set().values;
   const varName = () => set().variable[lang];
   const range = () => Math.max(...vals()) - Math.min(...vals());
 
@@ -104,7 +94,6 @@
         <label><span data-i18n="quant_show">${escapeHtml(t.quant_show)}</span><select id="quantShow"></select></label>
         <label class="check"><input id="quantMarkers" type="checkbox" ${state.markers ? 'checked' : ''}>
           <span data-i18n="quant_markers">${escapeHtml(t.quant_markers)}</span></label>
-        <button id="quantReset" class="reset" type="button" data-i18n="quant_reset">${escapeHtml(t.quant_reset)}</button>
       </section>
       <p id="quantNote" class="hint"></p>
       <section class="bin-control">
@@ -117,16 +106,11 @@
       <p id="quantHint" class="hint"></p>`;
 
     syncDataset();
-    $('quantDataset').addEventListener('change', e => {
-      state.ds = e.target.value; state.values = null; state.binW = null;
-      resetDotDomain(); syncBin(); render();
-    });
-    $('quantReset').addEventListener('click', () => { state.values = null; render(); });
+    $('quantDataset').addEventListener('change', e => { state.ds = e.target.value; state.binW = null; syncBin(); render(); });
     $('quantShow').addEventListener('change', e => { state.rel = e.target.value === 'rel'; render(); });
     $('quantMarkers').addEventListener('change', e => { state.markers = e.target.checked; render(); });
     $('quantBin').addEventListener('input', e => { state.binW = binChoices(range())[Number(e.target.value)]; render(); });
     syncShow();
-    resetDotDomain();
     syncBin();
   }
   /* 下拉文字要跟着语言重新标注，否则切英文后还是中文 */
@@ -138,14 +122,6 @@
     const t = translations[lang];
     $('quantShow').innerHTML = `<option value="freq">${escapeHtml(t.quant_freq)}</option><option value="rel">${escapeHtml(t.quant_relfreq)}</option>`;
     $('quantShow').value = state.rel ? 'rel' : 'freq';
-  }
-  /* 点图的横轴域在切换数据集时定下来，之后拖动不再改变它 ——
-     否则每拖一下坐标轴就重新缩放，点会从鼠标底下「跑掉」。 */
-  function resetDotDomain() {
-    const v = set().values;
-    // 两侧各留 60% 的余量：n 比较大时，一个点要拖得够远才看得出均值在动
-    const lo = Math.min(...v), hi = Math.max(...v), pad = (hi - lo) * 0.6 || 1;
-    state.dotDomain = [lo - pad, hi + pad];
   }
   function syncBin() {
     const choices = binChoices(range());
@@ -224,64 +200,23 @@
     return g + markers(lo, hi, f, ms);
   }
 
-  /* 点图：每个点画在它真实的数值位置上（不是组的中心），这样拖动才有意义。
-     数值相同的点往上叠。横轴用固定的 state.dotDomain，拖动时不跟着缩放。 */
-  function dataPrecision(v) {
-    let unit = 1;
-    while (unit > 1e-4 && !v.every(x => Math.abs(x / unit - Math.round(x / unit)) < 1e-6)) unit /= 10;
-    return unit;
-  }
-  function drawDot(f, ms) {
-    const t = translations[lang], v = vals();
-    const [lo, hi] = state.dotDomain;
-    const unit = dataPrecision(set().values);
-    const slots = new Map();                        // 数值相同的归到一摞
-    v.forEach((x, i) => {
-      const k = Math.round(x / unit);
-      if (!slots.has(k)) slots.set(k, []);
-      slots.get(k).push(i);
-    });
-    const maxStack = Math.max(...[...slots.values()].map(a => a.length));
+  function drawDot(bins, lo, hi, f, ms) {
+    const t = translations[lang];
+    const maxStack = Math.max(...bins.map(b => b.n));
     const ax = axes(lo, hi, maxStack, t.quant_freq);
-    const r = Math.max(2.5, Math.min(9, (H - M.bottom - M.top) / (2.2 * Math.max(maxStack, 1))));
+    const bw = (W - M.right - M.left) / bins.length;
+    const r = Math.max(1.5, Math.min(bw / 2.6, (H - M.bottom - M.top) / (2.2 * Math.max(maxStack, 1))));
+    const d = decimalsFor(state.binW);
     let g = ax.svg;
-    for (const [k, idxs] of slots) {
-      const cx = X(k * unit, lo, hi);
-      idxs.forEach((i, level) => {
-        g += `<circle class="dot draggable" data-i="${i}" cx="${cx}" cy="${H - M.bottom - r - level * 2 * r}" r="${r}">` +
-             `<title>${(k * unit).toFixed(decimalsFor(unit))}</title></circle>`;
-      });
-    }
+    bins.forEach((b, i) => {
+      const cx = M.left + bw * i + bw / 2;
+      for (let k = 0; k < b.n; k++)
+        g += `<circle class="dot" cx="${cx}" cy="${H - M.bottom - r - k * 2 * r}" r="${r}"/>`;
+      if (b.n) g += `<rect x="${M.left + bw * i}" y="${M.top}" width="${bw}" height="${H - M.bottom - M.top}" fill="transparent">` +
+                    `<title>[${b.lo.toFixed(d)}, ${b.hi.toFixed(d)})　${b.n}</title></rect>`;
+    });
     return g + markers(lo, hi, f, ms);
   }
-
-  /* 拖动：监听挂在 window 上而不是圆点上 —— render() 每次都会重建 SVG，
-     挂在圆点上的监听会随元素一起消失，拖到一半就断了。 */
-  function dotSvg() { return $('quantDotChart'); }
-  function valueFromClientX(clientX) {
-    const svg = dotSvg(); if (!svg) return null;
-    const rect = svg.getBoundingClientRect();
-    const vx = (clientX - rect.left) * W / (rect.width || 1);   // 换算到 viewBox 坐标
-    const [lo, hi] = state.dotDomain;
-    const val = lo + (vx - M.left) * (hi - lo) / (W - M.right - M.left);
-    const unit = dataPrecision(set().values);
-    return Math.min(hi, Math.max(lo, Math.round(val / unit) * unit));
-  }
-  document.addEventListener('pointerdown', e => {
-    const dot = e.target.closest?.('#quantDotChart .draggable');
-    if (!dot) return;
-    e.preventDefault();
-    if (!state.values) state.values = [...set().values];        // 第一次拖动才复制
-    dragIdx = Number(dot.dataset.i);
-  });
-  window.addEventListener('pointermove', e => {
-    if (dragIdx === null) return;
-    const val = valueFromClientX(e.clientX);
-    if (val === null) return;
-    state.values[dragIdx] = val;
-    render();
-  });
-  window.addEventListener('pointerup', () => { dragIdx = null; });
 
   /* 累积频率曲线：点画在每组右端点上（「到这里为止累计了多少」），折线相连 */
   function drawOgive(bins, lo, hi, n) {
@@ -405,11 +340,8 @@
     const { bins, lo, hi } = histogram(v, state.binW);
     const d = decimalsFor(state.binW);
 
-    $('quantNote').textContent = set().note[lang]
-      + (state.values ? `　·　${t.quant_edited}` : '');
-    $('quantHint').textContent = canDrag() ? t.quant_drag_hint : t.quant_hint;
-    $('quantReset').hidden = !canDrag();
-    $('quantReset').disabled = !state.values;
+    $('quantNote').textContent = set().note[lang];
+    $('quantHint').textContent = t.quant_hint;
     $('quantBinOut').textContent = `${state.binW.toFixed(d)}　(${t.quant_bins} ${bins.length})`;
     renderStats(f, ms);
 
@@ -421,9 +353,7 @@
     $('quantCharts').innerHTML = (set().displays || ['hist']).map(kind => {
       switch (kind) {
         case 'hist':  return panel(t.chart_hist,  svgOf('hist', drawHist(bins, lo, hi, n, f, ms)));
-        case 'dot':   return panel(t.chart_dot,
-                        `<svg id="quantDotChart" class="cat-chart" viewBox="0 0 ${W} ${H}" role="img"` +
-                        ` aria-label="${escapeHtml(varName() + ' — ' + t.chart_dot)}">${drawDot(f, ms)}</svg>`);
+        case 'dot':   return panel(t.chart_dot,   svgOf('dot', drawDot(bins, lo, hi, f, ms)));
         case 'ogive': return panel(t.chart_ogive, svgOf('ogive', drawOgive(bins, lo, hi, n)));
         case 'box': { const b = drawBox(f);
                       return panel(t.chart_box, svgOf('box', b.svg, b.h),
