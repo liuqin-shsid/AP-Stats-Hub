@@ -5,6 +5,7 @@
    PAGES 的第一条同时是网页打开时的默认页。 */
 
 const NAV_GROUPS = [
+  { key:'display',  labelKey:'nav_display'  },
   { key:'linreg',   labelKey:'nav_linreg'   },
   { key:'sampling', labelKey:'nav_sampling' },
 ];
@@ -14,6 +15,7 @@ const NAV_GROUPS = [
    pageId   页面容器 div 的 id
    titleKey 浏览器标签页标题用的翻译键，同时也是侧边栏按钮文字 */
 const PAGES = [
+  { tool:'categorical', group:'display',  pageId:'catPage',         titleKey:'cat_title' },
   { tool:'correlation', group:'linreg',   pageId:'correlationPage', titleKey:'heading_title' },
   { tool:'scatter',     group:'linreg',   pageId:'scatterPage',     titleKey:'scatter_title' },
   { tool:'outlier',     group:'linreg',   pageId:'outlierPage',     titleKey:'outlier_title' },

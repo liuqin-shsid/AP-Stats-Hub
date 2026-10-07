@@ -201,3 +201,39 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 @media (max-width: 800px) {
   #proportionPage .prop-charts { grid-template-columns: minmax(0, 1fr); }
 }
+/* ---------- 分类数据的展示 ---------- */
+/* 分类配色：Okabe–Ito 色觉障碍友好配色，已通过全配对校验（ΔE 全部达标）。
+   按固定顺序分配，不循环使用；超过 5 类归入「其他」。 */
+:root {
+  --cat-1:#0072B2; --cat-2:#D55E00; --cat-3:#009E73; --cat-4:#CC79A7; --cat-5:#E69F00;
+  --cat-other:#6b7280;
+}
+.chart-switch { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 0; }
+.chart-switch button { border:1px solid #c9d2da; border-radius:5px; padding:7px 14px; background:#fff; color:var(--navy); font:inherit; font-size:13px; cursor:pointer; }
+.chart-switch button:hover { background:#eaf1f6; }
+.chart-switch button[aria-pressed="true"] { border-color:var(--blue); background:#dfeef9; font-weight:600; }
+
+.freq-table-wrap { margin-top:18px; overflow-x:auto; }
+.freq-table { border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+.freq-table th, .freq-table td { padding:8px 14px; border:1px solid var(--line); text-align:right; white-space:nowrap; }
+.freq-table thead th { background:#f7fafc; color:var(--navy); font-weight:700; }
+.freq-table tbody th { background:#f7fafc; color:var(--navy); font-weight:600; text-align:left; }
+.freq-table .corner { background:#eef3f7; }
+/* 边际分布（行列合计）—— 教材里专门强调的概念，底色区分 */
+.freq-table .margin { background:#eef3f7; font-weight:700; color:var(--navy); }
+.freq-table .swatch { display:inline-block; width:11px; height:11px; margin-right:7px; border-radius:2px; vertical-align:-1px; }
+.freq-caption { margin:0 0 8px; color:#64717d; font-size:13px; }
+
+.cat-chart-card { margin-top:14px; padding:10px 8px 6px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.cat-chart { display:block; width:100%; height:auto; }
+.cat-chart .bar { stroke:#fff; stroke-width:2; }          /* 2px 同色描边 = 色块之间的间隙 */
+.cat-chart .slice { stroke:#fff; stroke-width:2; }
+.cat-chart .val-label { fill:#42515e; font-size:12px; font-variant-numeric:tabular-nums; }
+.cat-chart .cat-label { fill:#42515e; font-size:13px; }
+.cat-chart .axis-title { fill:#263844; font-size:13px; font-weight:600; }
+.cat-chart .baseline { stroke:#50606d; stroke-width:1.2; }
+.cat-chart .grid { stroke:#eef2f5; stroke-width:1; }
+.cat-legend { display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 4px 2px; color:#42515e; font-size:13px; }
+.cat-legend span { display:flex; align-items:center; gap:7px; }
+.cat-legend i { width:12px; height:12px; border-radius:2px; }
+.area-warning { margin:10px 2px 0; padding:10px 12px; border-left:4px solid #c73932; background:#fdf3f2; color:#8d2f27; font-size:13px; line-height:1.6; }

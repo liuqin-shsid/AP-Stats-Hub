@@ -12,6 +12,7 @@
   <script src="vendor/katex/katex.min.js"></script>
   <!-- 数据：由 tools/build-data.js 从 data/source/ 的 Excel 生成 -->
   <script src="data/regression.js"></script>
+  <script src="data/display.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -118,6 +119,8 @@
           </section>
         </div>
       </div>
+      <!-- 页面容器：内容由对应的 pages/*.js 动态注入 -->
+      <div id="catPage" hidden></div>
       <!-- 新增页面容器：内容由 Sampling-distribution-for-means.js 动态注入 -->
       <div id="samplingPage" hidden></div>
       <!-- 新增页面容器：内容由 Sampling-distribution-for-proportions.js 动态注入 -->
@@ -135,6 +138,7 @@
   <script src="core/router.js"></script>
   <script src="core/sidebar.js"></script>
   <!-- 各页面（加载顺序 = 语言/数据事件的响应顺序，勿随意调换） -->
+  <script src="pages/display-categorical.js"></script>
   <script src="pages/correlation.js"></script>
   <script src="pages/scatter.js"></script>
   <script src="pages/outlier.js"></script>

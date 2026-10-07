@@ -30,6 +30,10 @@ const MANIFEST = {
   ],
 };
 
+/* 分类数据集单独处理：需要把 Excel 里的代号翻成课堂上用的中英文标签，
+   描述写在 tools/datasets.categorical.js。 */
+const CATEGORICAL = require('./datasets.categorical.js');
+
 /* ---------- 工具 ---------- */
 function readWorkbook(relPath, onlySheets) {
   const abs = path.join(ROOT, relPath);
@@ -68,8 +72,62 @@ function build(bundle, sources) {
   console.log(`  → data/${bundle}.js  (${(out.length / 1024).toFixed(0)} KB, 共 ${rowCount} 行)\n`);
 }
 
+/* ---------- 分类数据集 ---------- */
+/* 行用「取值在 levels 里的下标」编码，既紧凑又保证顺序稳定。
+   任何一个取值不在 levels 里（含空值）的整行丢弃，并打印出来以免悄悄丢数据。 */
+function buildCategorical() {
+  const sets = {}, order = [];
+  let failed = false;
+
+  for (const cfg of CATEGORICAL) {
+    const abs = path.join(ROOT, cfg.file);
+    if (!fs.existsSync(abs)) { console.error(`  \u2717 找不到 ${cfg.file}`); failed = true; continue; }
+    const book = XLSX.read(fs.readFileSync(abs), { type: 'buffer' });
+    const rawRows = XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]], { defval: null });
+
+    const index = cfg.columns.map(c => new Map(c.levels.map((l, i) => [String(l.v), i])));
+    const rows = [];
+    let dropped = 0;
+    for (const raw of rawRows) {
+      const encoded = cfg.columns.map((c, ci) => {
+        const cell = raw[c.key];
+        return cell === null || cell === undefined ? -1 : (index[ci].get(String(cell)) ?? -1);
+      });
+      if (encoded.includes(-1)) { dropped++; continue; }
+      rows.push(encoded);
+    }
+
+    // 未在 levels 中声明的取值要报出来，否则会被静默丢掉
+    for (const [ci, c] of cfg.columns.entries()) {
+      const seen = new Set(rawRows.map(r => r[c.key]).filter(v => v !== null && v !== undefined).map(String));
+      const unknown = [...seen].filter(v => !index[ci].has(v));
+      if (unknown.length) { console.error(`  \u2717 ${cfg.id}.${c.key} 有未声明的取值：${unknown.join('、')}`); failed = true; }
+    }
+
+    sets[cfg.id] = {
+      name: cfg.name, note: cfg.note, n: rows.length,
+      columns: cfg.columns.map(c => ({ key: c.key, name: c.name, levels: c.levels.map(l => ({ zh: l.zh, en: l.en })) })),
+      rows,
+    };
+    order.push(cfg.id);
+    console.log(`  \u2713 ${cfg.file}  ${rows.length} 行` + (dropped ? `（丢弃 ${dropped} 行缺失值）` : ''));
+  }
+
+  const out =
+    `/* 本文件由 tools/build-data.js 自动生成，请勿手改。\n` +
+    `   数据源见 data/source/，改完 Excel 后执行： npm run build:data */\n` +
+    `window.APSTATS_DATA = window.APSTATS_DATA || {};\n` +
+    `window.APSTATS_DATA.display = ${JSON.stringify({ categorical: { order, sets } })};\n`;
+  fs.writeFileSync(path.join(ROOT, 'data', 'display.js'), out, 'utf8');
+  console.log(`  \u2192 data/display.js  (${(out.length / 1024).toFixed(0)} KB)\n`);
+  return failed;
+}
+
 /* ---------- 主流程 ---------- */
 let failed = false;
+console.log('[display · 分类数据]');
+if (buildCategorical()) failed = true;
+
 for (const [bundle, sources] of Object.entries(MANIFEST)) {
   console.log(`[${bundle}]`);
   try {
