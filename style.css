@@ -236,4 +236,3 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .cat-legend { display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 4px 2px; color:#42515e; font-size:13px; }
 .cat-legend span { display:flex; align-items:center; gap:7px; }
 .cat-legend i { width:12px; height:12px; border-radius:2px; }
-.area-warning { margin:10px 2px 0; padding:10px 12px; border-left:4px solid #c73932; background:#fdf3f2; color:#8d2f27; font-size:13px; line-height:1.6; }

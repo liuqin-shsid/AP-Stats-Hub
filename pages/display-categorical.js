@@ -9,10 +9,8 @@
     cat_dataset: '选择数据集', cat_var1: '变量一', cat_var2: '变量二', cat_none: '—（只看一个变量）',
     cat_basis: '数值显示', cat_count: '计数', cat_row: '行百分比', cat_col: '列百分比', cat_total: '总百分比',
     cat_rel: '相对频数',
-    chart_bar: '条形图', chart_barh: '横向条形图', chart_pie: '饼图',
+    chart_bar: '条形图', chart_pie: '饼图',
     chart_grouped: '并排条形图', chart_segmented: '分段条形图',
-    cat_area_toggle: '违反面积原理（反例）',
-    cat_area_warning: '这是一张**错误**的图：条形的宽度也随数值变化，于是面积按数值的平方增长。眼睛比较的是面积，所以差距被严重夸大。教材的「面积原理」要求：图形所占面积必须与它代表的数值成正比。',
     cat_freq_title: '频数表', cat_ctab_title: '列联表',
     cat_category: '类别', cat_freq: '频数', cat_total_label: '合计',
     cat_hint_1: '只选了一个变量：下面是它的分布。切换「数值显示」可在计数与相对频数之间切换。',
@@ -28,10 +26,8 @@
     cat_dataset: 'Dataset', cat_var1: 'Variable 1', cat_var2: 'Variable 2', cat_none: '— (one variable only)',
     cat_basis: 'Show as', cat_count: 'Counts', cat_row: 'Row %', cat_col: 'Column %', cat_total: 'Table %',
     cat_rel: 'Relative frequency',
-    chart_bar: 'Bar chart', chart_barh: 'Horizontal bar', chart_pie: 'Pie chart',
+    chart_bar: 'Bar chart', chart_pie: 'Pie chart',
     chart_grouped: 'Side-by-side bar', chart_segmented: 'Segmented bar',
-    cat_area_toggle: 'Violate the area principle (bad example)',
-    cat_area_warning: 'This chart is **wrong**: the bars also grow in width, so their area grows with the square of the value. Your eye compares areas, so the differences are wildly exaggerated. The area principle says the area a figure occupies must be proportional to the value it represents.',
     cat_freq_title: 'Frequency table', cat_ctab_title: 'Contingency table',
     cat_category: 'Category', cat_freq: 'Count', cat_total_label: 'Total',
     cat_hint_1: 'One variable selected: below is its distribution. Use "Show as" to switch between counts and relative frequency.',
@@ -46,7 +42,7 @@
   const colorOf = i => i < PALETTE.length ? PALETTE[i] : 'var(--cat-other)';
 
   const W = 900, H = 520, M = { left: 84, right: 28, top: 26, bottom: 96 };
-  const state = { ds: null, v1: 0, v2: -1, basis: 'count', chart: 'bar', area: false };
+  const state = { ds: null, v1: 0, v2: -1, basis: 'count', chart: 'bar' };
 
   /* ---------- 取数 ---------- */
   const set = () => DATA.sets[state.ds];
@@ -88,7 +84,6 @@
       <p id="catHint" class="hint" role="status"></p>
       <div id="catTable" class="freq-table-wrap"></div>
       <div id="catChartSwitch" class="chart-switch"></div>
-      <div id="catAreaWarn"></div>
       <section class="cat-chart-card">
         <svg id="catChart" class="cat-chart" viewBox="0 0 ${W} ${H}" role="img"></svg>
         <div id="catLegend" class="cat-legend"></div>
@@ -121,15 +116,12 @@
     $('catBasis').innerHTML = opts.map(([v, l]) => `<option value="${v}">${escapeHtml(l)}</option>`).join('');
     $('catBasis').value = state.basis;
 
-    const charts = twoVar() ? ['grouped', 'segmented'] : ['bar', 'barh', 'pie'];
+    const charts = twoVar() ? ['grouped', 'segmented'] : ['bar', 'pie'];
     if (!charts.includes(state.chart)) state.chart = charts[0];
     $('catChartSwitch').innerHTML = charts.map(c =>
-      `<button type="button" data-chart="${c}" aria-pressed="${c === state.chart}">${escapeHtml(t['chart_' + c])}</button>`).join('')
-      + (twoVar() ? '' : `<button type="button" id="catAreaBtn" aria-pressed="${state.area}">${escapeHtml(t.cat_area_toggle)}</button>`);
+      `<button type="button" data-chart="${c}" aria-pressed="${c === state.chart}">${escapeHtml(t['chart_' + c])}</button>`).join('');
     $('catChartSwitch').querySelectorAll('[data-chart]').forEach(b =>
-      b.addEventListener('click', () => { state.chart = b.dataset.chart; state.area = false; render(); }));
-    const ab = $('catAreaBtn');
-    if (ab) ab.addEventListener('click', () => { state.area = !state.area; if (state.area) state.chart = 'bar'; render(); });
+      b.addEventListener('click', () => { state.chart = b.dataset.chart; render(); }));
   }
 
   /* ---------- 表格 ---------- */
@@ -177,11 +169,6 @@
     const rr = Math.min(r, w / 2, h);
     return `M ${x} ${y + h} V ${y + rr} Q ${x} ${y} ${x + rr} ${y} H ${x + w - rr} Q ${x + w} ${y} ${x + w} ${y + rr} V ${y + h} Z`;
   }
-  function barPathH(x, y, w, h, r = 4) {
-    if (w <= 0.5) return '';
-    const rr = Math.min(r, h / 2, w);
-    return `M ${x} ${y} H ${x + w - rr} Q ${x + w} ${y} ${x + w} ${y + rr} V ${y + h - rr} Q ${x + w} ${y + h} ${x + w - rr} ${y + h} H ${x} Z`;
-  }
   /* 把轴顶取成「好看的整数」，并返回刻度步长 —— 否则会出现 0/17/33/50/67/84 这种读不出来的刻度。 */
   function niceAxis(rawMax, isPct) {
     if (isPct) {                                   // 百分比轴固定走 10 的倍数，上限 100
@@ -224,30 +211,13 @@
     let g = ax.svg;
     values.forEach((v, i) => {
       // 条形之间留空隙：教材强调分类数据的条形是分开的
-      const bw = band * (state.area ? 1 : 0.58);
-      // 面积原理反例：宽度也随数值变化，面积 ∝ 数值²
-      const w = state.area ? band * 0.9 * (v / Math.max(...values)) : bw;
+      const w = band * 0.58;
       const x = M.left + band * i + (band - w) / 2;
       const y = px(v, 0, ax.top, H - M.bottom, M.top);
       g += `<path class="bar" fill="${colorOf(i)}" d="${barPath(x, y, w, H - M.bottom - y)}">` +
            `<title>${escapeHtml(labels[i])}: ${unitPct ? fmtPct(v) : v}</title></path>`;
       g += `<text class="val-label" x="${M.left + band * i + band / 2}" y="${y - 7}" text-anchor="middle">${unitPct ? fmtPct(v) : v}</text>`;
       g += xLabel(labels[i], M.left + band * i + band / 2, H - M.bottom + 22);
-    });
-    return g;
-  }
-  function drawBarH(values, labels, axisLabel, unitPct) {
-    const maxV = Math.max(...values) * 1.1 || 1;
-    const left = 150, band = (H - M.top - 40) / values.length;
-    let g = `<line class="baseline" x1="${left}" y1="${M.top}" x2="${left}" y2="${H - 40}"/>`;
-    g += `<text class="axis-title" x="${(left + W - M.right) / 2}" y="${H - 10}" text-anchor="middle">${escapeHtml(axisLabel)}</text>`;
-    values.forEach((v, i) => {
-      const h = band * 0.58, y = M.top + band * i + (band - h) / 2;
-      const w = px(v, 0, maxV, 0, W - M.right - left);
-      g += `<path class="bar" fill="${colorOf(i)}" d="${barPathH(left, y, w, h)}">` +
-           `<title>${escapeHtml(labels[i])}: ${unitPct ? fmtPct(v) : v}</title></path>`;
-      g += `<text class="val-label" x="${left + w + 8}" y="${y + h / 2 + 4}">${unitPct ? fmtPct(v) : v}</text>`;
-      g += `<text class="cat-label" x="${left - 10}" y="${y + h / 2 + 4}" text-anchor="end">${escapeHtml(labels[i])}</text>`;
     });
     return g;
   }
@@ -317,9 +287,6 @@
     const t = translations[lang];
     renderTable();
     $('catHint').textContent = twoVar() ? t.cat_hint_2 : t.cat_hint_1;
-    $('catAreaWarn').innerHTML = state.area
-      ? `<p class="area-warning">${t.cat_area_warning.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>` : '';
-
     let svg = '';
     if (!twoVar()) {
       const c = counts1(state.v1), n = sum(c);
@@ -327,9 +294,7 @@
       const vals = asPct ? c.map(v => +pct(v, n).toFixed(1)) : c;
       const labels = col(state.v1).levels.map(l => l[lang]);
       const axis = asPct ? t.cat_pct_axis : t.cat_count_axis;
-      svg = state.chart === 'pie' ? drawPie(c, labels)
-          : state.chart === 'barh' ? drawBarH(vals, labels, axis, asPct)
-          : drawBar(vals, labels, axis, asPct);
+      svg = state.chart === 'pie' ? drawPie(c, labels) : drawBar(vals, labels, axis, asPct);
       legend(labels);
     } else {
       const T = counts2(state.v1, state.v2);
