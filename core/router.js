@@ -14,5 +14,8 @@ function showTool(tool) {
   document.dispatchEvent(new CustomEvent('apstats:tool', { detail: tool }));
 }
 
-document.querySelectorAll('[data-tool]').forEach(button =>
-  button.addEventListener('click', () => showTool(button.dataset.tool)));
+/* 侧边栏是生成的，所以绑定要等它建好 —— 由 core/boot.js 调用。 */
+function bindNav() {
+  document.querySelectorAll('[data-tool]').forEach(button =>
+    button.addEventListener('click', () => showTool(button.dataset.tool)));
+}

@@ -17,20 +17,8 @@
 <body>
   <header class="site-header"><div class="brand" data-i18n="brand">AP Stats Hub</div><button id="langToggle" class="lang-toggle" type="button">EN</button></header>
   <div class="layout">
-    <aside class="sidebar">
-      <div class="sidebar-title" data-i18n="sidebar_title">学习工具</div>
-      <div class="nav-group" data-i18n="nav_linreg">线性回归教学</div>
-      <nav aria-label="线性回归教学" data-i18n-aria="nav_linreg">
-        <button id="correlationNav" class="nav-item tool-nav active" type="button" data-tool="correlation" data-i18n="heading_title" aria-current="page" aria-controls="correlationPage">相关关系探究</button>
-        <button id="scatterNav" class="nav-item tool-nav" type="button" data-tool="scatter" data-i18n="scatter_title" aria-controls="scatterPage">散点图</button>
-        <button id="outlierNav" class="nav-item tool-nav" type="button" data-tool="outlier" data-i18n="outlier_title" aria-controls="outlierPage">异常值点</button>
-        <button id="linearNav" class="nav-item tool-nav" type="button" data-tool="linear" data-i18n="linear_title" aria-controls="linearPage">线性函数</button>
-        <!-- 新增 -->
-        <button id="samplingNav" class="nav-item tool-nav" type="button" data-tool="sampling" data-i18n="sampling_title" aria-controls="samplingPage">样本均值的抽样分布</button>
-        <!-- 新增 -->
-        <button id="proportionNav" class="nav-item tool-nav" type="button" data-tool="proportion" data-i18n="proportion_title" aria-controls="proportionPage">样本比例的抽样分布</button>
-      </nav>
-    </aside>
+    <!-- 侧边栏由 core/sidebar.js 依据 core/pages.js 的清单生成 -->
+    <aside class="sidebar"></aside>
     <main class="content">
       <div id="correlationPage">
       <div class="page-heading">
@@ -145,6 +133,7 @@
   <script src="core/data.js"></script>
   <script src="core/pages.js"></script>
   <script src="core/router.js"></script>
+  <script src="core/sidebar.js"></script>
   <!-- 各页面（加载顺序 = 语言/数据事件的响应顺序，勿随意调换） -->
   <script src="pages/correlation.js"></script>
   <script src="pages/scatter.js"></script>
@@ -152,5 +141,7 @@
   <script src="pages/linear.js"></script>
   <script src="pages/sampling-mean.js"></script>
   <script src="pages/sampling-proportion.js"></script>
+  <!-- 启动：必须最后 -->
+  <script src="core/boot.js"></script>
 </body>
 </html>
