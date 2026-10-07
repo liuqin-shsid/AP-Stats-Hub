@@ -86,13 +86,16 @@
         <p data-i18n="cmp_desc">${escapeHtml(t.cmp_desc)}</p>
       </div></div>
       <p id="cmpNote" class="hint"></p>
+      <div id="cmpStats" class="freq-table-wrap"></div>
+      <div id="cmpBox" class="chart-pair"></div>
+      <!-- 滑杆紧挨着它控制的直方图；放在不参与重绘的容器里，拖动才不会被打断 -->
       <section class="bin-control">
         <label for="cmpBin" data-i18n="cmp_binwidth">${escapeHtml(t.cmp_binwidth)}</label>
         <input id="cmpBin" type="range" min="0" max="1" step="1" value="0">
         <output id="cmpBinOut"></output>
       </section>
-      <div id="cmpStats" class="freq-table-wrap"></div>
-      <div id="cmpCharts" class="chart-pair"></div>`;
+      <div id="cmpHists" class="chart-pair"></div>
+      <div id="cmpStem" class="chart-pair"></div>`;
     $('cmpBin').addEventListener('input', e => { state.binW = binChoices(range())[Number(e.target.value)]; render(); });
     syncBin();
   }
@@ -253,12 +256,12 @@
     const svg = (body, h, label, w = W) =>
       `<svg class="cat-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${escapeHtml(label)}">${body}</svg>`;
 
-    $('cmpCharts').innerHTML =
-      panel(t.cmp_box, svg(drawBoxes(stats), BOX_H, varName() + ' — ' + t.cmp_box, BOX_W), t.cmp_box_note, true) +
-      groups().map((g, i) =>
-        panel(`${t.cmp_hist} · ${gLabel(g)}`, svg(drawHist(i, bins, yTop), H, gLabel(g) + ' — ' + t.cmp_hist),
-              i === 0 ? t.cmp_hist_note : '')).join('') +
-      panel(t.cmp_stem, drawBackToBack(), t.cmp_stem_note_1, true);
+    $('cmpBox').innerHTML =
+      panel(t.cmp_box, svg(drawBoxes(stats), BOX_H, varName() + ' — ' + t.cmp_box, BOX_W), t.cmp_box_note, true);
+    $('cmpHists').innerHTML = groups().map((g, i) =>
+      panel(`${t.cmp_hist} · ${gLabel(g)}`, svg(drawHist(i, bins, yTop), H, gLabel(g) + ' — ' + t.cmp_hist),
+            i === 0 ? t.cmp_hist_note : '')).join('');
+    $('cmpStem').innerHTML = panel(t.cmp_stem, drawBackToBack(), t.cmp_stem_note_1, true);
   }
 
   /* ---------- 启动 ---------- */
