@@ -137,7 +137,14 @@
     </main>
   </div>
   <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
-  <script src="app.js"></script>
+  <!-- 共用基础设施 -->
+  <script src="core/dom.js"></script>
+  <script src="core/plot.js"></script>
+  <script src="core/stats.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/data.js"></script>
+  <!-- 各页面（加载顺序 = 语言/数据事件的响应顺序，勿随意调换） -->
+  <script src="pages/correlation.js"></script>
   <script src="scatterplot.js"></script>
   <script src="outliers.js"></script>
   <script src="linear-function.js"></script>

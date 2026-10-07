@@ -79,7 +79,6 @@
 
   function showTool(tool) {
     activeTool=tool;
-    dragging=null;
     $('correlationPage').hidden=tool!=='correlation';
     $('scatterPage').hidden=tool!=='scatter';
     $('outlierPage').hidden=tool!=='outlier';
