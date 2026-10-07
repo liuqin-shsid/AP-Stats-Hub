@@ -4,8 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AP Stats Hub</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 第三方库全部本地化：不依赖 CDN，断网和 file:// 下都能用 -->
+  <link rel="stylesheet" href="vendor/katex/katex.embedded.css">
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/papaparse.min.js"></script>
+  <script src="vendor/jstat.min.js"></script>
+  <script src="vendor/katex/katex.min.js"></script>
+  <!-- 数据：由 tools/build-data.js 从 data/source/ 的 Excel 生成 -->
+  <script src="data/regression.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>

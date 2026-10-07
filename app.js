@@ -48,7 +48,7 @@ const translations = {
     metrics_hidden: '拟合直线已隐藏。',
     loading: '正在读取数据…',
     load_error_option: '数据文件读取失败',
-    load_error_hint: '无法读取数据文件。请确认 linear-regression-data.xlsx 与 index.html 位于同一文件夹。',
+    load_error_hint: '无法读取数据文件 data/regression.js。若改过 data/source/ 里的 Excel，请在仓库根目录执行 npm run build:data 重新生成。',
     lang_button: 'EN',
     empty_chart: '没有数据点，请点击“重置数据”。',
     controls_aria: '控制面板',
@@ -76,7 +76,7 @@ const translations = {
     metrics_hidden: 'Best-fit line hidden.',
     loading: 'Loading data…',
     load_error_option: 'Failed to load data file',
-    load_error_hint: 'Could not read the data file. Make sure linear-regression-data.xlsx is in the same folder as index.html.',
+    load_error_hint: 'Could not read data/regression.js. If you edited the Excel files in data/source/, run "npm run build:data" in the repository root to regenerate it.',
     lang_button: '中文',
     empty_chart: 'No data points — click "Reset data".',
     controls_aria: 'Controls',
@@ -184,8 +184,17 @@ chart.addEventListener('mousemove', event=>{ if(!dragging) return; const p=point
 window.addEventListener('mouseup', ()=>dragging=null);
 $('sheetSelect').addEventListener('change', e=>loadSheet(e.target.value)); $('xSelect').addEventListener('change',updateVariables); $('ySelect').addEventListener('change',updateVariables); $('fitToggle').addEventListener('change',render); $('deleteToggle').addEventListener('change',render); $('resetButton').addEventListener('click',()=>{current=original.map(p=>({...p}));render();});
 applyLang();
-fetch('linear-regression-data.xlsx').then(r=>r.arrayBuffer()).then(buffer=>{
-  const book=XLSX.read(buffer,{type:'array'}); book.SheetNames.forEach(name=>{sheets[name]=XLSX.utils.sheet_to_json(book.Sheets[name],{defval:null});});
-  setOptions($('sheetSelect'),book.SheetNames,book.SheetNames[0],displaySheetName); $('sheetSelect').disabled=false; $('xSelect').disabled=false; $('ySelect').disabled=false; loadSheet(book.SheetNames[0]);
+// 数据来自 data/regression.js（由 tools/build-data.js 生成），不再 fetch —— 双击 index.html 也能用。
+// 事件延到 DOMContentLoaded 再派发：本文件先于 scatterplot.js 加载，立即派发会让它漏掉监听。
+function loadWorkbook() {
+  const book = (window.APSTATS_DATA || {}).regression?.linearRegression;
+  if (!book || !book.sheetNames.length) {
+    $('sheetSelect').innerHTML=`<option>${translations[lang].load_error_option}</option>`;
+    $('hint').className='hint danger'; $('hint').textContent=translations[lang].load_error_hint;
+    document.dispatchEvent(new Event('apstats:error')); return;
+  }
+  Object.assign(sheets, book.sheets);
+  setOptions($('sheetSelect'),book.sheetNames,book.sheetNames[0],displaySheetName); $('sheetSelect').disabled=false; $('xSelect').disabled=false; $('ySelect').disabled=false; loadSheet(book.sheetNames[0]);
   document.dispatchEvent(new Event('apstats:data'));
-}).catch(()=>{ $('sheetSelect').innerHTML=`<option>${translations[lang].load_error_option}</option>`; $('hint').className='hint danger'; $('hint').textContent=translations[lang].load_error_hint; document.dispatchEvent(new Event('apstats:error')); });
+}
+document.addEventListener('DOMContentLoaded', loadWorkbook);

@@ -1,15 +1,28 @@
 # AP Stats 小站
 
-这是可直接发布的静态网站。请保持以下文件位于同一文件夹：
+这是可直接发布的静态网站，**不需要构建，也不需要联网**。目录结构：
 
-- `index.html`
-- `style.css`
-- `app.js`
-- `scatterplot.js`
-- `outliers.js`
-- `linear-function.js`
-- `linear-regression-data.xlsx`
-- `burger-king-menu-items.xls`
+```
+index.html           网页入口
+style.css            样式
+app.js / scatterplot.js / outliers.js / linear-function.js    线性回归教学四个页面
+Sampling-distribution-for-means.js / ...-for-proportions.js   抽样分布两个页面
+vendor/              第三方库（SheetJS、PapaParse、jStat、KaTeX），已本地化
+data/                网页实际读取的数据（.js），由脚本自动生成
+data/source/         数据源 Excel —— 你要改数据就改这里
+tools/build-data.js  把 data/source/ 的 Excel 转成 data/*.js 的脚本
+```
+
+## 改数据怎么做
+
+1. 编辑 `data/source/` 里的 Excel 文件
+2. 在仓库根目录执行：
+
+```bash
+npm run build:data
+```
+
+3. 刷新网页即可。（首次需要先 `npm install` 安装转换脚本的依赖；网站本身不需要）
 
 左侧“线性回归教学”包含四个工具：
 
@@ -39,7 +52,7 @@
 
 线性函数操作：
 
-1. 图中使用 `burger-king-menu-items.xls` 的“第二节数据”工作表，共 32 项餐品；X 是脂肪含量，Y 是蛋白质含量。双均值点 `(x̄, ȳ)` 起初隐藏。
+1. 图中使用 `data/source/burger-king-menu-items.xls` 的“第二节数据”工作表，共 32 项餐品；X 是脂肪含量，Y 是蛋白质含量。双均值点 `(x̄, ȳ)` 起初隐藏。
 2. 在图内任意位置按住鼠标或触控笔并拖出一小段，松开后网页会把线段延长成完整直线。红色竖直短线表示每个餐品的残差 `d = y − ŷ`。线段太接近竖直时会提示横向多拖一些。
 3. 当直线进入双均值点附近时，网页会自动把直线吸附到双均值点，并显示紫色双均值点及其数值。吸附范围为当前 Y 显示跨度的 3%，图中不显示范围边界。
 4. 吸附后会显示残差正方形，每个正方形的边长为 `|d|`，并显示 `MSR = Σ(y − ŷ)²/(n − 1)`。标准化图使用 `MSR = Σ(zᵧ − ẑᵧ)²/(n − 1)`。拖动线上的紫色圆环可围绕双均值点旋转，MSR 随之实时变化。
@@ -50,14 +63,12 @@
 发布步骤：
 
 1. 登录 GitHub，点击右上角的 **+ → New repository**，仓库名可填写 `ap-stats-site`，选择 **Public**，然后点击 **Create repository**。
-2. 在新仓库点击 **Add file → Upload files**，把上面列出的八个文件全部拖进去，点击 **Commit changes**。
+2. 在新仓库点击 **Add file → Upload files**，把仓库里的全部文件拖进去，点击 **Commit changes**。
 3. 点击仓库上方的 **Settings → Pages**；在 **Build and deployment** 中将 Source 设为 **Deploy from a branch**，Branch 选择 **main** 和 **/(root)**，点击 **Save**。
 4. 等待约 1–3 分钟，刷新此页面。页面顶部会出现网站地址，复制后即可发给学生。
 
 以后如果要更新，只需在仓库里替换同名的 Excel 文件或网页文件，网站地址不会改变。
 
-注意：网页首次打开需要联网，以便读取图表所需的公开 JavaScript 库。
-
-本地预览需要通过静态网站服务打开文件夹（例如编辑器的 Live Server）。直接双击 `index.html` 可能因浏览器限制而无法读取 Excel。网站不需要后台数据库，也不会把课堂操作写回 Excel。
+注意：**直接双击 `index.html` 即可使用**，不需要本地服务器，也不需要联网 —— 数据已预先转成 `data/*.js`，第三方库也都在 `vendor/` 里。网站不需要后台数据库，也不会把课堂操作写回 Excel。
 
 
