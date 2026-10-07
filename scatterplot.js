@@ -30,7 +30,7 @@
 
     undefined_r:'undefined (too few points or a constant variable)',
   });
-  let activeTool='correlation', points=[], baseX=[-1,1], baseY=[-1,1];
+  let points=[], baseX=[-1,1], baseY=[-1,1];
   let originalStats={x:{mean:NaN,sd:NaN},y:{mean:NaN,sd:NaN}};
   let dataReady=false, dataError=false;
   const defaults={scaleX:1, shiftX:0, scaleY:1, shiftY:0};
@@ -77,22 +77,6 @@
     });
   }
 
-  function showTool(tool) {
-    activeTool=tool;
-    $('correlationPage').hidden=tool!=='correlation';
-    $('scatterPage').hidden=tool!=='scatter';
-    $('outlierPage').hidden=tool!=='outlier';
-    $('linearPage').hidden=tool!=='linear';
-    $('samplingPage').hidden=tool!=='sampling';
-    document.querySelectorAll('[data-tool]').forEach(button=>{
-      const active=button.dataset.tool===tool;
-      button.classList.toggle('active',active);
-      if (active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
-    });
-    document.title=`AP Stats Hub · ${translations[lang][{scatter:'scatter_title',outlier:'outlier_title',linear:'linear_title',sampling:'sampling_title',correlation:'heading_title'}[tool]]}`;
-    document.dispatchEvent(new CustomEvent('apstats:tool',{detail:tool}));
-  }
-  document.querySelectorAll('[data-tool]').forEach(button=>button.addEventListener('click',()=>showTool(button.dataset.tool)));
 
   function numericValue(value) {
     if (value===null || value===undefined || typeof value==='boolean' || (typeof value==='string' && !value.trim())) return NaN;

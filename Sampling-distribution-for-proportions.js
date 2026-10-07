@@ -461,44 +461,12 @@
     renderHint();
   }
 
-  /* ---------- 页面显隐 ---------- */
-  function showProportionPage(show) {
-    const myPage = document.getElementById('proportionPage');
-    if (!myPage) return;
-    if (show) {
-      ['correlationPage', 'scatterPage', 'outlierPage', 'linearPage', 'samplingPage'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.hidden = true;
-      });
-      myPage.hidden = false;
-      document.querySelectorAll('[data-tool]').forEach(btn => {
-        const active = btn.dataset.tool === 'proportion';
-        btn.classList.toggle('active', active);
-        if (active) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
-      });
-      document.title = `AP Stats Hub · ${translations[lang].proportion_title}`;
-      renderAll();
-    }
-  }
-
   /* ---------- 初始化 ---------- */
   function init() {
     buildUI();
     renderAll();
-    const nav = document.getElementById('proportionNav');
-    if (nav) {
-      nav.addEventListener('click', () => {
-        setTimeout(() => showProportionPage(true), 0);
-      });
-    }
-    document.addEventListener('apstats:tool', e => {
-      if (e.detail !== 'proportion') {
-        const myPage = document.getElementById('proportionPage');
-        if (myPage) myPage.hidden = true;
-      } else {
-        showProportionPage(true);
-      }
-    });
+    // 页面显隐与标题交给 core/router.js，这里只负责切回本页时重绘。
+    document.addEventListener('apstats:tool', e => { if (e.detail === 'proportion') renderAll(); });
     document.addEventListener('apstats:language', () => { renderAll(); });
   }
 
