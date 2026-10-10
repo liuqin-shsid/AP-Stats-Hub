@@ -6,6 +6,9 @@ const translations = {
     sidebar_title: '学习工具',
     nav_linreg: '线性回归教学',
     nav_sampling: '抽样分布',
+    /* 侧边栏按钮标题：必须在 sidebar.js 生成按钮前就已注册，
+       否则按钮会显示空白或不显示。 */
+    zscore_title: 'z-score 标准化',
     heading_title: '相关关系探究',
     heading_desc: '拖动数据点，观察最佳拟合线、相关系数与 R² 的变化。',
     label_sheet: '选择案例',
@@ -40,6 +43,8 @@ const translations = {
     sidebar_title: 'Learning tools',
     nav_linreg: 'Linear Regression',
     nav_sampling: 'Sampling Distributions',
+    /* Sidebar button title: must be registered before sidebar.js runs. */
+    zscore_title: 'z-score Standardization',
     heading_title: 'Correlation Explorer',
     heading_desc: 'Drag the data points and watch the best-fit line, correlation, and R² update live.',
     label_sheet: 'Select dataset',
