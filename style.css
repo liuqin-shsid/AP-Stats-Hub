@@ -292,3 +292,58 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .resid-drop { stroke:#c73932; stroke-width:1.2; opacity:.5; }
 .resid-point { fill:#2878b8; stroke:#fff; stroke-width:1.5; }
 .resid-empty { fill:#64717d; font-size:20px; }
+
+/* ---------- z-score 手绘页 ---------- */
+.zscore-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+.zscore-pair .chart-panel {
+  min-width: 0;
+  padding: 14px 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.zscore-pair .chart-panel h2 {
+  margin: 0 6px 8px;
+  color: var(--navy);
+  font-size: 16px;
+}
+.zscore-pair svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+.zscore-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin: 10px 6px 4px;
+  padding: 10px 12px;
+  background: #f7fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #42515e;
+}
+.zscore-stats > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.zscore-stats span {
+  color: #64717d;
+}
+.zscore-stats strong {
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .zscore-pair { grid-template-columns: 1fr; }
+}
