@@ -3,6 +3,7 @@
      1) 用户在图里点击加点、拖动移动、右键删除
      2) 左图：原始单位散点图；右图：标准化散点图（z 分数）
      3) 两张图下方各显示对应统计量（n、均值、标准差、r、回归线）
+     4) 顶部一个按钮，同时控制两张图的拟合线显隐，默认隐藏
    数据源：无需 Excel，纯手绘。 */
 (() => {
   Object.assign(translations.zh, {
@@ -10,20 +11,14 @@
     zscore_desc: '在左图点击添加散点，拖动移动，右键删除；右图自动显示标准化后的散点。',
     zscore_raw_title: '原始数据散点图',
     zscore_std_title: '标准化散点图',
-    zscore_raw_x: 'x',
-    zscore_raw_y: 'y',
-    zscore_std_x: 'z(x)',
-    zscore_std_y: 'z(y)',
     zscore_n: 'n',
-    zscore_mean_x: 'x̄',
-    zscore_mean_y: 'ȳ',
-    zscore_sd_x: 'sₓ',
-    zscore_sd_y: 'sᵧ',
     zscore_r: 'r',
     zscore_r2: 'R²',
     zscore_line: '回归线',
     zscore_clear: '清空',
     zscore_undo: '撤销',
+    zscore_show_line: '显示拟合线',
+    zscore_hide_line: '隐藏拟合线',
     zscore_need: '至少需要 2 个点才能计算统计量。',
     zscore_x_label: 'x',
     zscore_y_label: 'y',
@@ -35,20 +30,14 @@
     zscore_desc: 'Click to add points, drag to move, right-click to delete; the right plot shows standardized points automatically.',
     zscore_raw_title: 'Raw data scatterplot',
     zscore_std_title: 'Standardized scatterplot',
-    zscore_raw_x: 'x',
-    zscore_raw_y: 'y',
-    zscore_std_x: 'z(x)',
-    zscore_std_y: 'z(y)',
     zscore_n: 'n',
-    zscore_mean_x: 'x̄',
-    zscore_mean_y: 'ȳ',
-    zscore_sd_x: 'sₓ',
-    zscore_sd_y: 'sᵧ',
     zscore_r: 'r',
     zscore_r2: 'R²',
     zscore_line: 'Regression',
     zscore_clear: 'Clear',
     zscore_undo: 'Undo',
+    zscore_show_line: 'Show best-fit line',
+    zscore_hide_line: 'Hide best-fit line',
     zscore_need: 'At least 2 points are needed for statistics.',
     zscore_x_label: 'x',
     zscore_y_label: 'y',
@@ -64,6 +53,7 @@
     history: [],
     drag: null,
     built: false,
+    showLine: false,   // 两张图共用一个显隐开关，默认隐藏
   };
 
   const rawSVGId = 'zscoreRawSVG';
@@ -106,13 +96,6 @@
   function scaleLinear(value, d, a, b) {
     return a + (value - d[0]) * (b - a) / (d[1] - d[0]);
   }
-  function domainFrom(values, fallback) {
-    if (values.length === 0) return fallback;
-    let lo = Math.min(...values), hi = Math.max(...values);
-    if (lo === hi) { lo -= 1; hi += 1; }
-    const pad = (hi - lo) * 0.08;
-    return [lo - pad, hi + pad];
-  }
   function ticks(lo, hi, count) {
     return Array.from({ length: count }, (_, i) => lo + (hi - lo) * i / (count - 1));
   }
@@ -130,7 +113,6 @@
     const sy = v => scaleLinear(v, dy, h - m.bottom, m.top);
 
     let html = '';
-    // 网格
     ticks(dx[0], dx[1], 6).forEach(v => {
       const x = sx(v);
       html += `<line x1="${x}" y1="${m.top}" x2="${x}" y2="${h - m.bottom}" stroke="#e4e9ee"/>`;
@@ -141,27 +123,22 @@
       html += `<line x1="${m.left}" y1="${y}" x2="${w - m.right}" y2="${y}" stroke="#e4e9ee"/>`;
       html += `<text x="${m.left - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#5b6874">${fmt(v)}</text>`;
     });
-    // 轴
     html += `<line x1="${m.left}" y1="${h - m.bottom}" x2="${w - m.right}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
     html += `<line x1="${m.left}" y1="${m.top}" x2="${m.left}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
 
-    // 回归线
     const fit = regression(xs, ys);
-    if (fit) {
+    if (fit && state.showLine) {
       html += `<line x1="${sx(XMIN)}" y1="${sy(fit.intercept + fit.slope * XMIN)}" x2="${sx(XMAX)}" y2="${sy(fit.intercept + fit.slope * XMAX)}" stroke="#c73932" stroke-width="2.2"/>`;
     }
 
-    // 数据点
     state.points.forEach((p, i) => {
       html += `<circle data-idx="${i}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="7" fill="#2878b8" stroke="#fff" stroke-width="1.5" style="cursor:grab"/>`;
     });
 
-    // 轴标签
     html += `<text x="${(m.left + w - m.right) / 2}" y="${h - 14}" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_x_label}</text>`;
     html += `<text transform="translate(16 ${(m.top + h - m.bottom) / 2}) rotate(-90)" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_y_label}</text>`;
 
     svg.innerHTML = html;
-    return { sx, sy, dx, dy, m, w, h };
   }
 
   function drawStd() {
@@ -192,7 +169,6 @@
     const sx = v => scaleLinear(v, dx, m.left, w - m.right);
     const sy = v => scaleLinear(v, dy, h - m.bottom, m.top);
 
-    // 网格
     ticks(dx[0], dx[1], 6).forEach(v => {
       const x = sx(v);
       html += `<line x1="${x}" y1="${m.top}" x2="${x}" y2="${h - m.bottom}" stroke="#e4e9ee"/>`;
@@ -203,10 +179,9 @@
       html += `<line x1="${m.left}" y1="${y}" x2="${w - m.right}" y2="${y}" stroke="#e4e9ee"/>`;
       html += `<text x="${m.left - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#5b6874">${fmt(v)}</text>`;
     });
-    // 轴
     html += `<line x1="${m.left}" y1="${h - m.bottom}" x2="${w - m.right}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
     html += `<line x1="${m.left}" y1="${m.top}" x2="${m.left}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
-    // 零轴
+
     if (dx[0] < 0 && dx[1] > 0) {
       html += `<line x1="${sx(0)}" y1="${m.top}" x2="${sx(0)}" y2="${h - m.bottom}" stroke="#888" stroke-width="0.9"/>`;
     }
@@ -214,21 +189,19 @@
       html += `<line x1="${m.left}" y1="${sy(0)}" x2="${w - m.right}" y2="${sy(0)}" stroke="#888" stroke-width="0.9"/>`;
     }
 
-    // 回归线（标准化后）
-    if (canStd) {
+    if (canStd && state.showLine) {
       const fit = regression(zx, zy);
       if (fit) {
         html += `<line x1="${sx(dx[0])}" y1="${sy(fit.intercept + fit.slope * dx[0])}" x2="${sx(dx[1])}" y2="${sy(fit.intercept + fit.slope * dx[1])}" stroke="#c73932" stroke-width="2.2"/>`;
       }
     }
-    // 数据点
+
     if (canStd) {
       zx.forEach((vx, i) => {
         html += `<circle cx="${sx(vx)}" cy="${sy(zy[i])}" r="7" fill="#c17b23" stroke="#fff" stroke-width="1.5"/>`;
       });
     }
 
-    // 轴标签
     html += `<text x="${(m.left + w - m.right) / 2}" y="${h - 14}" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_zx_label}</text>`;
     html += `<text transform="translate(16 ${(m.top + h - m.bottom) / 2}) rotate(-90)" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_zy_label}</text>`;
 
@@ -278,12 +251,23 @@
     drawRaw();
     drawStd();
     updateStats();
+    updateLineButton();
+  }
+
+  function updateLineButton() {
+    const btn = document.getElementById('zscoreLineBtn');
+    if (!btn) return;
+    const t = translations[lang];
+    btn.textContent = state.showLine ? t.zscore_hide_line : t.zscore_show_line;
+    btn.setAttribute('aria-pressed', String(state.showLine));
+    btn.classList.toggle('active-toggle', state.showLine);
   }
 
   // ---------- 鼠标交互 ----------
   function getRawSVG() { return document.getElementById(rawSVGId); }
   function getPointCoordinates(event) {
     const svg = getRawSVG();
+    if (!svg) return null;
     const r = svg.getBoundingClientRect();
     const { w, h, m } = SIZES.raw;
     const px = (event.clientX - r.left) * w / r.width;
@@ -359,6 +343,7 @@
         <p data-i18n="zscore_desc">${t.zscore_desc}</p>
       </div></div>
       <section class="controls" data-i18n-aria="controls_aria">
+        <button id="zscoreLineBtn" class="secondary-button" type="button" aria-pressed="false">${t.zscore_show_line}</button>
         <button id="zscoreClear" class="reset" type="button">${t.zscore_clear}</button>
         <button id="zscoreUndo" class="secondary-button" type="button">${t.zscore_undo}</button>
       </section>
@@ -374,6 +359,13 @@
           <section id="${stdStatsId}" class="zscore-stats"></section>
         </section>
       </div>`;
+
+    document.getElementById('zscoreLineBtn').addEventListener('click', () => {
+      state.showLine = !state.showLine;
+      drawRaw();
+      drawStd();
+      updateLineButton();
+    });
 
     document.getElementById('zscoreClear').addEventListener('click', () => {
       if (state.points.length === 0) return;
@@ -408,8 +400,6 @@
     else redrawAll();
   });
   document.addEventListener('apstats:language', () => {
-    if (state.built) {
-      buildUI();
-    }
+    if (state.built) buildUI();
   });
 })();
