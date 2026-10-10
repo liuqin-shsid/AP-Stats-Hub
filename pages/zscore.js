@@ -1,450 +1,415 @@
-/* Z-Score Explorer（标准化 / z 分数）
-   放在「线性回归教学」分组下。
-   用 Burger King 的脂肪 / 蛋白质数据，展示：
-   - 原始数据散点图（浅色大点）
-   - 标准化后的散点图（z 分数，深色实心点）
-   - 每个点的 z 分数、均值、标准差
-   依赖：data/regression.js（window.APSTATS_DATA.regression.burgerKing） */
+/* z-score 标准化 —— 手绘散点图 + 标准化并排对照。
+   功能：
+     1) 用户在图里点击加点、拖动移动、右键删除
+     2) 左图：原始单位散点图；右图：标准化散点图（z 分数）
+     3) 两张图下方各显示对应统计量（n、均值、标准差、r、回归线）
+   数据源：无需 Excel，纯手绘。 */
 (() => {
-  /* ---------- i18n ---------- */
   Object.assign(translations.zh, {
-    zscore_title: 'Z 分数（标准化）',
-    zscore_desc: '把原始变量转换成 z 分数：z = (x − 均值) / 标准差。观察中心与离散程度如何被统一到均值为 0、标准差为 1 的尺度上。',
-    zscore_dataset: '选择数据集',
-    zscore_x: 'X 变量',
-    zscore_y: 'Y 变量',
-    zscore_show_raw: '显示原始数据点',
-    zscore_show_std: '显示标准化数据点',
-    zscore_show_axes: '显示 z = 0 参考线',
-    zscore_show_grid: '显示网格',
-    zscore_raw: '原始数据',
-    zscore_std: '标准化数据',
-    zscore_mean: '均值',
-    zscore_sd: '标准差',
-    zscore_n: '样本数 n',
-    zscore_corr: '相关系数 r',
-    zscore_point: '点',
-    zscore_hover_raw: '原始',
-    zscore_hover_std: '标准化',
-    zscore_hint: '本页只做标准化演示，不会改动数据。开启「显示原始数据点」可以看到原始点与标准化点的位置关系。',
-    zscore_loading: '正在读取数据…',
-    zscore_load_error: '无法读取 data/regression.js。请执行 npm run build:data 重新生成。',
-    zscore_aria: 'Z 分数标准化散点图',
-    zscore_formula: 'z = (x − x̄) / s',
+    zscore_title: 'z-score 标准化',
+    zscore_desc: '在左图点击添加散点，拖动移动，右键删除；右图自动显示标准化后的散点。',
+    zscore_raw_title: '原始数据散点图',
+    zscore_std_title: '标准化散点图',
+    zscore_raw_x: 'x',
+    zscore_raw_y: 'y',
+    zscore_std_x: 'z(x)',
+    zscore_std_y: 'z(y)',
+    zscore_n: 'n',
+    zscore_mean_x: 'x̄',
+    zscore_mean_y: 'ȳ',
+    zscore_sd_x: 'sₓ',
+    zscore_sd_y: 'sᵧ',
+    zscore_r: 'r',
+    zscore_r2: 'R²',
+    zscore_line: '回归线',
+    zscore_clear: '清空',
+    zscore_undo: '撤销',
+    zscore_need: '至少需要 2 个点才能计算统计量。',
+    zscore_x_label: 'x',
+    zscore_y_label: 'y',
+    zscore_zx_label: 'z(x)',
+    zscore_zy_label: 'z(y)',
   });
   Object.assign(translations.en, {
-    zscore_title: 'Z-Scores (Standardization)',
-    zscore_desc: 'Convert raw variables into z-scores: z = (x − mean) / SD. Watch how center and spread get unified to mean 0 and SD 1.',
-    zscore_dataset: 'Dataset',
-    zscore_x: 'X variable',
-    zscore_y: 'Y variable',
-    zscore_show_raw: 'Show raw points',
-    zscore_show_std: 'Show standardized points',
-    zscore_show_axes: 'Show z = 0 reference lines',
-    zscore_show_grid: 'Show grid',
-    zscore_raw: 'Raw data',
-    zscore_std: 'Standardized data',
-    zscore_mean: 'Mean',
-    zscore_sd: 'Standard deviation',
+    zscore_title: 'z-score Standardization',
+    zscore_desc: 'Click to add points, drag to move, right-click to delete; the right plot shows standardized points automatically.',
+    zscore_raw_title: 'Raw data scatterplot',
+    zscore_std_title: 'Standardized scatterplot',
+    zscore_raw_x: 'x',
+    zscore_raw_y: 'y',
+    zscore_std_x: 'z(x)',
+    zscore_std_y: 'z(y)',
     zscore_n: 'n',
-    zscore_corr: 'Correlation r',
-    zscore_point: 'Point',
-    zscore_hover_raw: 'Raw',
-    zscore_hover_std: 'Std',
-    zscore_hint: 'This page only demonstrates standardization; it does not modify the data. Turn on "Show raw points" to see how raw and standardized points relate.',
-    zscore_loading: 'Loading data…',
-    zscore_load_error: 'Could not read data/regression.js. Run "npm run build:data" to regenerate it.',
-    zscore_aria: 'Z-score standardized scatterplot',
-    zscore_formula: 'z = (x − x̄) / s',
+    zscore_mean_x: 'x̄',
+    zscore_mean_y: 'ȳ',
+    zscore_sd_x: 'sₓ',
+    zscore_sd_y: 'sᵧ',
+    zscore_r: 'r',
+    zscore_r2: 'R²',
+    zscore_line: 'Regression',
+    zscore_clear: 'Clear',
+    zscore_undo: 'Undo',
+    zscore_need: 'At least 2 points are needed for statistics.',
+    zscore_x_label: 'x',
+    zscore_y_label: 'y',
+    zscore_zx_label: 'z(x)',
+    zscore_zy_label: 'z(y)',
   });
 
-  /* ---------- 常量 ---------- */
-  const W = 620, H = 500, M = { left: 78, right: 24, top: 24, bottom: 66 };
-  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const XMIN = 0, XMAX = 20, YMIN = 0, YMAX = 20;
+  const HIT = 0.45;
 
-  /* ---------- 状态 ---------- */
   const state = {
-    sheet: '',
-    xKey: '',
-    yKey: '',
-    raw: true,
-    std: true,
-    axes: true,
-    grid: true,
-    loaded: false,
-    error: false,
+    points: [],
+    history: [],
+    drag: null,
+    built: false,
   };
 
-  /* ---------- 工具 ---------- */
-  const compact = (v) => {
-    if (!Number.isFinite(v)) return '—';
-    return Number(v.toPrecision(6)).toString();
+  const rawSVGId = 'zscoreRawSVG';
+  const stdSVGId = 'zscoreStdSVG';
+  const rawStatsId = 'zscoreRawStats';
+  const stdStatsId = 'zscoreStdStats';
+
+  const SIZES = {
+    raw: { w: 620, h: 470, m: { left: 60, right: 20, top: 24, bottom: 56 } },
+    std: { w: 620, h: 470, m: { left: 60, right: 20, top: 24, bottom: 56 } },
   };
-  function mean(arr) {
-    if (!arr.length) return NaN;
-    let s = 0;
-    for (const v of arr) s += v;
-    return s / arr.length;
-  }
-  function sampleSd(arr) {
+
+  // ---------- 统计 ----------
+  function stats(arr) {
     const n = arr.length;
-    if (n < 2) return NaN;
-    const m = mean(arr);
-    let s = 0;
-    for (const v of arr) s += (v - m) ** 2;
-    return Math.sqrt(s / (n - 1));
+    if (n === 0) return { n: 0, mean: NaN, sd: NaN };
+    const mean = arr.reduce((s, v) => s + v, 0) / n;
+    const sd = n < 2 ? NaN : Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1));
+    return { n, mean, sd };
   }
-  function makeScale(domain, range) {
-    return (v) => range[0] + (v - domain[0]) * (range[1] - range[0]) / ((domain[1] - domain[0]) || 1);
+  function regression(xs, ys) {
+    const n = xs.length;
+    if (n < 2) return null;
+    const mx = xs.reduce((s, v) => s + v, 0) / n;
+    const my = ys.reduce((s, v) => s + v, 0) / n;
+    let sxx = 0, syy = 0, sxy = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xs[i] - mx, dy = ys[i] - my;
+      sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+    }
+    if (sxx === 0 || syy === 0) return null;
+    const slope = sxy / sxx;
+    const intercept = my - slope * mx;
+    const r = sxy / Math.sqrt(sxx * syy);
+    return { slope, intercept, r, r2: r * r };
   }
-  function safeDomain(values) {
-    let lo = Math.min.apply(null, values);
-    let hi = Math.max.apply(null, values);
+  const fmt = v => (Number.isFinite(v) ? Number(v.toPrecision(6)).toString() : '—');
+
+  // ---------- 坐标 ----------
+  function scaleLinear(value, d, a, b) {
+    return a + (value - d[0]) * (b - a) / (d[1] - d[0]);
+  }
+  function domainFrom(values, fallback) {
+    if (values.length === 0) return fallback;
+    let lo = Math.min(...values), hi = Math.max(...values);
     if (lo === hi) { lo -= 1; hi += 1; }
-    const pad = (hi - lo) * 0.1;
+    const pad = (hi - lo) * 0.08;
     return [lo - pad, hi + pad];
   }
-  function svgEl(tag, attrs) {
-    const el = document.createElementNS(SVG_NS, tag);
-    if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
-    return el;
-  }
-  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-  function titleEl(str) {
-    const el = document.createElementNS(SVG_NS, 'title');
-    el.textContent = str;
-    return el;
-  }
   function ticks(lo, hi, count) {
-    const out = [];
-    for (let i = 0; i < count; i++) out.push(lo + (hi - lo) * i / (count - 1));
-    return out;
+    return Array.from({ length: count }, (_, i) => lo + (hi - lo) * i / (count - 1));
   }
 
-  /* ---------- 数据读取 ---------- */
-  function availableSheets() {
-    const bk = (window.APSTATS_DATA || {}).regression && window.APSTATS_DATA.regression.burgerKing;
-    if (bk && bk.sheetNames && bk.sheetNames.length) {
-      return bk.sheetNames.map(function (n) {
-        return { key: n, label: n, rows: bk.sheets[n] };
-      });
+  // ---------- 绘制 ----------
+  function drawRaw() {
+    const svg = document.getElementById(rawSVGId);
+    if (!svg) return;
+    const { w, h, m } = SIZES.raw;
+    const xs = state.points.map(p => p.x);
+    const ys = state.points.map(p => p.y);
+    const dx = [XMIN, XMAX];
+    const dy = [YMIN, YMAX];
+    const sx = v => scaleLinear(v, dx, m.left, w - m.right);
+    const sy = v => scaleLinear(v, dy, h - m.bottom, m.top);
+
+    let html = '';
+    // 网格
+    ticks(dx[0], dx[1], 6).forEach(v => {
+      const x = sx(v);
+      html += `<line x1="${x}" y1="${m.top}" x2="${x}" y2="${h - m.bottom}" stroke="#e4e9ee"/>`;
+      html += `<text x="${x}" y="${h - m.bottom + 18}" text-anchor="middle" font-size="12" fill="#5b6874">${fmt(v)}</text>`;
+    });
+    ticks(dy[0], dy[1], 6).forEach(v => {
+      const y = sy(v);
+      html += `<line x1="${m.left}" y1="${y}" x2="${w - m.right}" y2="${y}" stroke="#e4e9ee"/>`;
+      html += `<text x="${m.left - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#5b6874">${fmt(v)}</text>`;
+    });
+    // 轴
+    html += `<line x1="${m.left}" y1="${h - m.bottom}" x2="${w - m.right}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
+    html += `<line x1="${m.left}" y1="${m.top}" x2="${m.left}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
+
+    // 回归线
+    const fit = regression(xs, ys);
+    if (fit) {
+      html += `<line x1="${sx(XMIN)}" y1="${sy(fit.intercept + fit.slope * XMIN)}" x2="${sx(XMAX)}" y2="${sy(fit.intercept + fit.slope * XMAX)}" stroke="#c73932" stroke-width="2.2"/>`;
     }
-    const lr = (window.APSTATS_DATA || {}).regression && window.APSTATS_DATA.regression.linearRegression;
-    if (lr && lr.sheetNames && lr.sheetNames.length) {
-      return lr.sheetNames.map(function (n) {
-        return { key: n, label: displaySheetName ? displaySheetName(n) : n, rows: lr.sheets[n] };
-      });
-    }
-    return [];
+
+    // 数据点
+    state.points.forEach((p, i) => {
+      html += `<circle data-idx="${i}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="7" fill="#2878b8" stroke="#fff" stroke-width="1.5" style="cursor:grab"/>`;
+    });
+
+    // 轴标签
+    html += `<text x="${(m.left + w - m.right) / 2}" y="${h - 14}" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_x_label}</text>`;
+    html += `<text transform="translate(16 ${(m.top + h - m.bottom) / 2}) rotate(-90)" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_y_label}</text>`;
+
+    svg.innerHTML = html;
+    return { sx, sy, dx, dy, m, w, h };
   }
-  function numericKeys(rows) {
-    if (!rows || !rows.length) return [];
-    const keys = Object.keys(rows[0]);
-    return keys.filter(function (k) {
-      return rows.some(function (r) { return Number.isFinite(Number(r[k])); });
+
+  function drawStd() {
+    const svg = document.getElementById(stdSVGId);
+    if (!svg) return;
+    const { w, h, m } = SIZES.std;
+    const xs = state.points.map(p => p.x);
+    const ys = state.points.map(p => p.y);
+    const sxStats = stats(xs), syStats = stats(ys);
+    const canStd = state.points.length >= 2 && sxStats.sd > 0 && syStats.sd > 0;
+
+    let html = '';
+    let zx = [], zy = [], dx, dy;
+
+    if (canStd) {
+      zx = xs.map(v => (v - sxStats.mean) / sxStats.sd);
+      zy = ys.map(v => (v - syStats.mean) / syStats.sd);
+      const lo = Math.min(...zx, ...zy, -2);
+      const hi = Math.max(...zx, ...zy, 2);
+      const pad = Math.max((hi - lo) * 0.08, 0.2);
+      const lim = Math.max(Math.abs(lo), Math.abs(hi)) + pad;
+      dx = [-lim, lim];
+      dy = [-lim, lim];
+    } else {
+      dx = [-3, 3];
+      dy = [-3, 3];
+    }
+    const sx = v => scaleLinear(v, dx, m.left, w - m.right);
+    const sy = v => scaleLinear(v, dy, h - m.bottom, m.top);
+
+    // 网格
+    ticks(dx[0], dx[1], 6).forEach(v => {
+      const x = sx(v);
+      html += `<line x1="${x}" y1="${m.top}" x2="${x}" y2="${h - m.bottom}" stroke="#e4e9ee"/>`;
+      html += `<text x="${x}" y="${h - m.bottom + 18}" text-anchor="middle" font-size="12" fill="#5b6874">${fmt(v)}</text>`;
+    });
+    ticks(dy[0], dy[1], 6).forEach(v => {
+      const y = sy(v);
+      html += `<line x1="${m.left}" y1="${y}" x2="${w - m.right}" y2="${y}" stroke="#e4e9ee"/>`;
+      html += `<text x="${m.left - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#5b6874">${fmt(v)}</text>`;
+    });
+    // 轴
+    html += `<line x1="${m.left}" y1="${h - m.bottom}" x2="${w - m.right}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
+    html += `<line x1="${m.left}" y1="${m.top}" x2="${m.left}" y2="${h - m.bottom}" stroke="#50606d" stroke-width="1.2"/>`;
+    // 零轴
+    if (dx[0] < 0 && dx[1] > 0) {
+      html += `<line x1="${sx(0)}" y1="${m.top}" x2="${sx(0)}" y2="${h - m.bottom}" stroke="#888" stroke-width="0.9"/>`;
+    }
+    if (dy[0] < 0 && dy[1] > 0) {
+      html += `<line x1="${m.left}" y1="${sy(0)}" x2="${w - m.right}" y2="${sy(0)}" stroke="#888" stroke-width="0.9"/>`;
+    }
+
+    // 回归线（标准化后）
+    if (canStd) {
+      const fit = regression(zx, zy);
+      if (fit) {
+        html += `<line x1="${sx(dx[0])}" y1="${sy(fit.intercept + fit.slope * dx[0])}" x2="${sx(dx[1])}" y2="${sy(fit.intercept + fit.slope * dx[1])}" stroke="#c73932" stroke-width="2.2"/>`;
+      }
+    }
+    // 数据点
+    if (canStd) {
+      zx.forEach((vx, i) => {
+        html += `<circle cx="${sx(vx)}" cy="${sy(zy[i])}" r="7" fill="#c17b23" stroke="#fff" stroke-width="1.5"/>`;
+      });
+    }
+
+    // 轴标签
+    html += `<text x="${(m.left + w - m.right) / 2}" y="${h - 14}" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_zx_label}</text>`;
+    html += `<text transform="translate(16 ${(m.top + h - m.bottom) / 2}) rotate(-90)" text-anchor="middle" font-size="14" fill="#263844">${translations[lang].zscore_zy_label}</text>`;
+
+    svg.innerHTML = html;
+  }
+
+  // ---------- 统计面板 ----------
+  function statsHTML(xs, ys, mode) {
+    const t = translations[lang];
+    const sxStats = stats(xs), syStats = stats(ys);
+    const fit = regression(xs, ys);
+    const rows = [];
+    rows.push(`<div><span>${t.zscore_n}</span><strong>${state.points.length}</strong></div>`);
+    rows.push(`<div><span>${mode === 'std' ? 'z̄ₓ' : 'x̄'}</span><strong>${fmt(sxStats.mean)}</strong></div>`);
+    rows.push(`<div><span>${mode === 'std' ? 'z̄ᵧ' : 'ȳ'}</span><strong>${fmt(syStats.mean)}</strong></div>`);
+    rows.push(`<div><span>${mode === 'std' ? 's(zₓ)' : 'sₓ'}</span><strong>${fmt(sxStats.sd)}</strong></div>`);
+    rows.push(`<div><span>${mode === 'std' ? 's(zᵧ)' : 'sᵧ'}</span><strong>${fmt(syStats.sd)}</strong></div>`);
+    if (fit) {
+      rows.push(`<div><span>${t.zscore_r}</span><strong>${fmt(fit.r)}</strong></div>`);
+      rows.push(`<div><span>${t.zscore_r2}</span><strong>${fmt(fit.r2)}</strong></div>`);
+      rows.push(`<div><span>${t.zscore_line}</span><strong>ŷ = ${fmt(fit.slope)}x ${fit.intercept >= 0 ? '+' : '−'} ${fmt(Math.abs(fit.intercept))}</strong></div>`);
+    } else {
+      rows.push(`<div class="hint" style="grid-column:1/-1">${t.zscore_need}</div>`);
+    }
+    return rows.join('');
+  }
+
+  function updateStats() {
+    const xs = state.points.map(p => p.x);
+    const ys = state.points.map(p => p.y);
+    const rawBox = document.getElementById(rawStatsId);
+    const stdBox = document.getElementById(stdStatsId);
+    if (rawBox) rawBox.innerHTML = statsHTML(xs, ys, 'raw');
+    if (stdBox) {
+      const sxStats = stats(xs), syStats = stats(ys);
+      if (state.points.length >= 2 && sxStats.sd > 0 && syStats.sd > 0) {
+        const zx = xs.map(v => (v - sxStats.mean) / sxStats.sd);
+        const zy = ys.map(v => (v - syStats.mean) / syStats.sd);
+        stdBox.innerHTML = statsHTML(zx, zy, 'std');
+      } else {
+        stdBox.innerHTML = `<div class="hint" style="grid-column:1/-1">${translations[lang].zscore_need}</div>`;
+      }
+    }
+  }
+
+  function redrawAll() {
+    drawRaw();
+    drawStd();
+    updateStats();
+  }
+
+  // ---------- 鼠标交互 ----------
+  function getRawSVG() { return document.getElementById(rawSVGId); }
+  function getPointCoordinates(event) {
+    const svg = getRawSVG();
+    const r = svg.getBoundingClientRect();
+    const { w, h, m } = SIZES.raw;
+    const px = (event.clientX - r.left) * w / r.width;
+    const py = (event.clientY - r.top) * h / r.height;
+    if (px < m.left || px > w - m.right || py < m.top || py > h - m.bottom) return null;
+    const x = scaleLinear(px, [m.left, w - m.right], XMIN, XMAX);
+    const y = scaleLinear(py, [h - m.bottom, m.top], YMIN, YMAX);
+    return { x, y };
+  }
+  function findPoint(x, y) {
+    let best = -1, bestD = HIT;
+    state.points.forEach((p, i) => {
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    return best;
+  }
+
+  function attachEvents() {
+    const svg = getRawSVG();
+    if (!svg) return;
+    svg.style.touchAction = 'none';
+    svg.addEventListener('contextmenu', e => e.preventDefault());
+
+    svg.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      const p = getPointCoordinates(event);
+      if (!p) return;
+      const idx = findPoint(p.x, p.y);
+      state.history.push(JSON.parse(JSON.stringify(state.points)));
+      if (idx >= 0) {
+        state.drag = { idx };
+      } else {
+        state.points.push({ x: p.x, y: p.y });
+        redrawAll();
+      }
+      svg.setPointerCapture(event.pointerId);
+    });
+
+    svg.addEventListener('pointermove', event => {
+      if (!state.drag) return;
+      const p = getPointCoordinates(event);
+      if (!p) return;
+      state.points[state.drag.idx] = { x: p.x, y: p.y };
+      redrawAll();
+    });
+
+    svg.addEventListener('pointerup', event => {
+      state.drag = null;
+      if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+    });
+
+    svg.addEventListener('pointercancel', () => { state.drag = null; });
+
+    svg.addEventListener('contextmenu', event => {
+      const p = getPointCoordinates(event);
+      if (!p) return;
+      const idx = findPoint(p.x, p.y);
+      if (idx >= 0) {
+        state.history.push(JSON.parse(JSON.stringify(state.points)));
+        state.points.splice(idx, 1);
+        redrawAll();
+      }
     });
   }
 
-  /* ---------- UI ---------- */
+  // ---------- UI ----------
   function buildUI() {
     const t = translations[lang];
-    $('zscorePage').innerHTML = `
-      <div class="page-heading">
-        <div>
-          <h1 data-i18n="zscore_title">${escapeHtml(t.zscore_title)}</h1>
-          <p data-i18n="zscore_desc">${escapeHtml(t.zscore_desc)}</p>
-        </div>
-      </div>
+    document.getElementById('zscorePage').innerHTML = `
+      <div class="page-heading"><div>
+        <h1 data-i18n="zscore_title">${t.zscore_title}</h1>
+        <p data-i18n="zscore_desc">${t.zscore_desc}</p>
+      </div></div>
       <section class="controls" data-i18n-aria="controls_aria">
-        <label><span data-i18n="zscore_dataset">${escapeHtml(t.zscore_dataset)}</span>
-          <select id="zscoreSheet" disabled><option data-i18n="zscore_loading">${escapeHtml(t.zscore_loading)}</option></select>
-        </label>
-        <label><span data-i18n="zscore_x">${escapeHtml(t.zscore_x)}</span>
-          <select id="zscoreX" disabled></select>
-        </label>
-        <label><span data-i18n="zscore_y">${escapeHtml(t.zscore_y)}</span>
-          <select id="zscoreY" disabled></select>
-        </label>
-        <label class="check"><input id="zscoreRaw" type="checkbox" checked> <span data-i18n="zscore_show_raw">${escapeHtml(t.zscore_show_raw)}</span></label>
-        <label class="check"><input id="zscoreStd" type="checkbox" checked> <span data-i18n="zscore_show_std">${escapeHtml(t.zscore_show_std)}</span></label>
-        <label class="check"><input id="zscoreAxes" type="checkbox" checked> <span data-i18n="zscore_show_axes">${escapeHtml(t.zscore_show_axes)}</span></label>
-        <label class="check"><input id="zscoreGrid" type="checkbox" checked> <span data-i18n="zscore_show_grid">${escapeHtml(t.zscore_show_grid)}</span></label>
+        <button id="zscoreClear" class="reset" type="button">${t.zscore_clear}</button>
+        <button id="zscoreUndo" class="secondary-button" type="button">${t.zscore_undo}</button>
       </section>
-      <p id="zscoreHint" class="hint" role="status"></p>
-      <section id="zscoreStats" class="quant-stats" aria-live="polite"></section>
-      <section class="chart-panel" style="margin-top:16px">
-        <h2 data-i18n="zscore_title">${escapeHtml(t.zscore_title)}</h2>
-        <svg id="zscoreChart" class="cat-chart" viewBox="0 0 ${W} ${H}" role="img"
-             data-i18n-aria="zscore_aria" aria-label="${escapeHtml(t.zscore_aria)}"></svg>
-        <p class="panel-note">${escapeHtml(t.zscore_formula)}</p>
-      </section>
-    `;
+      <div class="zscore-pair">
+        <section class="chart-panel">
+          <h2>${t.zscore_raw_title}</h2>
+          <svg id="${rawSVGId}" viewBox="0 0 620 470" role="img"></svg>
+          <section id="${rawStatsId}" class="zscore-stats"></section>
+        </section>
+        <section class="chart-panel">
+          <h2>${t.zscore_std_title}</h2>
+          <svg id="${stdSVGId}" viewBox="0 0 620 470" role="img"></svg>
+          <section id="${stdStatsId}" class="zscore-stats"></section>
+        </section>
+      </div>`;
 
-    $('zscoreRaw').addEventListener('change', function (e) { state.raw = e.target.checked; render(); });
-    $('zscoreStd').addEventListener('change', function (e) { state.std = e.target.checked; render(); });
-    $('zscoreAxes').addEventListener('change', function (e) { state.axes = e.target.checked; render(); });
-    $('zscoreGrid').addEventListener('change', function (e) { state.grid = e.target.checked; render(); });
-    $('zscoreSheet').addEventListener('change', function (e) { state.sheet = e.target.value; syncVars(); render(); });
-    $('zscoreX').addEventListener('change', function (e) { state.xKey = e.target.value; render(); });
-    $('zscoreY').addEventListener('change', function (e) { state.yKey = e.target.value; render(); });
-  }
-
-  function syncSheets() {
-    const sheets = availableSheets();
-    if (!sheets.length) return;
-    setOptions($('zscoreSheet'), sheets.map(function (s) { return s.key; }), state.sheet, function (k) {
-      const found = sheets.find(function (s) { return s.key === k; });
-      return found ? found.label : k;
+    document.getElementById('zscoreClear').addEventListener('click', () => {
+      if (state.points.length === 0) return;
+      state.history.push(JSON.parse(JSON.stringify(state.points)));
+      state.points = [];
+      redrawAll();
     });
-    $('zscoreSheet').disabled = false;
-    syncVars();
-  }
-
-  function syncVars() {
-    const sheets = availableSheets();
-    const current = sheets.find(function (s) { return s.key === state.sheet; }) || sheets[0];
-    if (!current) return;
-    const keys = numericKeys(current.rows);
-    if (!keys.length) return;
-    if (keys.indexOf(state.xKey) === -1) state.xKey = keys[0];
-    if (keys.indexOf(state.yKey) === -1) state.yKey = keys[1] || keys[0];
-    setOptions($('zscoreX'), keys, state.xKey, displayVariableName);
-    setOptions($('zscoreY'), keys, state.yKey, displayVariableName);
-    $('zscoreX').value = state.xKey;
-    $('zscoreY').value = state.yKey;
-    $('zscoreX').disabled = false;
-    $('zscoreY').disabled = false;
-  }
-
-  /* ---------- 数据加工 ---------- */
-  function getPoints() {
-    const sheets = availableSheets();
-    const current = sheets.find(function (s) { return s.key === state.sheet; }) || sheets[0];
-    if (!current) return [];
-    const xk = state.xKey, yk = state.yKey;
-    return current.rows
-      .map(function (r, i) {
-        return { i: i, x: Number(r[xk]), y: Number(r[yk]) };
-      })
-      .filter(function (p) { return Number.isFinite(p.x) && Number.isFinite(p.y); });
-  }
-
-  /* ---------- 渲染 ---------- */
-  function render() {
-    const t = translations[lang];
-    const hint = $('zscoreHint');
-    const statsEl = $('zscoreStats');
-    const svg = $('zscoreChart');
-
-    if (state.error) {
-      hint.className = 'hint danger';
-      hint.textContent = t.zscore_load_error;
-      clear(svg);
-      svg.appendChild(textNode(W / 2, H / 2, t.zscore_load_error, 'outlier-empty'));
-      statsEl.innerHTML = '';
-      return;
-    }
-    if (!state.loaded) {
-      hint.className = 'hint';
-      hint.textContent = t.zscore_loading;
-      return;
-    }
-
-    const points = getPoints();
-    if (points.length < 2) {
-      hint.className = 'hint danger';
-      hint.textContent = t.metrics_need_points;
-      clear(svg);
-      statsEl.innerHTML = '';
-      return;
-    }
-
-    hint.className = 'hint';
-    hint.textContent = t.zscore_hint;
-
-    const xs = points.map(function (p) { return p.x; });
-    const ys = points.map(function (p) { return p.y; });
-    const mx = mean(xs), sx = sampleSd(xs);
-    const my = mean(ys), sy = sampleSd(ys);
-
-    const std = points.map(function (p) {
-      return {
-        i: p.i,
-        zx: sx ? (p.x - mx) / sx : 0,
-        zy: sy ? (p.y - my) / sy : 0,
-      };
+    document.getElementById('zscoreUndo').addEventListener('click', () => {
+      if (state.history.length === 0) return;
+      state.points = state.history.pop();
+      redrawAll();
     });
 
-    const n = points.length;
-    let sxy = 0, sxx = 0, syy = 0;
-    for (let i = 0; i < n; i++) {
-      const dx = points[i].x - mx, dy = points[i].y - my;
-      sxy += dx * dy; sxx += dx * dx; syy += dy * dy;
-    }
-    const r = (sxx && syy) ? sxy / Math.sqrt(sxx * syy) : NaN;
-
-    statsEl.innerHTML =
-      cell(t.zscore_n, String(n)) +
-      cell(t.zscore_raw + ' · ' + t.zscore_mean + ' x̄', compact(mx)) +
-      cell(t.zscore_raw + ' · ' + t.zscore_sd + ' sₓ', compact(sx)) +
-      cell(t.zscore_raw + ' · ' + t.zscore_mean + ' ȳ', compact(my)) +
-      cell(t.zscore_raw + ' · ' + t.zscore_sd + ' sᵧ', compact(sy)) +
-      cell(t.zscore_corr, compact(r));
-
-    const rawX = safeDomain(xs);
-    const rawY = safeDomain(ys);
-    const stdX = safeDomain(std.map(function (p) { return p.zx; }).concat(0));
-    const stdY = safeDomain(std.map(function (p) { return p.zy; }).concat(0));
-
-    clear(svg);
-    drawChart(svg, {
-      points: points, std: std,
-      rawX: rawX, rawY: rawY, stdX: stdX, stdY: stdY,
-    });
+    attachEvents();
+    redrawAll();
+    state.built = true;
   }
 
-  function cell(label, value) {
-    return '<div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+  // ---------- 启动 ----------
+  function tryBuild() {
+    if (document.getElementById('zscorePage')) buildUI();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryBuild);
+  } else {
+    tryBuild();
   }
 
-  function textNode(x, y, str, cls) {
-    const t = svgEl('text', { x: x, y: y, 'text-anchor': 'middle', class: cls });
-    t.textContent = str;
-    return t;
-  }
-
-  function drawChart(svg, ctx) {
-    const t = translations[lang];
-    const points = ctx.points;
-    const std = ctx.std;
-
-    svg.appendChild(svgEl('rect', {
-      x: M.left, y: M.top,
-      width: W - M.left - M.right,
-      height: H - M.top - M.bottom,
-      fill: '#fbfdfe', stroke: '#e4e9ee',
-    }));
-
-    const sxScale = makeScale(ctx.stdX, [M.left, W - M.right]);
-    const syScale = makeScale(ctx.stdY, [H - M.bottom, M.top]);
-
-    if (state.grid) {
-      const gx = ticks(ctx.stdX[0], ctx.stdX[1], 7);
-      const gy = ticks(ctx.stdY[0], ctx.stdY[1], 7);
-      for (let i = 0; i < gx.length; i++) {
-        const x = sxScale(gx[i]);
-        svg.appendChild(svgEl('line', { class: 'grid', x1: x, y1: M.top, x2: x, y2: H - M.bottom }));
-      }
-      for (let i = 0; i < gy.length; i++) {
-        const y = syScale(gy[i]);
-        svg.appendChild(svgEl('line', { class: 'grid', x1: M.left, y1: y, x2: W - M.right, y2: y }));
-      }
+  document.addEventListener('apstats:tool', e => {
+    if (e.detail !== 'zscore') return;
+    if (!state.built) buildUI();
+    else redrawAll();
+  });
+  document.addEventListener('apstats:language', () => {
+    if (state.built) {
+      buildUI();
     }
-
-    if (state.axes) {
-      const x0 = sxScale(0), y0 = syScale(0);
-      svg.appendChild(svgEl('line', { class: 'zero-resid-line', x1: x0, y1: M.top, x2: x0, y2: H - M.bottom }));
-      svg.appendChild(svgEl('line', { class: 'zero-resid-line', x1: M.left, y1: y0, x2: W - M.right, y2: y0 }));
-    }
-
-    if (state.raw) {
-      const rawXScale = makeScale(ctx.rawX, [M.left, W - M.right]);
-      const rawYScale = makeScale(ctx.rawY, [H - M.bottom, M.top]);
-      for (let i = 0; i < points.length; i++) {
-        const p = points[i];
-        const c = svgEl('circle', {
-          class: 'point',
-          cx: rawXScale(p.x), cy: rawYScale(p.y),
-          r: 7, fill: '#2878b8', 'fill-opacity': 0.18,
-          stroke: '#2878b8', 'stroke-opacity': 0.45,
-        });
-        c.appendChild(titleEl(
-          t.zscore_point + ' ' + (i + 1) + ' · ' + t.zscore_hover_raw +
-          ': (' + compact(p.x) + ', ' + compact(p.y) + ')'
-        ));
-        svg.appendChild(c);
-      }
-    }
-
-    if (state.std) {
-      for (let i = 0; i < std.length; i++) {
-        const p = std[i];
-        const c = svgEl('circle', {
-          class: 'point adjusted-point',
-          cx: sxScale(p.zx), cy: syScale(p.zy),
-          r: 5, fill: '#c17b23', stroke: '#fff', 'stroke-width': 1.5,
-        });
-        c.appendChild(titleEl(
-          t.zscore_point + ' ' + (i + 1) + ' · ' + t.zscore_hover_std +
-          ': (zₓ=' + compact(p.zx) + ', zᵧ=' + compact(p.zy) + ')'
-        ));
-        svg.appendChild(c);
-      }
-    }
-
-    svg.appendChild(svgEl('line', {
-      class: 'axis',
-      x1: M.left, y1: H - M.bottom, x2: W - M.right, y2: H - M.bottom,
-    }));
-    svg.appendChild(svgEl('line', {
-      class: 'axis',
-      x1: M.left, y1: M.top, x2: M.left, y2: H - M.bottom,
-    }));
-
-    const gx = ticks(ctx.stdX[0], ctx.stdX[1], 6);
-    const gy = ticks(ctx.stdY[0], ctx.stdY[1], 6);
-    for (let i = 0; i < gx.length; i++) {
-      const x = sxScale(gx[i]);
-      svg.appendChild(svgEl('line', { class: 'tickmark', x1: x, y1: H - M.bottom, x2: x, y2: H - M.bottom + 5 }));
-      const tx = svgEl('text', { class: 'tick', x: x, y: H - M.bottom + 20, 'text-anchor': 'middle' });
-      tx.textContent = Number(gx[i].toFixed(2)).toString();
-      svg.appendChild(tx);
-    }
-    for (let i = 0; i < gy.length; i++) {
-      const y = syScale(gy[i]);
-      svg.appendChild(svgEl('line', { class: 'tickmark', x1: M.left - 5, y1: y, x2: M.left, y2: y }));
-      const ty = svgEl('text', { class: 'tick', x: M.left - 10, y: y + 4, 'text-anchor': 'end' });
-      ty.textContent = Number(gy[i].toFixed(2)).toString();
-      svg.appendChild(ty);
-    }
-
-    const xLab = svgEl('text', {
-      class: 'axis-label',
-      x: (M.left + W - M.right) / 2,
-      y: H - 16,
-      'text-anchor': 'middle',
-    });
-    xLab.textContent = 'z(' + displayVariableName(state.xKey) + ')';
-    svg.appendChild(xLab);
-
-    const yLab = svgEl('text', {
-      class: 'axis-label',
-      transform: 'translate(20 ' + ((M.top + H - M.bottom) / 2) + ') rotate(-90)',
-      'text-anchor': 'middle',
-    });
-    yLab.textContent = 'z(' + displayVariableName(state.yKey) + ')';
-    svg.appendChild(yLab);
-  }
-
-  /* ---------- 启动 ---------- */
-  function init() {
-    buildUI();
-    try {
-      const sheets = availableSheets();
-      if (!sheets.length) throw new Error('No sheets');
-      state.sheet = sheets[0].key;
-      const keys = numericKeys(sheets[0].rows);
-      state.xKey = keys[0];
-      state.yKey = keys[1] || keys[0];
-      state.loaded = true;
-    } catch (e) {
-      state.error = true;
-    }
-    if (state.loaded) syncSheets();
-    render();
-    document.addEventListener('apstats:tool', function (e) { if (e.detail === 'zscore') render(); });
-    document.addEventListener('apstats:language', function () { syncSheets(); render(); });
-  }
-
-  init();
+  });
 })();
