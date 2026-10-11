@@ -309,3 +309,8 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .cat-legend.span-2 { grid-column:1 / -1; }
 .cat-chart .ogive-line { stroke:var(--cat-2); stroke-width:2.5; }
 .cat-chart .ogive-dot { fill:var(--cat-2); }
+.manual-grid .grid-addcol-cell { background:transparent; border:0; padding:0 6px; }
+.manual-grid #gridAddCol { height:28px; padding:0 10px; border:1px dashed #c9d2da; border-radius:5px; background:#fff; color:var(--blue); font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+.manual-grid #gridAddCol:hover { border-color:var(--blue); background:#f4f9fd; }
+.manual-grid .grid-delcol { margin-left:4px; border:0; border-radius:3px; padding:0 5px; background:transparent; color:#9aa5af; font:inherit; cursor:pointer; }
+.manual-grid .grid-delcol:hover { background:#fdf3f2; color:#c73932; }

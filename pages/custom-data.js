@@ -22,6 +22,12 @@
     custom_quant: '定量', custom_cat: '分类',
     custom_col1: '第一列', custom_col2: '第二列（可选）',
     custom_apply: '应用', custom_clear: '清空',
+    custom_addcol: '＋ 加一列', custom_delcol: '删除这一列',
+    custom_coln: '第 {n} 列',
+    custom_multi: '多列对比',
+    custom_multi_note: '选了 3 列或更多，这时只画并排箱线图 —— 多个变量放在同一条数轴上比，中心、离散程度和离群点一眼可比。',
+    custom_multi_skip: '已跳过 {n} 个非定量的列（并排箱线图只能比定量数据）。',
+    custom_multi_need: '至少需要 2 个定量的列才能做并排箱线图。',
     custom_report: '解析结果', custom_rows: '行', custom_cols: '列',
     custom_dropped: '丢弃 {n} 行（有空值或非数值）',
     custom_vars: '变量设置', custom_preview: '取值预览',
@@ -64,6 +70,12 @@
     custom_quant: 'Quantitative', custom_cat: 'Categorical',
     custom_col1: 'Column 1', custom_col2: 'Column 2 (optional)',
     custom_apply: 'Apply', custom_clear: 'Clear',
+    custom_addcol: '+ Add column', custom_delcol: 'Remove this column',
+    custom_coln: 'Column {n}',
+    custom_multi: 'Comparing several columns',
+    custom_multi_note: 'With 3 or more columns the page draws side-by-side boxplots only — putting the variables on one axis makes centers, spreads and outliers directly comparable.',
+    custom_multi_skip: '{n} non-quantitative column(s) skipped (side-by-side boxplots need quantitative data).',
+    custom_multi_need: 'At least 2 quantitative columns are needed for side-by-side boxplots.',
     custom_report: 'Parsed', custom_rows: 'rows', custom_cols: 'columns',
     custom_dropped: '{n} row(s) dropped (blank or non-numeric)',
     custom_vars: 'Variables', custom_preview: 'Sample values',
@@ -256,21 +268,38 @@
 
   /* ---------- 手动输入网格 ---------- */
   const GRID_ROWS = 14;
+  const MAX_COLS = 8;
+  let gridCols = 2;                                  // 手动输入网格当前有几列
+
   function buildGrid(rows = GRID_ROWS) {
     const t = T();
     const typeSel = j => `<select class="grid-type" data-j="${j}">` +
       `<option value="quant">${escapeHtml(t.custom_quant)}</option>` +
       `<option value="cat">${escapeHtml(t.custom_cat)}</option></select>`;
-    let html = `<thead><tr><th></th><th>${escapeHtml(t.custom_col1)}</th><th>${escapeHtml(t.custom_col2)}</th></tr></thead><tbody>`;
-    html += `<tr><th>${escapeHtml(t.custom_type)}</th><td>${typeSel(0)}</td><td>${typeSel(1)}</td></tr>`;
+    const head = j => j === 0 ? t.custom_col1 : j === 1 ? t.custom_col2 : t.custom_coln.replace('{n}', j + 1);
+    const cols = [...Array(gridCols).keys()];
+    let html = `<thead><tr><th></th>` + cols.map(j =>
+        `<th>${escapeHtml(head(j))}` +
+        (j >= 2 ? ` <button type="button" class="grid-delcol" data-j="${j}" title="${escapeHtml(t.custom_delcol)}">×</button>` : '') +
+        `</th>`).join('') +
+      (gridCols < MAX_COLS ? `<th class="grid-addcol-cell"><button type="button" id="gridAddCol">${escapeHtml(t.custom_addcol)}</button></th>` : '') +
+      `</tr></thead><tbody>`;
+    html += `<tr><th>${escapeHtml(t.custom_type)}</th>` + cols.map(j => `<td>${typeSel(j)}</td>`).join('') + `<td></td></tr>`;
     html += `<tr><th>${escapeHtml(t.custom_varname)}</th>` +
-            `<td><input class="grid-name" data-j="0" type="text"></td>` +
-            `<td><input class="grid-name" data-j="1" type="text"></td></tr>`;
+            cols.map(j => `<td><input class="grid-name" data-j="${j}" type="text"></td>`).join('') + `<td></td></tr>`;
     for (let i = 0; i < rows; i++)
       html += `<tr><th class="grid-rownum">${i + 1}</th>` +
-              `<td><input class="grid-cell" data-i="${i}" data-j="0" type="text"></td>` +
-              `<td><input class="grid-cell" data-i="${i}" data-j="1" type="text"></td></tr>`;
+              cols.map(j => `<td><input class="grid-cell" data-i="${i}" data-j="${j}" type="text"></td>`).join('') +
+              `<td></td></tr>`;
     $('customGrid').innerHTML = html + '</tbody>';
+    const add = $('gridAddCol');
+    if (add) add.addEventListener('click', () => { const keep = readGrid(); gridCols++; buildGrid(); writeGrid(keep); });
+    $('customGrid').querySelectorAll('.grid-delcol').forEach(b =>
+      b.addEventListener('click', () => {
+        const j = Number(b.dataset.j), keep = readGrid();
+        keep.names.splice(j, 1); keep.types.splice(j, 1); keep.cells.forEach(r => r.splice(j, 1));
+        gridCols--; buildGrid(); writeGrid(keep);
+      }));
     $('customGrid').querySelectorAll('.grid-cell').forEach(el => {
       el.addEventListener('paste', onGridPaste);
       el.addEventListener('input', () => {             // 填到最后一行就再加几行
@@ -279,14 +308,32 @@
     });
   }
   const gridRowCount = () => $('customGrid').querySelectorAll('.grid-rownum').length;
+  /* 加列、删列都要重建整个表格，所以先把已填的内容读出来、建完再写回去 */
+  function readGrid() {
+    const names = [...$('customGrid').querySelectorAll('.grid-name')].map(e => e.value);
+    const types = [...$('customGrid').querySelectorAll('.grid-type')].map(e => e.value);
+    const n = gridRowCount(), cells = [];
+    for (let i = 0; i < n; i++) cells.push([...Array(names.length).keys()].map(j =>
+      $('customGrid').querySelector(`.grid-cell[data-i="${i}"][data-j="${j}"]`)?.value ?? ''));
+    return { names, types, cells };
+  }
+  function writeGrid(k) {
+    if (k.cells.length > gridRowCount()) addGridRows(k.cells.length - gridRowCount());
+    $('customGrid').querySelectorAll('.grid-name').forEach((e, j) => { if (k.names[j] !== undefined) e.value = k.names[j]; });
+    $('customGrid').querySelectorAll('.grid-type').forEach((e, j) => { if (k.types[j] !== undefined) e.value = k.types[j]; });
+    k.cells.forEach((row, i) => row.forEach((v, j) => {
+      const c = $('customGrid').querySelector(`.grid-cell[data-i="${i}"][data-j="${j}"]`);
+      if (c) c.value = v;
+    }));
+  }
   function addGridRows(k) {
     const tbody = $('customGrid').querySelector('tbody');
     const start = gridRowCount();
     for (let i = start; i < start + k; i++) {
       const tr = document.createElement('tr');
       tr.innerHTML = `<th class="grid-rownum">${i + 1}</th>` +
-        `<td><input class="grid-cell" data-i="${i}" data-j="0" type="text"></td>` +
-        `<td><input class="grid-cell" data-i="${i}" data-j="1" type="text"></td>`;
+        [...Array(gridCols).keys()].map(j => `<td><input class="grid-cell" data-i="${i}" data-j="${j}" type="text"></td>`).join('') +
+        `<td></td>`;
       tbody.appendChild(tr);
       tr.querySelectorAll('.grid-cell').forEach(el => {
         el.addEventListener('paste', onGridPaste);
@@ -312,19 +359,20 @@
     const names = [...$('customGrid').querySelectorAll('.grid-name')].map(el => el.value.trim());
     const types = [...$('customGrid').querySelectorAll('.grid-type')].map(el => el.value);
     const n = gridRowCount();
-    const colVals = [[], []];
+    const colVals = [...Array(gridCols).keys()].map(() => []);
     for (let i = 0; i < n; i++)
-      for (let j = 0; j < 2; j++)
-        colVals[j].push($('customGrid').querySelector(`.grid-cell[data-i="${i}"][data-j="${j}"]`).value.trim());
-    // 去掉两列都空的尾行
+      for (let j = 0; j < gridCols; j++)
+        colVals[j].push(($('customGrid').querySelector(`.grid-cell[data-i="${i}"][data-j="${j}"]`)?.value ?? '').trim());
+    // 去掉所有列都空的尾行
     let last = -1;
-    for (let i = 0; i < n; i++) if (colVals[0][i] !== '' || colVals[1][i] !== '') last = i;
+    for (let i = 0; i < n; i++) if (colVals.some(c => c[i] !== '')) last = i;
     if (last < 0) { alert(t.custom_empty_col); return; }
     const columns = [];
-    for (let j = 0; j < 2; j++) {
+    for (let j = 0; j < gridCols; j++) {
       const vals = colVals[j].slice(0, last + 1);
       if (!vals.some(v => v !== '')) continue;
-      columns.push({ name: names[j] || (j === 0 ? t.custom_col1 : t.custom_col2), type: types[j], values: vals });
+      const fallback = j === 0 ? t.custom_col1 : j === 1 ? t.custom_col2 : t.custom_coln.replace('{n}', j + 1);
+      columns.push({ name: names[j] || fallback, type: types[j], values: vals });
     }
     if (!columns.length) { alert(t.custom_empty_col); return; }
     setWork({ name: columns[0].name, columns, n: last + 1, truncated: false });
@@ -447,9 +495,15 @@
       }));
   }
 
+  const multiMode = () => work.columns.length >= 3;
+
   function renderPicker() {
     const t = T();
     const idx = work.columns.map((_, i) => i);
+    if (multiMode()) {                               // 3 列以上：不再选变量，直接并排比
+      $('customPick').hidden = true;
+      return;
+    }
     $('customPick').hidden = false;
     $('customPick').innerHTML =
       `<label><span>${escapeHtml(t.custom_show1)}</span><select id="customV1"></select></label>` +
@@ -484,6 +538,7 @@
 
   function renderCharts() {
     const t = T();
+    if (multiMode()) { renderMultiBox(); return; }
     const rows = cleanPairs();
     const q = quantIndex(), c = catIndex();
     $('customBinWrap').hidden = q < 0;
@@ -587,6 +642,45 @@
     $('customCharts').innerHTML = html;
   }
 
+  /* 3 列及以上：只画并排箱线图。每一列单独清洗（不做成对删除）——
+     各列长度本来就可以不一样，强行配对会白白丢数据。 */
+  function renderMultiBox() {
+    const t = T();
+    $('customBinWrap').hidden = true;
+    const groups = [], skipped = [];
+    for (const c of work.columns) {
+      if (c.type !== 'quant') { skipped.push(c.name); continue; }
+      const v = c.values.map(Number).filter(Number.isFinite);
+      if (v.length >= 2) groups.push({ label: c.name, values: v });
+    }
+    if (groups.length < 2) {
+      $('customStats').innerHTML = '';
+      $('customCharts').innerHTML = `<p class="hint">${escapeHtml(t.custom_multi_need)}</p>`;
+      return;
+    }
+    $('customStats').innerHTML = multiStats(groups);
+    const h = 90 + groups.length * 70;
+    $('customCharts').innerHTML = panel(t.custom_multi,
+      `<svg class="cat-chart" viewBox="0 0 1120 ${h}" role="img">` +
+      Charts.boxGroups({ groups, xLabel: '', geom: { W: 1120, H: h, yLabelDx: 8 } }) + `</svg>`,
+      t.custom_multi_note + (skipped.length ? '　' + t.custom_multi_skip.replace('{n}', skipped.length) : ''),
+      true);
+  }
+  function multiStats(groups) {
+    const t = T();
+    const cols = ['custom_n','custom_mean','custom_median','custom_sd','custom_min','custom_q1','custom_q3','custom_max','custom_iqr','custom_range'];
+    const head = cols.map(c => `<th>${escapeHtml(t[c])}</th>`).join('');
+    const body = groups.map((g, i) => {
+      const f = fiveNumber(g.values), ms = meanSd(g.values);
+      const n = x => Number.isFinite(x) ? x.toFixed(1) : '—';
+      return `<tr><th><span class="swatch" style="background:${Charts.colorOf(i)}"></span>${escapeHtml(g.label)}</th>` +
+        `<td>${f.n}</td><td>${n(ms.mean)}</td><td>${n(f.median)}</td><td>${n(ms.sd)}</td>` +
+        `<td>${n(f.min)}</td><td>${n(f.q1)}</td><td>${n(f.q3)}</td><td>${n(f.max)}</td><td>${n(f.iqr)}</td><td>${n(f.max - f.min)}</td></tr>`;
+    }).join('');
+    return `<div class="freq-table-wrap"><table class="freq-table"><thead><tr>` +
+      `<th class="corner">${escapeHtml(t.custom_varname)}</th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+
   /* ---------- 表格 ---------- */
   function legendHtml(labels) {
     return `<div class="cat-legend span-2">` + labels.map((l, i) =>
@@ -649,5 +743,10 @@
   buildUI();
   render();
   document.addEventListener('apstats:tool', e => { if (e.detail === 'custom') render(); });
-  document.addEventListener('apstats:language', () => { buildSrcSwitch(); render(); });
+  document.addEventListener('apstats:language', () => {
+    buildSrcSwitch();
+    const keep = readGrid();          // 网格里的表头文字要跟着语言走，重建前先存内容
+    buildGrid(); writeGrid(keep);
+    render();
+  });
 })();
