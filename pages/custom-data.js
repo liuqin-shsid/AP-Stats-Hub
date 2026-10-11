@@ -58,6 +58,12 @@
     custom_b2b_need2: '背靠背茎叶图需要分组变量恰好有 2 个类别，当前有 {n} 个。',
     custom_stem_label: '茎',
     custom_clear_all: '清除当前数据',
+    custom_sample: '载入示例数据',
+    custom_sample_name: '各季度航班延误时长（示例）',
+    custom_sample_note: '虚构的示例数据，用来演示多列并排箱线图：某机场四个季度各抽查 15 个航班的延误小时数。',
+    custom_q1: '第一季度', custom_q2: '第二季度', custom_q3: '第三季度', custom_q4: '第四季度',
+    custom_pushed: '已填入上方表格，可以直接改',
+    custom_too_big_grid: '这组数据有 {n} 行，太多了没填进上方表格（表格最多 {m} 行）。图表照常显示。',
   });
   Object.assign(translations.en, {
     custom_title: 'Your Own Data',
@@ -106,6 +112,12 @@
     custom_b2b_need2: 'A back-to-back stem-and-leaf needs exactly 2 groups; this variable has {n}.',
     custom_stem_label: 'Stem',
     custom_clear_all: 'Clear current data',
+    custom_sample: 'Load sample data',
+    custom_sample_name: 'Flight delay hours by quarter (sample)',
+    custom_sample_note: 'Made-up sample data for trying out side-by-side boxplots: delay in hours for 15 sampled flights in each quarter at one airport.',
+    custom_q1: 'Q1', custom_q2: 'Q2', custom_q3: 'Q3', custom_q4: 'Q4',
+    custom_pushed: 'Loaded into the table above — edit it freely',
+    custom_too_big_grid: 'This dataset has {n} rows, too many for the table above (limit {m}). The charts still work.',
   });
 
   /* work = { name, columns:[{name, type:'quant'|'cat', values:[]}], n } */
@@ -177,10 +189,53 @@
   function setWork(w, sheetName) {
     if (!w.columns.length) { alert(T().custom_empty_col); return; }
     work = w;
+    work.pushedToGrid = pushToGrid(w);            // 填回表格，载入后还能接着改
     state.v1 = 0; state.v2 = -1; state.binW = null; state.basis = 'count'; state.rel = false;
     state.sheet = sheetName || '';
     persistWork();
     render();
+  }
+
+  /* 把一组数据填回上方的手动输入表格，这样载入之后还能接着改。
+     行数太多就不填 —— 几百行会生成上千个输入框，页面会卡。 */
+  const GRID_PUSH_MAX = 300;
+  function pushToGrid(w) {
+    if (w.n > GRID_PUSH_MAX) return false;
+    gridCols = Math.min(Math.max(2, w.columns.length), MAX_COLS);
+    buildGrid(Math.max(GRID_ROWS, w.n + 2));
+    const names = $('customGrid').querySelectorAll('.grid-name');
+    const types = $('customGrid').querySelectorAll('.grid-type');
+    w.columns.slice(0, gridCols).forEach((c, j) => {
+      if (names[j]) names[j].value = c.name;
+      if (types[j]) types[j].value = c.type;
+      c.values.forEach((v, i) => {
+        const cell = $('customGrid').querySelector(`.grid-cell[data-i="${i}"][data-j="${j}"]`);
+        if (cell) cell.value = v === null || v === undefined ? '' : String(v);
+      });
+    });
+    return true;
+  }
+
+  /* ---------- 示例数据 ---------- */
+  /* 虚构数据，只用于演示多列并排箱线图。冬夏两季延误更久也更分散，
+     每季都右偏并带少数长尾 —— 与真实航班延误的形状一致。 */
+  const SAMPLE_FLIGHT = [
+    [0.3, 0.5, 0.8, 1.2, 0.4, 2.1, 0.6, 1.5, 0.9, 3.4, 0.7, 1.1, 0.5, 2.8, 1.3],
+    [0.2, 0.4, 0.3, 0.7, 0.5, 0.9, 0.3, 1.1, 0.6, 0.4, 0.8, 0.5, 1.4, 0.3, 0.6],
+    [0.4, 1.0, 0.7, 2.3, 1.6, 0.9, 3.1, 1.2, 0.6, 4.5, 1.8, 0.8, 1.4, 2.0, 1.1],
+    [0.3, 0.6, 1.0, 0.5, 1.7, 0.8, 0.4, 2.2, 0.9, 0.7, 1.3, 0.6, 1.9, 0.5, 1.0],
+  ];
+  function loadSample() {
+    const t = T();
+    const names = [t.custom_q1, t.custom_q2, t.custom_q3, t.custom_q4];
+    state.src = 'manual';
+    state.sheetNames = [];
+    setWork({
+      name: t.custom_sample_name,
+      note: t.custom_sample_note,
+      columns: SAMPLE_FLIGHT.map((v, j) => ({ name: names[j], type: 'quant', values: v.map(x => x.toFixed(1)) })),
+      n: SAMPLE_FLIGHT[0].length, truncated: false, footnotes: 0,
+    });
   }
 
   /* ---------- 存储 ---------- */
@@ -442,13 +497,18 @@
         list.map((x, i) => `<option value="${i}">${escapeHtml(x.name)}　(${x.at})</option>`).join('') + `</select></label>` +
         `<button id="customLoad" type="button" class="secondary-button">${escapeHtml(t.custom_load)}</button>` +
         `<button id="customDel" type="button" class="secondary-button">${escapeHtml(t.custom_delete)}</button>` : '') +
+      `<button id="customSample" type="button" class="secondary-button">${escapeHtml(t.custom_sample)}</button>` +
       (work ? `<button id="customClearAll" type="button" class="secondary-button">${escapeHtml(t.custom_clear_all)}</button>` : '');
+    $('customSample').addEventListener('click', loadSample);
     $('customSave').addEventListener('click', saveCurrent);
     const ld = $('customLoad');
     if (ld) {
       ld.addEventListener('click', () => {
         const e = savedList()[Number($('customSaved').value)];
-        if (e) { state.sheetNames = []; setWork(JSON.parse(JSON.stringify(e.data))); }
+        if (!e) return;
+        state.sheetNames = [];
+        state.src = 'manual';                     // 推回表格后切到手动输入，方便接着改
+        setWork(JSON.parse(JSON.stringify(e.data)));
       });
       $('customDel').addEventListener('click', () => {
         const list2 = savedList(); const i = Number($('customSaved').value);
@@ -467,9 +527,12 @@
     const t = T();
     const kept = cleanPairs().length, dropped = work.n - kept;
     $('customReport').innerHTML =
+      (work.note ? `<p class="hint">${escapeHtml(work.note)}</p>` : '') +
       `<p class="hint">${escapeHtml(t.custom_report)}：<strong>${work.n}</strong> ${escapeHtml(t.custom_rows)} × ` +
       `<strong>${work.columns.length}</strong> ${escapeHtml(t.custom_cols)}` +
       (dropped ? `　·　${escapeHtml(t.custom_dropped.replace('{n}', dropped))}` : '') +
+      (work.pushedToGrid ? `　·　${escapeHtml(t.custom_pushed)}` : '') +
+      (work.pushedToGrid === false ? `　·　${escapeHtml(t.custom_too_big_grid.replace('{n}', work.n).replace('{m}', GRID_PUSH_MAX))}` : '') +
       (work.footnotes ? `　·　${escapeHtml(t.custom_footnote.replace('{n}', work.footnotes))}` : '') +
       (work.truncated ? `　·　${escapeHtml(t.custom_too_many.replace('{n}', MAX_ROWS))}` : '') + `</p>`;
   }

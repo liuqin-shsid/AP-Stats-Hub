@@ -29,4 +29,23 @@ module.exports = [
     displays: ['hist', 'ogive', 'box'],
     pick: r => num(r['Average Monthly Spend']),
   },
+  {
+    id: 'derby',
+    file: 'data/source/Ch04_Kentucky_Derby_2007.xls',
+    name: { zh: '肯塔基赛马获胜时间', en: 'Kentucky Derby Winning Times' },
+    note: { zh: '教材 Ch4 · 1875–2007 年历届冠军成绩。分布是双峰的——1896 年赛道距离由 1.5 英里改成 1.25 英里', en: 'Textbook Ch4 · winners 1875–2007. The distribution is bimodal — the race was shortened from 1.5 to 1.25 miles in 1896' },
+    variable: { zh: '获胜用时（秒）', en: 'Winning Time (seconds)' },
+    displays: ['hist', 'ogive', 'box'],
+    pick: r => num(r['time (sec)']),
+    label: r => r['Winner'],
+  },
+  {
+    id: 'horsepower',
+    file: 'data/source/Ch04_Horsepower.xls',
+    name: { zh: '汽车马力', en: 'Car Horsepower' },
+    note: { zh: '教材 Ch4 · 38 款车型', en: 'Textbook Ch4 · 38 car models' },
+    variable: { zh: '马力 (hp)', en: 'Horsepower (hp)' },
+    displays: ['hist', 'dot', 'stem', 'box'],
+    pick: r => num(r['Horsepower']),
+  },
 ];

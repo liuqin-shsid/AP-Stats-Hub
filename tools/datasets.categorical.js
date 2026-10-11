@@ -68,4 +68,20 @@ module.exports = [
       ]},
     ],
   },
+  {
+    id: 'weather',
+    file: 'data/source/Ch03_Weather_forecasts.xls',
+    name: { zh: '天气预报与实际天气', en: 'Forecast vs Actual Weather' },
+    note: { zh: '教材 Ch3 · 某地一年 365 天', en: 'Textbook Ch3 · 365 days at one location' },
+    columns: [
+      { key: 'Forecast', name: { zh: '预报', en: 'Forecast' }, levels: [
+        { v: 'Rain',    zh: '预报有雨', en: 'Rain' },
+        { v: 'No Rain', zh: '预报无雨', en: 'No Rain' },
+      ]},
+      { key: 'Actual Weather', name: { zh: '实际天气', en: 'Actual Weather' }, levels: [
+        { v: 'Rain',    zh: '实际下雨', en: 'Rain' },
+        { v: 'No Rain', zh: '实际没下', en: 'No Rain' },
+      ]},
+    ],
+  },
 ];
