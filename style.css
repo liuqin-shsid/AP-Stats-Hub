@@ -288,7 +288,8 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
    限个最大宽度，否则在宽屏上按 1000×610 的比例会高得离谱。 */
 .corr-charts { display:grid; gap:14px; max-width:900px; margin-top:18px; }
 /* 相关关系探究：残差图样式 */
-.zero-resid-line { stroke:#c73932; stroke-width:2.5; }
+/* 零线画成弱虚线：它只是个参照基准，不该比数据点更抢眼 */
+.zero-resid-line { stroke:#9aa5af; stroke-width:1.2; stroke-dasharray:6 5; }
 .resid-drop { stroke:#c73932; stroke-width:1.2; opacity:.5; }
 .resid-point { fill:#2878b8; stroke:#fff; stroke-width:1.5; }
 .resid-empty { fill:#64717d; font-size:20px; }
