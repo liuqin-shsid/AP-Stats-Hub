@@ -1,0 +1,653 @@
+/* 自定义数据 —— 用自己的数据画教材 Ch3–5 的那些图。
+   两种输入方式：选文件（Excel / CSV）或手动输入（两列，支持从 Excel 粘贴）。
+   绘图全部走 core/charts.js。
+
+   存储：
+     当前数据  sessionStorage —— 刷新还在，关掉标签页就没了，只有一份，传新的覆盖旧的
+     保存的数据 localStorage  —— 长期留着，可以多份，随时载入 */
+(() => {
+  const SKEY = 'apstats-custom-work';      // 当前数据（sessionStorage）
+  const LKEY = 'apstats-custom-saved';     // 已保存的数据（localStorage）
+  const MAX_ROWS = 5000;
+  const MAX_SAVE_BYTES = 1.5 * 1024 * 1024;
+
+  Object.assign(translations.zh, {
+    custom_title: '自定义数据',
+    custom_desc: '用你自己的数据画图。传一个 Excel / CSV，或者直接在下面手敲、从 Excel 粘贴。数据只在你这台电脑上，不会上传到任何地方。',
+    custom_src_file: '选文件', custom_src_manual: '手动输入',
+    custom_pick: '选择文件…', custom_sheet: '工作表',
+    custom_file_hint: '支持 .xlsx / .xls / .csv。默认第一行是表头。',
+    custom_manual_hint: '第一列必填，第二列可留空。点任意数据格，从 Excel 复制的内容可以直接粘贴进来，会自动铺开。',
+    custom_type: '类型', custom_varname: '变量名', custom_data: '数据',
+    custom_quant: '定量', custom_cat: '分类',
+    custom_col1: '第一列', custom_col2: '第二列（可选）',
+    custom_apply: '应用', custom_clear: '清空',
+    custom_report: '解析结果', custom_rows: '行', custom_cols: '列',
+    custom_dropped: '丢弃 {n} 行（有空值或非数值）',
+    custom_vars: '变量设置', custom_preview: '取值预览',
+    custom_show1: '展示变量一', custom_show2: '展示变量二', custom_none: '—（只看一个）',
+    custom_save: '保存这组数据', custom_saved_list: '已保存的数据',
+    custom_load: '载入', custom_delete: '删除',
+    custom_save_prompt: '给这组数据起个名字：',
+    custom_save_ok: '已保存：{n}', custom_save_dup: '已有同名数据，要覆盖吗？',
+    custom_save_big: '数据太大，存不下（浏览器约 5MB 上限）。建议减少行数后再保存。',
+    custom_no_data: '还没有数据。上面选个文件，或者切到「手动输入」自己敲。',
+    custom_empty_col: '第一列还没填数据。',
+    custom_too_many: '最多 {n} 行，多出来的已忽略。',
+    custom_footnote: '已去掉表格末尾 {n} 行（看起来是脚注，只有一格有内容）',
+    custom_both_quant: '两个都是定量变量。这一页只做教材 Ch3–5 的展示图，不含散点图——想看两个定量变量的关系，请用「相关关系探究」那一页。',
+    custom_binwidth: '组距', custom_bins: '组数',
+    custom_freq: '频数', custom_relfreq: '相对频数 (%)', custom_pct_axis: '百分比 (%)',
+    custom_count: '计数', custom_row_pct: '行百分比', custom_col_pct: '列百分比', custom_tot_pct: '总百分比',
+    custom_basis: '数值显示', custom_category: '类别', custom_total: '合计',
+    custom_n: '个数 n', custom_mean: '均值 x̄', custom_median: '中位数 M', custom_sd: '样本标准差 s',
+    custom_min: '最小值', custom_q1: 'Q₁', custom_q3: 'Q₃', custom_max: '最大值',
+    custom_range: '全距', custom_iqr: '四分位距 IQR',
+    chart_bar: '条形图', chart_pie: '饼图', chart_grouped: '并排条形图', chart_segmented: '分段条形图',
+    chart_hist: '直方图', chart_dot: '点图', chart_stem: '茎叶图', chart_ogive: '累积频率曲线（肩形图）',
+    chart_box: '箱线图', chart_boxes: '并排箱线图', chart_b2b: '背靠背茎叶图',
+    custom_stem_read: '读法：{k} | {d} 表示 {v}',
+    custom_stem_crowded: '提示：某一行的叶太多，形状已经读不出来了，这种规模改看直方图更合适。',
+    custom_stem_neg: '（已略去 {n} 个负值，茎叶图无法表示负数）',
+    custom_b2b_need2: '背靠背茎叶图需要分组变量恰好有 2 个类别，当前有 {n} 个。',
+    custom_stem_label: '茎',
+    custom_clear_all: '清除当前数据',
+  });
+  Object.assign(translations.en, {
+    custom_title: 'Your Own Data',
+    custom_desc: 'Make the Ch3–5 displays from your own data. Upload an Excel/CSV file, or type or paste values below. Everything stays on this computer — nothing is uploaded.',
+    custom_src_file: 'Choose a file', custom_src_manual: 'Type or paste',
+    custom_pick: 'Choose file…', custom_sheet: 'Sheet',
+    custom_file_hint: 'Accepts .xlsx / .xls / .csv. The first row is treated as the header.',
+    custom_manual_hint: 'The first column is required; the second is optional. Click any data cell and paste straight from Excel — it fills out automatically.',
+    custom_type: 'Type', custom_varname: 'Variable name', custom_data: 'Data',
+    custom_quant: 'Quantitative', custom_cat: 'Categorical',
+    custom_col1: 'Column 1', custom_col2: 'Column 2 (optional)',
+    custom_apply: 'Apply', custom_clear: 'Clear',
+    custom_report: 'Parsed', custom_rows: 'rows', custom_cols: 'columns',
+    custom_dropped: '{n} row(s) dropped (blank or non-numeric)',
+    custom_vars: 'Variables', custom_preview: 'Sample values',
+    custom_show1: 'Variable 1', custom_show2: 'Variable 2', custom_none: '— (one only)',
+    custom_save: 'Save this dataset', custom_saved_list: 'Saved datasets',
+    custom_load: 'Load', custom_delete: 'Delete',
+    custom_save_prompt: 'Name this dataset:',
+    custom_save_ok: 'Saved: {n}', custom_save_dup: 'A dataset with that name exists. Overwrite?',
+    custom_save_big: 'Too large to save (browsers allow about 5MB). Try fewer rows.',
+    custom_no_data: 'No data yet. Choose a file above, or switch to "Type or paste".',
+    custom_empty_col: 'Column 1 is still empty.',
+    custom_too_many: 'Only the first {n} rows are kept.',
+    custom_footnote: 'Removed {n} trailing row(s) that look like a footnote (only one cell filled)',
+    custom_both_quant: 'Both variables are quantitative. This page covers the Ch3–5 displays only and has no scatterplot — use the Correlation Explorer page for two quantitative variables.',
+    custom_binwidth: 'Bin width', custom_bins: 'Bins',
+    custom_freq: 'Count', custom_relfreq: 'Relative frequency (%)', custom_pct_axis: 'Percent (%)',
+    custom_count: 'Counts', custom_row_pct: 'Row %', custom_col_pct: 'Column %', custom_tot_pct: 'Table %',
+    custom_basis: 'Show as', custom_category: 'Category', custom_total: 'Total',
+    custom_n: 'Count n', custom_mean: 'Mean x̄', custom_median: 'Median M', custom_sd: 'Sample SD s',
+    custom_min: 'Min', custom_q1: 'Q₁', custom_q3: 'Q₃', custom_max: 'Max',
+    custom_range: 'Range', custom_iqr: 'IQR',
+    chart_bar: 'Bar chart', chart_pie: 'Pie chart', chart_grouped: 'Side-by-side bar', chart_segmented: 'Segmented bar',
+    chart_hist: 'Histogram', chart_dot: 'Dotplot', chart_stem: 'Stem-and-leaf', chart_ogive: 'Ogive (cumulative relative frequency)',
+    chart_box: 'Boxplot', chart_boxes: 'Side-by-side boxplots', chart_b2b: 'Back-to-back stem-and-leaf',
+    custom_stem_read: 'Read as: {k} | {d} means {v}',
+    custom_stem_crowded: 'Note: one line carries too many leaves to read the shape — use the histogram at this size.',
+    custom_stem_neg: '({n} negative value(s) omitted — stem-and-leaf cannot show them)',
+    custom_b2b_need2: 'A back-to-back stem-and-leaf needs exactly 2 groups; this variable has {n}.',
+    custom_stem_label: 'Stem',
+    custom_clear_all: 'Clear current data',
+  });
+
+  /* work = { name, columns:[{name, type:'quant'|'cat', values:[]}], n } */
+  let work = null;
+  let state = { src: 'file', v1: 0, v2: -1, basis: 'count', rel: false, binW: null, sheetNames: [], book: null };
+
+  const T = () => translations[lang];
+  const col = i => work.columns[i];
+  const twoVar = () => state.v2 >= 0 && state.v2 !== state.v1;
+  const typeOf = i => col(i).type;
+
+  /* ---------- 解析 ---------- */
+  const isNum = v => v !== null && v !== undefined && String(v).trim() !== '' && Number.isFinite(Number(v));
+
+  /* 自动判断类型：非数字一定是分类；数字但取值很少（如 1/2/3 的等级编码）也按分类。
+     无论怎么判，界面上都有下拉让你改 —— 这类判断不可能全对。 */
+  function guessType(values) {
+    const nonEmpty = values.filter(v => v !== null && v !== undefined && String(v).trim() !== '');
+    if (!nonEmpty.length) return 'cat';
+    if (!nonEmpty.every(isNum)) return 'cat';
+    return new Set(nonEmpty.map(Number)).size > 6 ? 'quant' : 'cat';
+  }
+
+  /* Excel 表格末尾常常跟着一两行脚注（「注：数据来源…」），它只占第一格。
+     不清掉的话，选那一列做分类变量时脚注会变成一个假类别。
+     只从末尾往回清，且只清「非空单元格不超过 1 个」的行，避免误伤正常数据。 */
+  function trimFootnotes(rows, ncol) {
+    if (ncol < 2) return { rows, trimmed: 0 };
+    let end = rows.length;
+    while (end > 0) {
+      const filled = rows[end - 1].filter(v => v !== null && v !== undefined && String(v).trim() !== '').length;
+      if (filled > 1) break;
+      end--;
+    }
+    return { rows: rows.slice(0, end), trimmed: rows.length - end };
+  }
+
+  function fromRows(name, header, rows) {
+    const cut = trimFootnotes(rows, header.length);
+    const trimmed = cut.rows.slice(0, MAX_ROWS);
+    const columns = header.map((h, j) => {
+      const values = trimmed.map(r => r[j]);
+      return { name: String(h ?? `列${j + 1}`).trim() || `列${j + 1}`, type: guessType(values), values };
+    }).filter(c => c.values.some(v => v !== null && v !== undefined && String(v).trim() !== ''));
+    return { name, columns, n: trimmed.length, truncated: cut.rows.length > MAX_ROWS, footnotes: cut.trimmed };
+  }
+
+  function readFile(file) {
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const book = XLSX.read(new Uint8Array(fr.result), { type: 'array' });
+        state.book = book;
+        state.sheetNames = book.SheetNames;
+        loadSheet(file.name.replace(/\.[^.]+$/, ''), book.SheetNames[0]);
+      } catch (e) {
+        alert('读取失败：' + e.message);
+      }
+    };
+    fr.onerror = () => alert('读取失败：' + fr.error);
+    fr.readAsArrayBuffer(file);
+  }
+  function loadSheet(baseName, sheetName) {
+    const aoa = XLSX.utils.sheet_to_json(state.book.Sheets[sheetName], { header: 1, defval: null, blankrows: false });
+    if (!aoa.length) { alert('这张工作表是空的。'); return; }
+    setWork(fromRows(baseName, aoa[0], aoa.slice(1)), sheetName);
+  }
+
+  function setWork(w, sheetName) {
+    if (!w.columns.length) { alert(T().custom_empty_col); return; }
+    work = w;
+    state.v1 = 0; state.v2 = -1; state.binW = null; state.basis = 'count'; state.rel = false;
+    state.sheet = sheetName || '';
+    persistWork();
+    render();
+  }
+
+  /* ---------- 存储 ---------- */
+  function persistWork() {
+    try { sessionStorage.setItem(SKEY, JSON.stringify(work)); } catch { /* 存不下就算了，不影响当前使用 */ }
+  }
+  function restoreWork() {
+    try { const s = sessionStorage.getItem(SKEY); if (s) work = JSON.parse(s); } catch { work = null; }
+  }
+  const savedList = () => { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch { return []; } };
+  function writeSaved(list) {
+    const json = JSON.stringify(list);
+    if (json.length > MAX_SAVE_BYTES) { alert(T().custom_save_big); return false; }
+    try { localStorage.setItem(LKEY, json); return true; }
+    catch { alert(T().custom_save_big); return false; }
+  }
+  function saveCurrent() {
+    if (!work) return;
+    const name = prompt(T().custom_save_prompt, work.name || '');
+    if (!name) return;
+    const list = savedList();
+    const i = list.findIndex(x => x.name === name);
+    if (i >= 0 && !confirm(T().custom_save_dup)) return;
+    const entry = { name, at: new Date().toISOString().slice(0, 10), data: { ...work, name } };
+    if (i >= 0) list[i] = entry; else list.push(entry);
+    if (writeSaved(list)) { render(); alert(T().custom_save_ok.replace('{n}', name)); }
+  }
+
+  /* ---------- 界面 ---------- */
+  function buildUI() {
+    const t = T();
+    $('customPage').innerHTML = `
+      <div class="page-heading"><div>
+        <h1 data-i18n="custom_title">${escapeHtml(t.custom_title)}</h1>
+        <p data-i18n="custom_desc">${escapeHtml(t.custom_desc)}</p>
+      </div></div>
+      <div id="customSrcSwitch" class="chart-switch"></div>
+      <section id="customFilePanel" class="controls">
+        <label><span data-i18n="custom_pick">${escapeHtml(t.custom_pick)}</span>
+          <input id="customFile" type="file" accept=".xlsx,.xls,.csv"></label>
+        <label id="customSheetWrap" hidden><span data-i18n="custom_sheet">${escapeHtml(t.custom_sheet)}</span>
+          <select id="customSheet"></select></label>
+      </section>
+      <section id="customManualPanel" hidden>
+        <div class="manual-grid-wrap"><table id="customGrid" class="manual-grid"></table></div>
+        <div class="chart-switch">
+          <button id="customApply" type="button" class="reset">${escapeHtml(t.custom_apply)}</button>
+          <button id="customClearGrid" type="button">${escapeHtml(t.custom_clear)}</button>
+        </div>
+      </section>
+      <p id="customSrcHint" class="hint"></p>
+      <section id="customStore" class="controls"></section>
+      <div id="customReport"></div>
+      <div id="customVars"></div>
+      <section id="customPick" class="controls" hidden></section>
+      <section id="customBinWrap" class="bin-control" hidden>
+        <label for="customBin" data-i18n="custom_binwidth">${escapeHtml(t.custom_binwidth)}</label>
+        <input id="customBin" type="range" min="0" max="1" step="1" value="0">
+        <output id="customBinOut"></output>
+      </section>
+      <div id="customStats"></div>
+      <div id="customCharts" class="chart-pair"></div>`;
+
+    $('customFile').addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); });
+    $('customSheet').addEventListener('change', e => loadSheet(work ? work.name : 'data', e.target.value));
+    $('customApply').addEventListener('click', applyGrid);
+    $('customClearGrid').addEventListener('click', () => { buildGrid(); });
+    $('customBin').addEventListener('input', e => {
+      const v = quantValues(quantIndex());
+      const r = Math.max(...v) - Math.min(...v);
+      state.binW = Charts.binChoices(r)[Number(e.target.value)];
+      render();
+    });
+    buildSrcSwitch();
+    buildGrid();
+  }
+
+  function buildSrcSwitch() {
+    const t = T();
+    $('customSrcSwitch').innerHTML = [['file', t.custom_src_file], ['manual', t.custom_src_manual]]
+      .map(([k, l]) => `<button type="button" data-src="${k}" aria-pressed="${state.src === k}">${escapeHtml(l)}</button>`).join('');
+    $('customSrcSwitch').querySelectorAll('[data-src]').forEach(b =>
+      b.addEventListener('click', () => { state.src = b.dataset.src; render(); }));
+  }
+
+  /* ---------- 手动输入网格 ---------- */
+  const GRID_ROWS = 14;
+  function buildGrid(rows = GRID_ROWS) {
+    const t = T();
+    const typeSel = j => `<select class="grid-type" data-j="${j}">` +
+      `<option value="quant">${escapeHtml(t.custom_quant)}</option>` +
+      `<option value="cat">${escapeHtml(t.custom_cat)}</option></select>`;
+    let html = `<thead><tr><th></th><th>${escapeHtml(t.custom_col1)}</th><th>${escapeHtml(t.custom_col2)}</th></tr></thead><tbody>`;
+    html += `<tr><th>${escapeHtml(t.custom_type)}</th><td>${typeSel(0)}</td><td>${typeSel(1)}</td></tr>`;
+    html += `<tr><th>${escapeHtml(t.custom_varname)}</th>` +
+            `<td><input class="grid-name" data-j="0" type="text"></td>` +
+            `<td><input class="grid-name" data-j="1" type="text"></td></tr>`;
+    for (let i = 0; i < rows; i++)
+      html += `<tr><th class="grid-rownum">${i + 1}</th>` +
+              `<td><input class="grid-cell" data-i="${i}" data-j="0" type="text"></td>` +
+              `<td><input class="grid-cell" data-i="${i}" data-j="1" type="text"></td></tr>`;
+    $('customGrid').innerHTML = html + '</tbody>';
+    $('customGrid').querySelectorAll('.grid-cell').forEach(el => {
+      el.addEventListener('paste', onGridPaste);
+      el.addEventListener('input', () => {             // 填到最后一行就再加几行
+        if (Number(el.dataset.i) >= gridRowCount() - 2) addGridRows(6);
+      });
+    });
+  }
+  const gridRowCount = () => $('customGrid').querySelectorAll('.grid-rownum').length;
+  function addGridRows(k) {
+    const tbody = $('customGrid').querySelector('tbody');
+    const start = gridRowCount();
+    for (let i = start; i < start + k; i++) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<th class="grid-rownum">${i + 1}</th>` +
+        `<td><input class="grid-cell" data-i="${i}" data-j="0" type="text"></td>` +
+        `<td><input class="grid-cell" data-i="${i}" data-j="1" type="text"></td>`;
+      tbody.appendChild(tr);
+      tr.querySelectorAll('.grid-cell').forEach(el => {
+        el.addEventListener('paste', onGridPaste);
+        el.addEventListener('input', () => { if (Number(el.dataset.i) >= gridRowCount() - 2) addGridRows(6); });
+      });
+    }
+  }
+  /* 从 Excel 复制来的是「制表符分列、换行分行」的文本，从落点开始铺开 */
+  function onGridPaste(e) {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!text || !/[\t\n]/.test(text)) return;       // 单个值就让浏览器自己处理
+    e.preventDefault();
+    const i0 = Number(e.target.dataset.i), j0 = Number(e.target.dataset.j);
+    const grid = text.replace(/\r/g, '').replace(/\n+$/, '').split('\n').map(r => r.split('\t'));
+    if (i0 + grid.length > gridRowCount()) addGridRows(i0 + grid.length - gridRowCount() + 4);
+    grid.forEach((row, di) => row.forEach((val, dj) => {
+      const cell = $('customGrid').querySelector(`.grid-cell[data-i="${i0 + di}"][data-j="${j0 + dj}"]`);
+      if (cell) cell.value = val.trim();
+    }));
+  }
+  function applyGrid() {
+    const t = T();
+    const names = [...$('customGrid').querySelectorAll('.grid-name')].map(el => el.value.trim());
+    const types = [...$('customGrid').querySelectorAll('.grid-type')].map(el => el.value);
+    const n = gridRowCount();
+    const colVals = [[], []];
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < 2; j++)
+        colVals[j].push($('customGrid').querySelector(`.grid-cell[data-i="${i}"][data-j="${j}"]`).value.trim());
+    // 去掉两列都空的尾行
+    let last = -1;
+    for (let i = 0; i < n; i++) if (colVals[0][i] !== '' || colVals[1][i] !== '') last = i;
+    if (last < 0) { alert(t.custom_empty_col); return; }
+    const columns = [];
+    for (let j = 0; j < 2; j++) {
+      const vals = colVals[j].slice(0, last + 1);
+      if (!vals.some(v => v !== '')) continue;
+      columns.push({ name: names[j] || (j === 0 ? t.custom_col1 : t.custom_col2), type: types[j], values: vals });
+    }
+    if (!columns.length) { alert(t.custom_empty_col); return; }
+    setWork({ name: columns[0].name, columns, n: last + 1, truncated: false });
+  }
+
+  /* ---------- 取值 ---------- */
+  /* 画图前按所选变量成对清洗：任一所选变量缺失的整行都丢掉，保证配对关系正确 */
+  function cleanPairs() {
+    const idx = twoVar() ? [state.v1, state.v2] : [state.v1];
+    const keep = [];
+    for (let r = 0; r < work.n; r++) {
+      let ok = true;
+      for (const i of idx) {
+        const v = col(i).values[r];
+        if (v === null || v === undefined || String(v).trim() === '') { ok = false; break; }
+        if (col(i).type === 'quant' && !isNum(v)) { ok = false; break; }
+      }
+      if (ok) keep.push(r);
+    }
+    return keep;
+  }
+  const quantIndex = () => typeOf(state.v1) === 'quant' ? state.v1 : (twoVar() && typeOf(state.v2) === 'quant' ? state.v2 : -1);
+  const catIndex = () => typeOf(state.v1) === 'cat' ? state.v1 : (twoVar() && typeOf(state.v2) === 'cat' ? state.v2 : -1);
+  function quantValues(i, rowsIdx) {
+    const rows = rowsIdx || cleanPairs();
+    return rows.map(r => Number(col(i).values[r])).filter(Number.isFinite);
+  }
+  function levelsOf(i, rows) {
+    const seen = [];
+    for (const r of rows) { const v = String(col(i).values[r]); if (!seen.includes(v)) seen.push(v); }
+    return seen.sort((a, b) => {
+      const na = Number(a), nb = Number(b);
+      return Number.isFinite(na) && Number.isFinite(nb) ? na - nb : a.localeCompare(b, 'zh');
+    });
+  }
+
+  /* ---------- 渲染 ---------- */
+  function render() {
+    const t = T();
+    $('customSrcSwitch').querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.src === state.src)));
+    $('customFilePanel').hidden = state.src !== 'file';
+    $('customManualPanel').hidden = state.src !== 'manual';
+    $('customSrcHint').textContent = state.src === 'file' ? t.custom_file_hint : t.custom_manual_hint;
+    $('customSheetWrap').hidden = state.sheetNames.length < 2;
+    if (state.sheetNames.length > 1) setOptions($('customSheet'), state.sheetNames, state.sheet);
+
+    renderStore();
+
+    if (!work) {
+      $('customReport').innerHTML = `<p class="hint">${escapeHtml(t.custom_no_data)}</p>`;
+      $('customVars').innerHTML = ''; $('customPick').hidden = true;
+      $('customBinWrap').hidden = true; $('customStats').innerHTML = ''; $('customCharts').innerHTML = '';
+      return;
+    }
+    renderReport();
+    renderVarTable();
+    renderPicker();
+    renderCharts();
+  }
+
+  function renderStore() {
+    const t = T();
+    const list = savedList();
+    $('customStore').innerHTML =
+      `<button id="customSave" class="reset" type="button" ${work ? '' : 'disabled'}>${escapeHtml(t.custom_save)}</button>` +
+      (list.length ? `<label><span>${escapeHtml(t.custom_saved_list)}</span><select id="customSaved">` +
+        list.map((x, i) => `<option value="${i}">${escapeHtml(x.name)}　(${x.at})</option>`).join('') + `</select></label>` +
+        `<button id="customLoad" type="button" class="secondary-button">${escapeHtml(t.custom_load)}</button>` +
+        `<button id="customDel" type="button" class="secondary-button">${escapeHtml(t.custom_delete)}</button>` : '') +
+      (work ? `<button id="customClearAll" type="button" class="secondary-button">${escapeHtml(t.custom_clear_all)}</button>` : '');
+    $('customSave').addEventListener('click', saveCurrent);
+    const ld = $('customLoad');
+    if (ld) {
+      ld.addEventListener('click', () => {
+        const e = savedList()[Number($('customSaved').value)];
+        if (e) { state.sheetNames = []; setWork(JSON.parse(JSON.stringify(e.data))); }
+      });
+      $('customDel').addEventListener('click', () => {
+        const list2 = savedList(); const i = Number($('customSaved').value);
+        if (list2[i] && confirm(`${T().custom_delete}「${list2[i].name}」?`)) { list2.splice(i, 1); writeSaved(list2); render(); }
+      });
+    }
+    const ca = $('customClearAll');
+    if (ca) ca.addEventListener('click', () => {
+      work = null; state.sheetNames = []; state.book = null;
+      try { sessionStorage.removeItem(SKEY); } catch {}
+      render();
+    });
+  }
+
+  function renderReport() {
+    const t = T();
+    const kept = cleanPairs().length, dropped = work.n - kept;
+    $('customReport').innerHTML =
+      `<p class="hint">${escapeHtml(t.custom_report)}：<strong>${work.n}</strong> ${escapeHtml(t.custom_rows)} × ` +
+      `<strong>${work.columns.length}</strong> ${escapeHtml(t.custom_cols)}` +
+      (dropped ? `　·　${escapeHtml(t.custom_dropped.replace('{n}', dropped))}` : '') +
+      (work.footnotes ? `　·　${escapeHtml(t.custom_footnote.replace('{n}', work.footnotes))}` : '') +
+      (work.truncated ? `　·　${escapeHtml(t.custom_too_many.replace('{n}', MAX_ROWS))}` : '') + `</p>`;
+  }
+
+  function renderVarTable() {
+    const t = T();
+    const rows = work.columns.map((c, i) => {
+      const preview = c.values.filter(v => v !== null && String(v).trim() !== '').slice(0, 5).join('、');
+      return `<tr><th>${escapeHtml(c.name)}</th>` +
+        `<td><select class="var-type" data-i="${i}">` +
+        `<option value="quant"${c.type === 'quant' ? ' selected' : ''}>${escapeHtml(t.custom_quant)}</option>` +
+        `<option value="cat"${c.type === 'cat' ? ' selected' : ''}>${escapeHtml(t.custom_cat)}</option></select></td>` +
+        `<td class="var-preview">${escapeHtml(preview)}${c.values.length > 5 ? ' …' : ''}</td></tr>`;
+    }).join('');
+    $('customVars').innerHTML =
+      `<div class="freq-table-wrap"><p class="freq-caption">${escapeHtml(t.custom_vars)}</p>` +
+      `<table class="freq-table"><thead><tr><th class="corner">${escapeHtml(t.custom_varname)}</th>` +
+      `<th>${escapeHtml(t.custom_type)}</th><th>${escapeHtml(t.custom_preview)}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    $('customVars').querySelectorAll('.var-type').forEach(el =>
+      el.addEventListener('change', () => {
+        work.columns[Number(el.dataset.i)].type = el.value;
+        state.binW = null; persistWork(); render();
+      }));
+  }
+
+  function renderPicker() {
+    const t = T();
+    const idx = work.columns.map((_, i) => i);
+    $('customPick').hidden = false;
+    $('customPick').innerHTML =
+      `<label><span>${escapeHtml(t.custom_show1)}</span><select id="customV1"></select></label>` +
+      `<label><span>${escapeHtml(t.custom_show2)}</span><select id="customV2"></select></label>` +
+      (needBasis() ? `<label><span>${escapeHtml(t.custom_basis)}</span><select id="customBasis"></select></label>` : '');
+    setOptions($('customV1'), idx, state.v1, i => col(i).name);
+    setOptions($('customV2'), [-1, ...idx], state.v2, i => i < 0 ? t.custom_none : col(i).name);
+    $('customV1').value = String(state.v1);
+    $('customV2').value = String(state.v2);
+    $('customV1').addEventListener('change', e => { state.v1 = Number(e.target.value); state.binW = null; render(); });
+    $('customV2').addEventListener('change', e => { state.v2 = Number(e.target.value); state.binW = null; render(); });
+    const bs = $('customBasis');
+    if (bs) {
+      const opts = twoVar() && typeOf(state.v1) === 'cat' && typeOf(state.v2) === 'cat'
+        ? [['count', t.custom_count], ['row', t.custom_row_pct], ['col', t.custom_col_pct], ['total', t.custom_tot_pct]]
+        : [['count', t.custom_freq], ['rel', t.custom_relfreq]];
+      if (!opts.some(o => o[0] === state.basis)) state.basis = 'count';
+      bs.innerHTML = opts.map(([v, l]) => `<option value="${v}">${escapeHtml(l)}</option>`).join('');
+      bs.value = state.basis;
+      bs.addEventListener('change', e => { state.basis = e.target.value; render(); });
+    }
+  }
+  function needBasis() {
+    if (!twoVar()) return true;
+    return !(typeOf(state.v1) === 'quant' || typeOf(state.v2) === 'quant');
+  }
+
+  const panel = (title, inner, note, span) =>
+    `<section class="chart-panel${span ? ' span-2' : ''}"><h2>${escapeHtml(title)}</h2>${inner}` +
+    (note ? `<p class="panel-note">${escapeHtml(note)}</p>` : '') + `</section>`;
+  const svgOf = (body, h, w = Charts.DEF.W) => `<svg class="cat-chart" viewBox="0 0 ${w} ${h}" role="img">${body}</svg>`;
+
+  function renderCharts() {
+    const t = T();
+    const rows = cleanPairs();
+    const q = quantIndex(), c = catIndex();
+    $('customBinWrap').hidden = q < 0;
+    $('customStats').innerHTML = '';
+
+    // 「两个都是定量」是结构性情况，必须排在数据清洗之前判断 ——
+    // 否则把一个文字列误标成定量时，整表会被清空，先撞上「没数据」的分支。
+    if (twoVar() && typeOf(state.v1) === 'quant' && typeOf(state.v2) === 'quant') {
+      $('customCharts').innerHTML = `<p class="hint">${escapeHtml(t.custom_both_quant)}</p>`;
+      $('customBinWrap').hidden = true;
+      return;
+    }
+    if (!rows.length) {
+      $('customCharts').innerHTML = `<p class="hint">${escapeHtml(t.custom_empty_col)}</p>`;
+      $('customBinWrap').hidden = true;
+      return;
+    }
+
+    if (q >= 0) {                                   // 组距滑杆
+      const v = quantValues(q, rows);
+      const r = Math.max(...v) - Math.min(...v);
+      const choices = Charts.binChoices(r);
+      if (!choices.length) { $('customBinWrap').hidden = true; }
+      else {
+        if (state.binW === null || !choices.includes(state.binW)) state.binW = Charts.defaultBin(choices, r);
+        $('customBin').max = String(choices.length - 1);
+        $('customBin').value = String(choices.indexOf(state.binW));
+        const d = Charts.decimalsFor(state.binW);
+        $('customBinOut').textContent = `${state.binW.toFixed(d)}　(${t.custom_bins} ${Charts.histogram(v, state.binW).k})`;
+      }
+    }
+
+    // 只有分类变量
+    if (q < 0) { renderCategorical(rows); return; }
+    // 定量 + 分类
+    if (c >= 0) { renderGrouped(rows, q, c); return; }
+    // 只有一个定量
+    renderQuantitative(rows, q);
+  }
+
+  function renderCategorical(rows) {
+    const t = T();
+    if (!twoVar()) {
+      const lv = levelsOf(state.v1, rows);
+      const counts = lv.map(l => rows.filter(r => String(col(state.v1).values[r]) === l).length);
+      const n = Charts.sum(counts);
+      const asPct = state.basis === 'rel';
+      const vals = asPct ? counts.map(v => +Charts.pctOf(v, n).toFixed(1)) : counts;
+      $('customStats').innerHTML = freqTable(lv, counts, n);
+      $('customCharts').innerHTML =
+        panel(t.chart_bar, svgOf(Charts.bar({ values: vals, labels: lv, axisLabel: asPct ? t.custom_pct_axis : t.custom_freq, pct: asPct }), Charts.DEF.H)) +
+        panel(t.chart_pie, svgOf(Charts.pie({ values: counts, labels: lv }), Charts.DEF.H)) +
+        legendHtml(lv);
+      return;
+    }
+    const lv1 = levelsOf(state.v1, rows), lv2 = levelsOf(state.v2, rows);
+    const M = lv1.map(a => lv2.map(b =>
+      rows.filter(r => String(col(state.v1).values[r]) === a && String(col(state.v2).values[r]) === b).length));
+    $('customStats').innerHTML = ctab(M, lv1, lv2);
+    const rowTot = M.map(Charts.sum), colTot = lv2.map((_, j) => Charts.sum(M.map(r => r[j]))), n = Charts.sum(rowTot);
+    const asPct = state.basis !== 'count';
+    const V = M.map((row, i) => row.map((v, j) => !asPct ? v
+      : +Charts.pctOf(v, state.basis === 'row' ? rowTot[i] : state.basis === 'col' ? colTot[j] : n).toFixed(1)));
+    $('customCharts').innerHTML =
+      panel(t.chart_grouped, svgOf(Charts.grouped({ matrix: V, rowLabels: lv1, colLabels: lv2, axisLabel: asPct ? t.custom_pct_axis : t.custom_freq, pct: asPct }), Charts.DEF.H)) +
+      panel(t.chart_segmented, svgOf(Charts.segmented({ matrix: M, rowLabels: lv1, colLabels: lv2, pctAxisLabel: t.custom_pct_axis }), Charts.DEF.H)) +
+      legendHtml(lv2);
+  }
+
+  function renderQuantitative(rows, q) {
+    const t = T();
+    const v = quantValues(q, rows), name = col(q).name;
+    $('customStats').innerHTML = statsGrid(v);
+    const box = Charts.box({ values: v, xLabel: name });
+    $('customCharts').innerHTML =
+      panel(t.chart_hist, svgOf(Charts.hist({ values: v, binW: state.binW, pct: state.basis === 'rel', yLabel: state.basis === 'rel' ? t.custom_relfreq : t.custom_freq, xLabel: name }), Charts.DEF.H)) +
+      panel(t.chart_dot, svgOf(Charts.dot({ values: v, binW: state.binW, yLabel: t.custom_freq, xLabel: name }), Charts.DEF.H)) +
+      panel(t.chart_ogive, svgOf(Charts.ogive({ values: v, binW: state.binW, yLabel: t.custom_relfreq, xLabel: name }), Charts.DEF.H)) +
+      panel(t.chart_box, svgOf(box.svg, box.h)) +
+      panel(t.chart_stem, `<pre class="stem-plot">${escapeHtml(Charts.stem({ values: v, readTpl: t.custom_stem_read, crowdedNote: t.custom_stem_crowded, negNote: t.custom_stem_neg }))}</pre>`, null, true);
+  }
+
+  function renderGrouped(rows, q, c) {
+    const t = T();
+    const name = col(q).name;
+    const lv = levelsOf(c, rows);
+    const groups = lv.map(l => ({ label: l, values: rows.filter(r => String(col(c).values[r]) === l).map(r => Number(col(q).values[r])).filter(Number.isFinite) }))
+                     .filter(g => g.values.length);
+    $('customStats').innerHTML = groupStats(groups);
+    // 两组直方图共用分箱边界与纵轴上限，否则无法直接比较
+    const all = groups.flatMap(g => g.values);
+    const shared = Charts.histogram(all, state.binW);
+    const yTop = Math.max(...groups.map(g => Math.max(...Charts.histogram(g.values, state.binW).bins.map(b => b.n))));
+    let html = panel(t.chart_boxes, svgOf(Charts.boxGroups({ groups, xLabel: name, geom: { W: 1120, H: 90 + groups.length * 70 } }), 90 + groups.length * 70, 1120), null, true);
+    html += groups.map(g => panel(`${t.chart_hist} · ${g.label}`,
+      svgOf(Charts.hist({ values: g.values, binW: state.binW, yLabel: t.custom_freq, xLabel: name,
+                          geom: { W: Charts.DEF.W, H: Charts.DEF.H } }), Charts.DEF.H))).join('');
+    html += groups.length === 2
+      ? panel(t.chart_b2b, Charts.backToBackStem({ groups, stemLabel: t.custom_stem_label, readTpl: t.custom_stem_read }), null, true)
+      : panel(t.chart_b2b, `<p class="hint">${escapeHtml(t.custom_b2b_need2.replace('{n}', groups.length))}</p>`, null, true);
+    $('customCharts').innerHTML = html;
+  }
+
+  /* ---------- 表格 ---------- */
+  function legendHtml(labels) {
+    return `<div class="cat-legend span-2">` + labels.map((l, i) =>
+      `<span><i style="background:${Charts.colorOf(i)}"></i>${escapeHtml(l)}</span>`).join('') + `</div>`;
+  }
+  function freqTable(labels, counts, n) {
+    const t = T();
+    const rows = labels.map((l, i) =>
+      `<tr><th><span class="swatch" style="background:${Charts.colorOf(i)}"></span>${escapeHtml(l)}</th>` +
+      `<td>${counts[i]}</td><td>${Charts.fmtPct(Charts.pctOf(counts[i], n))}</td></tr>`).join('');
+    return `<div class="freq-table-wrap"><table class="freq-table"><thead><tr>` +
+      `<th class="corner">${escapeHtml(t.custom_category)}</th><th>${escapeHtml(t.custom_freq)}</th><th>${escapeHtml(t.custom_relfreq)}</th>` +
+      `</tr></thead><tbody>${rows}<tr class="margin"><th>${escapeHtml(t.custom_total)}</th><td>${n}</td><td>100.0%</td></tr></tbody></table></div>`;
+  }
+  function ctab(M, lv1, lv2) {
+    const t = T();
+    const rowTot = M.map(Charts.sum), colTot = lv2.map((_, j) => Charts.sum(M.map(r => r[j]))), n = Charts.sum(rowTot);
+    const show = (v, i, j) => state.basis === 'count' ? String(v)
+      : state.basis === 'row' ? Charts.fmtPct(Charts.pctOf(v, rowTot[i]))
+      : state.basis === 'col' ? Charts.fmtPct(Charts.pctOf(v, colTot[j]))
+      : Charts.fmtPct(Charts.pctOf(v, n));
+    const head = lv2.map((l, j) => `<th><span class="swatch" style="background:${Charts.colorOf(j)}"></span>${escapeHtml(l)}</th>`).join('');
+    const body = M.map((row, i) => `<tr><th>${escapeHtml(lv1[i])}</th>` + row.map((v, j) => `<td>${show(v, i, j)}</td>`).join('') +
+      `<td class="margin">${state.basis === 'row' ? '100.0%' : state.basis === 'count' ? rowTot[i] : Charts.fmtPct(Charts.pctOf(rowTot[i], n))}</td></tr>`).join('');
+    const foot = `<tr class="margin"><th>${escapeHtml(t.custom_total)}</th>` +
+      colTot.map(v => `<td>${state.basis === 'col' ? '100.0%' : state.basis === 'count' ? v : Charts.fmtPct(Charts.pctOf(v, n))}</td>`).join('') +
+      `<td>${state.basis === 'count' ? n : '100.0%'}</td></tr>`;
+    return `<div class="freq-table-wrap"><table class="freq-table"><thead><tr>` +
+      `<th class="corner">${escapeHtml(col(state.v1).name)} \\ ${escapeHtml(col(state.v2).name)}</th>${head}` +
+      `<th class="margin">${escapeHtml(t.custom_total)}</th></tr></thead><tbody>${body}${foot}</tbody></table></div>`;
+  }
+  function statsGrid(v) {
+    const t = T(), f = fiveNumber(v), ms = meanSd(v);
+    const d = (Math.max(...v) - Math.min(...v)) < 10 ? 2 : 1;
+    const cell = (k, val) => `<div><span>${escapeHtml(t[k])}</span><strong>${val}</strong></div>`;
+    const n = x => Number.isFinite(x) ? x.toFixed(d) : '—';
+    return `<section class="quant-stats">` +
+      cell('custom_n', f.n) + cell('custom_mean', n(ms.mean)) + cell('custom_median', n(f.median)) +
+      cell('custom_sd', n(ms.sd)) + cell('custom_range', n(f.max - f.min)) + cell('custom_iqr', n(f.iqr)) +
+      cell('custom_min', n(f.min)) + cell('custom_q1', n(f.q1)) + cell('custom_q3', n(f.q3)) + cell('custom_max', n(f.max)) +
+      `</section>`;
+  }
+  function groupStats(groups) {
+    const t = T();
+    const cols = ['custom_n', 'custom_mean', 'custom_median', 'custom_sd', 'custom_min', 'custom_q1', 'custom_q3', 'custom_max', 'custom_iqr', 'custom_range'];
+    const head = cols.map(c => `<th>${escapeHtml(t[c])}</th>`).join('');
+    const body = groups.map((g, i) => {
+      const f = fiveNumber(g.values), ms = meanSd(g.values);
+      const n = x => Number.isFinite(x) ? x.toFixed(1) : '—';
+      return `<tr><th><span class="swatch" style="background:${Charts.colorOf(i)}"></span>${escapeHtml(g.label)}</th>` +
+        `<td>${f.n}</td><td>${n(ms.mean)}</td><td>${n(f.median)}</td><td>${n(ms.sd)}</td>` +
+        `<td>${n(f.min)}</td><td>${n(f.q1)}</td><td>${n(f.q3)}</td><td>${n(f.max)}</td><td>${n(f.iqr)}</td><td>${n(f.max - f.min)}</td></tr>`;
+    }).join('');
+    return `<div class="freq-table-wrap"><table class="freq-table"><thead><tr>` +
+      `<th class="corner">${escapeHtml(col(catIndex()).name)}</th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  /* ---------- 启动 ---------- */
+  restoreWork();
+  buildUI();
+  render();
+  document.addEventListener('apstats:tool', e => { if (e.detail === 'custom') render(); });
+  document.addEventListener('apstats:language', () => { buildSrcSwitch(); render(); });
+})();

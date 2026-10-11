@@ -128,6 +128,7 @@
       <div id="catPage" hidden></div>
       <div id="quantPage" hidden></div>
       <div id="cmpPage" hidden></div>
+      <div id="customPage" hidden></div>
       <!-- 新增页面容器：内容由 Sampling-distribution-for-means.js 动态注入 -->
       <div id="samplingPage" hidden></div>
       <!-- 新增页面容器：内容由 Sampling-distribution-for-proportions.js 动态注入 -->
@@ -144,10 +145,12 @@
   <script src="core/pages.js"></script>
   <script src="core/router.js"></script>
   <script src="core/sidebar.js"></script>
+  <script src="core/charts.js"></script>
   <!-- 各页面（加载顺序 = 语言/数据事件的响应顺序，勿随意调换） -->
   <script src="pages/display-categorical.js"></script>
   <script src="pages/display-quantitative.js"></script>
   <script src="pages/compare-distributions.js"></script>
+  <script src="pages/custom-data.js"></script>
   <script src="pages/correlation.js"></script>
   <script src="pages/scatter.js"></script>
   <script src="pages/outlier.js"></script>
