@@ -255,6 +255,8 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 /* 直方图的条必须相接：空隙只能来自数据本身。用深色描边分隔，不留白缝。 */
 .cat-chart .hist-bar { fill:var(--cat-1); stroke:#004f7d; stroke-width:.75; }
 .cat-chart .dot { fill:var(--cat-1); }
+.cat-chart .scatter-dot { fill:var(--cat-1); stroke:#fff; stroke-width:1.2; }
+.cat-chart .scatter-fit { stroke:#c73932; stroke-width:2.2; }
 /* 累积频率曲线 */
 .cat-chart .ogive-line { fill:none; stroke:var(--cat-2); stroke-width:2.2; }
 .cat-chart .ogive-dot { fill:var(--cat-2); }
@@ -306,6 +308,10 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .manual-grid .grid-name input { font-weight:600; }
 .var-preview { color:#64717d; font-weight:400; text-align:left!important; max-width:380px; overflow:hidden; text-overflow:ellipsis; }
 #customFile { width:auto; padding:6px 0; border:0; font:13px inherit; }
+.var-check { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; margin:0; padding:8px 14px 10px; border:1px solid var(--line); border-radius:8px; }
+.var-check legend { padding:0 6px; color:var(--navy); font-size:13px; font-weight:700; }
+.var-check-item { display:inline-flex; align-items:center; gap:6px; color:var(--text); font-size:13px; cursor:pointer; }
+.var-check-item input { width:15px; height:15px; margin:0; accent-color:var(--blue); cursor:pointer; }
 .cat-legend.span-2 { grid-column:1 / -1; }
 .cat-chart .ogive-line { stroke:var(--cat-2); stroke-width:2.5; }
 .cat-chart .ogive-dot { fill:var(--cat-2); }

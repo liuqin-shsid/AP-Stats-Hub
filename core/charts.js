@@ -334,6 +334,66 @@ const Charts = (() => {
     return s;
   }
 
+  /* 把一段数据的范围扩 5%，再对齐到好读的刻度上。返回 [下界, 上界, 步长]。
+     和频数轴不同 —— 散点图两条轴都由数据决定，不能从 0 起。 */
+  function niceDomain(values, divs = 6) {
+    let lo = Math.min(...values), hi = Math.max(...values);
+    if (lo === hi) { lo -= 1; hi += 1; }
+    const pad = (hi - lo) * 0.05; lo -= pad; hi += pad;
+    const raw = (hi - lo) / divs, pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * pow).find(st => raw <= st) || 10 * pow;
+    return [Math.floor(lo / step) * step, Math.ceil(hi / step) * step, step];
+  }
+
+  /* 散点图。fit 传 regression() 的结果就顺便画出最小二乘直线。 */
+  function scatter({ points, xLabel, yLabel, fit, geom }) {
+    const G = g(geom);
+    if (!points.length) return '';
+    const [xlo, xhi, xst] = niceDomain(points.map(p => p.x), G.W > 800 ? 8 : 6);
+    const [ylo, yhi, yst] = niceDomain(points.map(p => p.y), 6);
+    const px = v => X(v, xlo, xhi, G);
+    const py = v => G.M.top + (G.H - G.M.bottom - G.M.top) * (1 - (v - ylo) / ((yhi - ylo) || 1));
+    const dx = decimalsFor(xst), dy = decimalsFor(yst);
+    let s = '';
+
+    // 纵轴：网格线 + 刻度（按格数循环，不要累加浮点数）
+    const ny = Math.round((yhi - ylo) / yst);
+    for (let i = 0; i <= ny; i++) {
+      const v = ylo + i * yst, y = py(v);
+      s += `<line class="grid" x1="${G.M.left}" y1="${y}" x2="${G.W - G.M.right}" y2="${y}"/>` +
+           `<text class="val-label" x="${G.M.left - (G.yLabelDx ?? 9)}" y="${y + 4}" text-anchor="end">${v.toFixed(dy)}</text>`;
+    }
+    s += `<line class="baseline" x1="${G.M.left}" y1="${G.H - G.M.bottom}" x2="${G.W - G.M.right}" y2="${G.H - G.M.bottom}"/>`;
+    if (yLabel) s += `<text class="axis-title" transform="translate(${G.titleX ?? 13} ${(G.M.top + G.H - G.M.bottom) / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(yLabel)}</text>`;
+
+    // 横轴
+    const nx = Math.round((xhi - xlo) / xst);
+    for (let i = 0; i <= nx; i++) {
+      const v = xlo + i * xst, x = px(v);
+      s += `<line class="tickmark" x1="${x}" y1="${G.H - G.M.bottom}" x2="${x}" y2="${G.H - G.M.bottom + 5}"/>` +
+           `<text class="val-label" x="${x}" y="${G.H - G.M.bottom + 19}" text-anchor="middle">${v.toFixed(dx)}</text>`;
+    }
+    if (xLabel) s += `<text class="axis-title" x="${(G.M.left + G.W - G.M.right) / 2}" y="${G.H - 10}" text-anchor="middle">${escapeHtml(xLabel)}</text>`;
+
+    /* 回归线：先把直线和绘图框求交，只画框内那一段。
+       这样不用 clipPath，也就不会和页面上别的图抢 id。 */
+    if (fit) {
+      let x1 = xlo, x2 = xhi;
+      if (fit.slope) {
+        const xs = [(ylo - fit.intercept) / fit.slope, (yhi - fit.intercept) / fit.slope].sort((a, b) => a - b);
+        x1 = Math.max(x1, xs[0]); x2 = Math.min(x2, xs[1]);
+      }
+      if (x2 > x1)
+        s += `<line class="scatter-fit" x1="${px(x1)}" y1="${py(fit.intercept + fit.slope * x1)}" ` +
+             `x2="${px(x2)}" y2="${py(fit.intercept + fit.slope * x2)}"/>`;
+    }
+
+    for (const p of points)
+      s += `<circle class="scatter-dot" cx="${px(p.x)}" cy="${py(p.y)}" r="4">` +
+           `<title>(${p.x.toFixed(dx)}, ${p.y.toFixed(dy)})</title></circle>`;
+    return s;
+  }
+
   /* ---------- 茎叶图（返回 HTML，不是 SVG） ---------- */
   /* 所有取位都在整数空间里做 —— 直接用 (x − stem×10)/leaf 会被浮点误差坑到，
      例如 9.2 − 9 = 0.19999… 会算出叶 1 而不是 2。 */
@@ -417,6 +477,6 @@ const Charts = (() => {
       `<tbody>${body}</tbody></table><p class="panel-note">${escapeHtml(read)}</p>`;
   }
 
-  return { bar, pie, grouped, segmented, hist, dot, ogive, box, boxGroups, stem, backToBackStem,
+  return { bar, pie, grouped, segmented, hist, dot, ogive, box, boxGroups, stem, backToBackStem, scatter, niceDomain,
            binChoices, defaultBin, histogram, colorOf, decimalsFor, sum, pctOf, fmtPct, DEF };
 })();

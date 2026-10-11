@@ -21,8 +21,23 @@
       ['2 个分类变量', '列联表（计数／行%／列%／总%）＋ 并排条形图 ＋ 分段条形图'],
       ['1 个定量变量', '直方图（组距可调）＋ 点图 ＋ 肩形图 ＋ 箱线图 ＋ 茎叶图'],
       ['1 个定量 ＋ 1 个分类', '并排箱线图 ＋ 同刻度直方图 ＋ 背靠背茎叶图'],
-      ['3 列及以上', '只画并排箱线图，把几个变量放在同一条数轴上比'],
+      ['2 个定量变量', '散点图 ＋ 最小二乘回归直线（给出方程、r 与 r²）'],
+      ['3 个及以上变量', '并排箱线图，把几个变量放在同一条数轴上比'],
+      ['数据有 3 列以上时', '可以只勾其中几个：勾 1～2 个就按上面 1～2 个变量的规则出图'],
     ],
+    custom_use: '参与作图的变量',
+    custom_use_hint: '勾 1～2 个就按 1～2 个变量的规则出图，勾 3 个及以上画并排箱线图。',
+    custom_use_none: '至少勾一个变量。',
+    custom_swap: '交换 x / y 轴',
+    custom_scatter: '散点图与回归直线',
+    custom_scatter_note: '红线是最小二乘回归直线。x 轴（解释变量）在前、y 轴（响应变量）在后，换一换用上面的「交换 x / y 轴」。',
+    custom_scatter_need: '画散点图至少要 2 个成对的数据点，而且两个变量都不能是常数。',
+    custom_eq: '回归方程',
+    custom_r: '相关系数 r',
+    custom_r2: '判定系数 r²',
+    custom_slope: '斜率 b₁',
+    custom_intercept: '截距 b₀',
+    custom_npairs: '成对个数 n',
     custom_src_file: '选文件', custom_src_manual: '手动输入',
     custom_pick: '选择文件…', custom_sheet: '工作表',
     custom_file_hint: '支持 .xlsx / .xls / .csv。默认第一行是表头。',
@@ -50,7 +65,6 @@
     custom_empty_col: '第一列还没填数据。',
     custom_too_many: '最多 {n} 行，多出来的已忽略。',
     custom_footnote: '已去掉表格末尾 {n} 行（看起来是脚注，只有一格有内容）',
-    custom_both_quant: '两个都是定量变量。这一页只做教材 Ch3–5 的展示图，不含散点图——想看两个定量变量的关系，请用「相关关系探究」那一页。',
     custom_binwidth: '组距', custom_bins: '组数',
     custom_freq: '频数', custom_relfreq: '相对频数 (%)', custom_pct_axis: '百分比 (%)',
     custom_count: '计数', custom_row_pct: '行百分比', custom_col_pct: '列百分比', custom_tot_pct: '总百分比',
@@ -70,7 +84,7 @@
 
     custom_sample_name: '各季度航班延误时长（示例）',
     custom_sample_note: '虚构的示例数据，用来演示多列并排箱线图：某机场四个季度各抽查 15 个航班的延误小时数。',
-    custom_q1: '第一季度', custom_q2: '第二季度', custom_q3: '第三季度', custom_q4: '第四季度',
+    custom_qtr1: '第一季度', custom_qtr2: '第二季度', custom_qtr3: '第三季度', custom_qtr4: '第四季度',
     custom_pushed: '已填入上方表格，可以直接改',
     custom_too_big_grid: '这组数据有 {n} 行，太多了没填进上方表格（表格最多 {m} 行）。图表照常显示。',
   });
@@ -83,8 +97,23 @@
       ['2 categorical', 'Contingency table (counts / row% / column% / table%) + side-by-side bar + segmented bar'],
       ['1 quantitative', 'Histogram (adjustable bins) + dotplot + ogive + boxplot + stem-and-leaf'],
       ['1 quantitative + 1 categorical', 'Side-by-side boxplots + histograms on one scale + back-to-back stem-and-leaf'],
-      ['3 or more columns', 'Side-by-side boxplots only — several variables on one axis'],
+      ['2 quantitative', 'Scatterplot + least-squares regression line (equation, r and r²)'],
+      ['3 or more variables', 'Side-by-side boxplots — several variables on one axis'],
+      ['When the data has 3+ columns', 'Tick just the ones you want: tick 1 or 2 and the rules above apply'],
     ],
+    custom_use: 'Variables to plot',
+    custom_use_hint: 'Tick 1 or 2 and the one/two-variable rules apply; tick 3 or more for side-by-side boxplots.',
+    custom_use_none: 'Tick at least one variable.',
+    custom_swap: 'Swap x / y',
+    custom_scatter: 'Scatterplot with regression line',
+    custom_scatter_note: 'The red line is the least-squares regression line. The first variable is x (explanatory), the second is y (response) — use “Swap x / y” above to switch them.',
+    custom_scatter_need: 'A scatterplot needs at least 2 complete pairs, and neither variable can be constant.',
+    custom_eq: 'Equation',
+    custom_r: 'Correlation r',
+    custom_r2: 'r²',
+    custom_slope: 'Slope b₁',
+    custom_intercept: 'Intercept b₀',
+    custom_npairs: 'Pairs n',
     custom_src_file: 'Choose a file', custom_src_manual: 'Type or paste',
     custom_pick: 'Choose file…', custom_sheet: 'Sheet',
     custom_file_hint: 'Accepts .xlsx / .xls / .csv. The first row is treated as the header.',
@@ -112,7 +141,6 @@
     custom_empty_col: 'Column 1 is still empty.',
     custom_too_many: 'Only the first {n} rows are kept.',
     custom_footnote: 'Removed {n} trailing row(s) that look like a footnote (only one cell filled)',
-    custom_both_quant: 'Both variables are quantitative. This page covers the Ch3–5 displays only and has no scatterplot — use the Correlation Explorer page for two quantitative variables.',
     custom_binwidth: 'Bin width', custom_bins: 'Bins',
     custom_freq: 'Count', custom_relfreq: 'Relative frequency (%)', custom_pct_axis: 'Percent (%)',
     custom_count: 'Counts', custom_row_pct: 'Row %', custom_col_pct: 'Column %', custom_tot_pct: 'Table %',
@@ -132,14 +160,14 @@
 
     custom_sample_name: 'Flight delay hours by quarter (sample)',
     custom_sample_note: 'Made-up sample data for trying out side-by-side boxplots: delay in hours for 15 sampled flights in each quarter at one airport.',
-    custom_q1: 'Q1', custom_q2: 'Q2', custom_q3: 'Q3', custom_q4: 'Q4',
+    custom_qtr1: 'Q1', custom_qtr2: 'Q2', custom_qtr3: 'Q3', custom_qtr4: 'Q4',
     custom_pushed: 'Loaded into the table above — edit it freely',
     custom_too_big_grid: 'This dataset has {n} rows, too many for the table above (limit {m}). The charts still work.',
   });
 
   /* work = { name, columns:[{name, type:'quant'|'cat', values:[]}], n } */
   let work = null;
-  let state = { src: 'file', v1: 0, v2: -1, basis: 'count', rel: false, binW: null, sheetNames: [], book: null };
+  let state = { src: 'file', v1: 0, v2: -1, sel: [], basis: 'count', rel: false, binW: null, sheetNames: [], book: null };
 
   const T = () => translations[lang];
   const col = i => work.columns[i];
@@ -208,6 +236,7 @@
     work = w;
     work.pushedToGrid = pushToGrid(w);            // 填回表格，载入后还能接着改
     state.v1 = 0; state.v2 = -1; state.binW = null; state.basis = 'count'; state.rel = false;
+    state.sel = w.columns.map((_, i) => i);      // 3 列以上默认全勾，与改动前的行为一致
     state.sheet = sheetName || '';
     persistWork();
     render();
@@ -244,7 +273,7 @@
   ];
   function sampleData() {
     const t = T();
-    const names = [t.custom_q1, t.custom_q2, t.custom_q3, t.custom_q4];
+    const names = [t.custom_qtr1, t.custom_qtr2, t.custom_qtr3, t.custom_qtr4];
     return {
       name: t.custom_sample_name,
       note: t.custom_sample_note,
@@ -272,6 +301,7 @@
   }
   function restoreWork() {
     try { const s = sessionStorage.getItem(SKEY); if (s) work = JSON.parse(s); } catch { work = null; }
+    if (work) state.sel = work.columns.map((_, i) => i);   // 这条路不经过 setWork，勾选要自己补
   }
   const savedList = () => { try { return JSON.parse(localStorage.getItem(LKEY) || '[]'); } catch { return []; } };
   function writeSaved(list) {
@@ -597,24 +627,60 @@
 
   const multiMode = () => work.columns.length >= 3;
 
+  /* 参与作图的变量下标。
+     两列及以下 —— 由 v1 / v2 两个下拉决定；
+     三列及以上 —— 由勾选框决定，勾几个就按几个变量的规则出图。 */
+  function selection() {
+    if (!multiMode()) return twoVar() ? [state.v1, state.v2] : [state.v1];
+    return (state.sel || []).filter(i => i >= 0 && i < work.columns.length);
+  }
+  /* 勾了 1～2 个时把它们写回 v1 / v2，后面那一整套老逻辑就能原样复用 */
+  function syncSelToVars() {
+    const sel = selection();
+    if (!multiMode() || sel.length > 2 || !sel.length) return;
+    state.v1 = sel[0];
+    state.v2 = sel.length === 2 ? sel[1] : -1;
+  }
+  const bothQuant = () => { const sel = selection();
+    return sel.length === 2 && sel.every(i => typeOf(i) === 'quant'); };
+
   function renderPicker() {
     const t = T();
     const idx = work.columns.map((_, i) => i);
-    if (multiMode()) {                               // 3 列以上：不再选变量，直接并排比
-      $('customPick').hidden = true;
+    if (multiMode()) {                               // 3 列以上：勾选要画哪几个
+      $('customPick').hidden = false;
+      $('customPick').innerHTML =
+        `<fieldset class="var-check"><legend>${escapeHtml(t.custom_use)}</legend>` +
+        idx.map(i => `<label class="var-check-item"><input type="checkbox" data-i="${i}"` +
+          `${state.sel.includes(i) ? ' checked' : ''}><span>${escapeHtml(col(i).name)}</span></label>`).join('') +
+        `</fieldset>` +
+        (bothQuant() ? `<button id="customSwap" type="button" class="secondary-button">${escapeHtml(t.custom_swap)}</button>` : '') +
+        `<p class="hint">${escapeHtml(t.custom_use_hint)}</p>`;
+      $('customPick').querySelectorAll('input[type="checkbox"]').forEach(cb =>
+        cb.addEventListener('change', () => {
+          const i = Number(cb.dataset.i);
+          // 按列的顺序存，勾选顺序不影响谁是 x 谁是 y —— 要换轴用「交换 x / y」
+          state.sel = cb.checked ? [...state.sel, i].sort((a, b) => a - b) : state.sel.filter(x => x !== i);
+          state.binW = null; render();
+        }));
+      const sw = $('customSwap');
+      if (sw) sw.addEventListener('click', () => { state.sel = [state.sel[1], state.sel[0]]; render(); });
       return;
     }
     $('customPick').hidden = false;
     $('customPick').innerHTML =
       `<label><span>${escapeHtml(t.custom_show1)}</span><select id="customV1"></select></label>` +
       `<label><span>${escapeHtml(t.custom_show2)}</span><select id="customV2"></select></label>` +
-      (needBasis() ? `<label><span>${escapeHtml(t.custom_basis)}</span><select id="customBasis"></select></label>` : '');
+      (needBasis() ? `<label><span>${escapeHtml(t.custom_basis)}</span><select id="customBasis"></select></label>` : '') +
+      (bothQuant() ? `<button id="customSwap" type="button" class="secondary-button">${escapeHtml(t.custom_swap)}</button>` : '');
     setOptions($('customV1'), idx, state.v1, i => col(i).name);
     setOptions($('customV2'), [-1, ...idx], state.v2, i => i < 0 ? t.custom_none : col(i).name);
     $('customV1').value = String(state.v1);
     $('customV2').value = String(state.v2);
     $('customV1').addEventListener('change', e => { state.v1 = Number(e.target.value); state.binW = null; render(); });
     $('customV2').addEventListener('change', e => { state.v2 = Number(e.target.value); state.binW = null; render(); });
+    const sw = $('customSwap');
+    if (sw) sw.addEventListener('click', () => { const a = state.v1; state.v1 = state.v2; state.v2 = a; render(); });
     const bs = $('customBasis');
     if (bs) {
       const opts = twoVar() && typeOf(state.v1) === 'cat' && typeOf(state.v2) === 'cat'
@@ -638,7 +704,15 @@
 
   function renderCharts() {
     const t = T();
-    if (multiMode()) { renderMultiBox(); return; }
+    const sel = selection();
+    if (!sel.length) {                               // 一个都没勾
+      $('customBinWrap').hidden = true;
+      $('customStats').innerHTML = '';
+      $('customCharts').innerHTML = `<p class="hint">${escapeHtml(t.custom_use_none)}</p>`;
+      return;
+    }
+    if (sel.length >= 3) { renderMultiBox(sel); return; }
+    syncSelToVars();                                 // 勾了 1～2 个 → 走下面这套老逻辑
     const rows = cleanPairs();
     const q = quantIndex(), c = catIndex();
     $('customBinWrap').hidden = q < 0;
@@ -647,8 +721,8 @@
     // 「两个都是定量」是结构性情况，必须排在数据清洗之前判断 ——
     // 否则把一个文字列误标成定量时，整表会被清空，先撞上「没数据」的分支。
     if (twoVar() && typeOf(state.v1) === 'quant' && typeOf(state.v2) === 'quant') {
-      $('customCharts').innerHTML = `<p class="hint">${escapeHtml(t.custom_both_quant)}</p>`;
       $('customBinWrap').hidden = true;
+      renderScatter(rows);
       return;
     }
     if (!rows.length) {
@@ -721,6 +795,38 @@
       panel(t.chart_stem, `<pre class="stem-plot">${escapeHtml(Charts.stem({ values: v, readTpl: t.custom_stem_read, crowdedNote: t.custom_stem_crowded, negNote: t.custom_stem_neg }))}</pre>`, null, true);
   }
 
+  /* 两个都是定量：散点图 + 最小二乘回归直线。
+     第一个变量作 x（解释变量），第二个作 y（响应变量）—— 顺序要紧，所以给了交换按钮。 */
+  function renderScatter(rows) {
+    const t = T();
+    const xi = state.v1, yi = state.v2;
+    const pts = rows.map(r => ({ x: Number(col(xi).values[r]), y: Number(col(yi).values[r]) }))
+                    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+    const fit = regression(pts);                      // 点太少或某一轴是常数时返回 null
+    if (!fit) {
+      $('customStats').innerHTML = '';
+      $('customCharts').innerHTML = `<p class="hint">${escapeHtml(t.custom_scatter_need)}</p>`;
+      return;
+    }
+    const d = v => Math.abs(v) >= 100 ? v.toFixed(1) : Math.abs(v) >= 1 ? v.toFixed(3) : v.toFixed(4);
+    const eq = fit.intercept < 0 ? `ŷ = ${d(fit.slope)}x − ${d(-fit.intercept)}`
+                                 : `ŷ = ${d(fit.intercept)} + ${d(fit.slope)}x`;
+    const cell = (k, v) => `<div><span>${escapeHtml(t[k])}</span><strong>${escapeHtml(v)}</strong></div>`;
+    $('customStats').innerHTML = `<section class="quant-stats">` +
+      cell('custom_npairs', String(pts.length)) +
+      cell('custom_eq', eq) +
+      cell('custom_r', fit.r.toFixed(4)) +
+      cell('custom_r2', fit.r2.toFixed(4)) +
+      cell('custom_slope', d(fit.slope)) +
+      cell('custom_intercept', d(fit.intercept)) + `</section>`;
+    const H = 420;
+    $('customCharts').innerHTML = panel(t.custom_scatter,
+      `<svg class="cat-chart" viewBox="0 0 1120 ${H}" role="img">` +
+      Charts.scatter({ points: pts, xLabel: col(xi).name, yLabel: col(yi).name, fit,
+                       geom: { W: 1120, H, M: { left: 70, right: 24, top: 22, bottom: 62 }, yLabelDx: 10 } }) +
+      `</svg>`, t.custom_scatter_note, true);
+  }
+
   function renderGrouped(rows, q, c) {
     const t = T();
     const name = col(q).name;
@@ -744,11 +850,11 @@
 
   /* 3 列及以上：只画并排箱线图。每一列单独清洗（不做成对删除）——
      各列长度本来就可以不一样，强行配对会白白丢数据。 */
-  function renderMultiBox() {
+  function renderMultiBox(sel) {
     const t = T();
     $('customBinWrap').hidden = true;
     const groups = [], skipped = [];
-    for (const c of work.columns) {
+    for (const c of sel.map(i => col(i))) {
       if (c.type !== 'quant') { skipped.push(c.name); continue; }
       const v = c.values.map(Number).filter(Number.isFinite);
       if (v.length >= 2) groups.push({ label: c.name, values: v });
