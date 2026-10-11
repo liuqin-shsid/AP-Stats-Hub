@@ -8,6 +8,7 @@
 (() => {
   const SKEY = 'apstats-custom-work';      // 当前数据（sessionStorage）
   const LKEY = 'apstats-custom-saved';     // 已保存的数据（localStorage）
+  const SEEDED = 'apstats-custom-seeded';  // 示例数据是否已预置过（只置一次）
   const MAX_ROWS = 5000;
   const MAX_SAVE_BYTES = 1.5 * 1024 * 1024;
 
@@ -66,7 +67,7 @@
     custom_b2b_need2: '背靠背茎叶图需要分组变量恰好有 2 个类别，当前有 {n} 个。',
     custom_stem_label: '茎',
     custom_clear_all: '清除当前数据',
-    custom_sample: '载入示例：各季度航班延误',
+
     custom_sample_name: '各季度航班延误时长（示例）',
     custom_sample_note: '虚构的示例数据，用来演示多列并排箱线图：某机场四个季度各抽查 15 个航班的延误小时数。',
     custom_q1: '第一季度', custom_q2: '第二季度', custom_q3: '第三季度', custom_q4: '第四季度',
@@ -128,7 +129,7 @@
     custom_b2b_need2: 'A back-to-back stem-and-leaf needs exactly 2 groups; this variable has {n}.',
     custom_stem_label: 'Stem',
     custom_clear_all: 'Clear current data',
-    custom_sample: 'Load sample: flight delays by quarter',
+
     custom_sample_name: 'Flight delay hours by quarter (sample)',
     custom_sample_note: 'Made-up sample data for trying out side-by-side boxplots: delay in hours for 15 sampled flights in each quarter at one airport.',
     custom_q1: 'Q1', custom_q2: 'Q2', custom_q3: 'Q3', custom_q4: 'Q4',
@@ -241,17 +242,28 @@
     [0.4, 1.0, 0.7, 2.3, 1.6, 0.9, 3.1, 1.2, 0.6, 4.5, 1.8, 0.8, 1.4, 2.0, 1.1],
     [0.3, 0.6, 1.0, 0.5, 1.7, 0.8, 0.4, 2.2, 0.9, 0.7, 1.3, 0.6, 1.9, 0.5, 1.0],
   ];
-  function loadSample() {
+  function sampleData() {
     const t = T();
     const names = [t.custom_q1, t.custom_q2, t.custom_q3, t.custom_q4];
-    state.src = 'manual';
-    state.sheetNames = [];
-    setWork({
+    return {
       name: t.custom_sample_name,
       note: t.custom_sample_note,
       columns: SAMPLE_FLIGHT.map((v, j) => ({ name: names[j], type: 'quant', values: v.map(x => x.toFixed(1)) })),
       n: SAMPLE_FLIGHT[0].length, truncated: false, footnotes: 0,
-    });
+    };
+  }
+  /* 首次打开时把示例数据放进「已保存的数据」，之后就当成普通的一条，
+     可以载入、改名、删除。删掉之后不会再自动冒出来 —— 只预置这一次。 */
+  function seedSample() {
+    try {
+      if (localStorage.getItem(SEEDED)) return;
+      const list = savedList();
+      const d = sampleData();
+      if (!list.some(x => x.name === d.name))
+        list.push({ name: d.name, at: new Date().toISOString().slice(0, 10), data: d });
+      localStorage.setItem(LKEY, JSON.stringify(list));
+      localStorage.setItem(SEEDED, '1');
+    } catch { /* 存不下就算了，不影响其它功能 */ }
   }
 
   /* ---------- 存储 ---------- */
@@ -524,9 +536,7 @@
         list.map((x, i) => `<option value="${i}">${escapeHtml(x.name)}　(${x.at})</option>`).join('') + `</select></label>` +
         `<button id="customLoad" type="button" class="secondary-button">${escapeHtml(t.custom_load)}</button>` +
         `<button id="customDel" type="button" class="secondary-button">${escapeHtml(t.custom_delete)}</button>` : '') +
-      `<button id="customSample" type="button" class="secondary-button">${escapeHtml(t.custom_sample)}</button>` +
       (work ? `<button id="customClearAll" type="button" class="secondary-button">${escapeHtml(t.custom_clear_all)}</button>` : '');
-    $('customSample').addEventListener('click', loadSample);
     $('customSave').addEventListener('click', saveCurrent);
     const ld = $('customLoad');
     if (ld) {
@@ -829,6 +839,7 @@
   }
 
   /* ---------- 启动 ---------- */
+  seedSample();
   restoreWork();
   buildUI();
   render();
