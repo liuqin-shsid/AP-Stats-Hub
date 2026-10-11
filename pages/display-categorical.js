@@ -158,125 +158,20 @@
       `${head}<th class="margin">${escapeHtml(t.cat_total_label)}</th></tr></thead><tbody>${body}${foot}</tbody></table>`;
   }
 
-  /* ---------- 图表基础 ---------- */
-  const px = (v, lo, hi, a, b) => a + (v - lo) * (b - a) / ((hi - lo) || 1);
-  /* 顶端 4px 圆角、底端贴基线的竖条 */
-  function barPath(x, y, w, h, r = 4) {
-    if (h <= 0.5) return '';
-    const rr = Math.min(r, w / 2, h);
-    return `M ${x} ${y + h} V ${y + rr} Q ${x} ${y} ${x + rr} ${y} H ${x + w - rr} Q ${x + w} ${y} ${x + w} ${y + rr} V ${y + h} Z`;
-  }
-  /* 把轴顶取成「好看的整数」，并返回刻度步长 —— 否则会出现 0/17/33/50/67/84 这种读不出来的刻度。 */
-  function niceAxis(rawMax, isPct) {
-    if (isPct) {                                   // 百分比轴固定走 10 的倍数，上限 100
-      const top = Math.min(100, Math.ceil(rawMax / 10) * 10);
-      return { top, step: top <= 20 ? 5 : top <= 50 ? 10 : 20 };
-    }
-    const pow = Math.pow(10, Math.floor(Math.log10(rawMax || 1)));
-    const step = [1, 2, 2.5, 5, 10].map(m => m * pow).find(s => rawMax / s <= 5) || 10 * pow;
-    return { top: Math.ceil(rawMax / step) * step, step };
-  }
-  function yAxis(maxV, label, isPct) {
-    const { top, step } = niceAxis(maxV, isPct);
-    let g = '';
-    for (let v = 0; v <= top + 1e-9; v += step) {
-      const y = px(v, 0, top, H - M.bottom, M.top);
-      g += `<line class="grid" x1="${M.left}" y1="${y}" x2="${W - M.right}" y2="${y}"/>` +
-           `<text class="val-label" x="${M.left - 10}" y="${y + 4}" text-anchor="end">${Number.isInteger(step) ? v : v.toFixed(1)}${isPct ? '%' : ''}</text>`;
-    }
-    g += `<line class="baseline" x1="${M.left}" y1="${H - M.bottom}" x2="${W - M.right}" y2="${H - M.bottom}"/>`;
-    g += `<text class="axis-title" transform="translate(20 ${(M.top + H - M.bottom) / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(label)}</text>`;
-    return { svg: g, top };                        // top = 画条形时要用的同一个轴顶
-  }
-  /* 类别名太长就断成两行，避免互相叠字 */
-  function xLabel(text, cx, y) {
-    const s = String(text);
-    if (s.length <= 9) return `<text class="cat-label" x="${cx}" y="${y}" text-anchor="middle">${escapeHtml(s)}</text>`;
-    const cut = s.lastIndexOf('/') + 1 || Math.ceil(s.length / 2);
-    return `<text class="cat-label" x="${cx}" y="${y}" text-anchor="middle">${escapeHtml(s.slice(0, cut))}</text>` +
-           `<text class="cat-label" x="${cx}" y="${y + 16}" text-anchor="middle">${escapeHtml(s.slice(cut))}</text>`;
-  }
+  /* ---------- 绘图（统一走 core/charts.js） ---------- */
+  const GEOM = { W, H, M, titleX: 20, yLabelDx: 10 };   // 与迁移前的常数一致
+  const drawBar = (values, labels, axisLabel, unitPct) =>
+    Charts.bar({ values, labels, axisLabel, pct: unitPct, geom: GEOM });
+  const drawPie = (values, labels) =>
+    Charts.pie({ values, labels, geom: GEOM });
+  const drawGrouped = (T, rowLabels, colLabels, axisLabel, unitPct) =>
+    Charts.grouped({ matrix: T, rowLabels, colLabels, axisLabel, pct: unitPct, geom: GEOM });
+  const drawSegmented = (T, rowLabels, colLabels) =>
+    Charts.segmented({ matrix: T, rowLabels, colLabels, pctAxisLabel: translations[lang].cat_pct_axis, geom: GEOM });
+
   function legend(labels) {
     $('catLegend').innerHTML = labels.map((l, i) =>
-      `<span><i style="background:${colorOf(i)}"></i>${escapeHtml(l)}</span>`).join('');
-  }
-
-  /* ---------- 单变量图 ---------- */
-  function drawBar(values, labels, axisLabel, unitPct) {
-    const ax = yAxis(Math.max(...values), axisLabel, unitPct);
-    const band = (W - M.left - M.right) / values.length;
-    let g = ax.svg;
-    values.forEach((v, i) => {
-      // 条形之间留空隙：教材强调分类数据的条形是分开的
-      const w = band * 0.58;
-      const x = M.left + band * i + (band - w) / 2;
-      const y = px(v, 0, ax.top, H - M.bottom, M.top);
-      g += `<path class="bar" fill="${colorOf(i)}" d="${barPath(x, y, w, H - M.bottom - y)}">` +
-           `<title>${escapeHtml(labels[i])}: ${unitPct ? fmtPct(v) : v}</title></path>`;
-      g += `<text class="val-label" x="${M.left + band * i + band / 2}" y="${y - 7}" text-anchor="middle">${unitPct ? fmtPct(v) : v}</text>`;
-      g += xLabel(labels[i], M.left + band * i + band / 2, H - M.bottom + 22);
-    });
-    return g;
-  }
-  function drawPie(values, labels) {
-    const n = sum(values), cx = W / 2, cy = H / 2 - 10, r = Math.min(H, W) / 2 - 60;
-    let a0 = -Math.PI / 2, g = '';
-    values.forEach((v, i) => {
-      const a1 = a0 + (v / n) * Math.PI * 2;
-      const big = a1 - a0 > Math.PI ? 1 : 0;
-      const p = (a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-      const [x0, y0] = p(a0), [x1, y1] = p(a1);
-      // 整圆（只有一个类别）时 arc 画不出来，改画整圆
-      g += values.filter(x => x > 0).length === 1
-        ? `<circle class="slice" fill="${colorOf(i)}" cx="${cx}" cy="${cy}" r="${r}"/>`
-        : `<path class="slice" fill="${colorOf(i)}" d="M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${big} 1 ${x1} ${y1} Z">` +
-          `<title>${escapeHtml(labels[i])}: ${v} (${fmtPct(pct(v, n))})</title></path>`;
-      if (v / n > 0.04) {
-        const [lx, ly] = p((a0 + a1) / 2);
-        g += `<text class="pie-label" x="${cx + (lx - cx) * 0.68}" y="${cy + (ly - cy) * 0.68 + 4}" text-anchor="middle">${fmtPct(pct(v, n))}</text>`;
-      }
-      a0 = a1;
-    });
-    return g;
-  }
-
-  /* ---------- 双变量图 ---------- */
-  /* 并排条形图：每个「变量一」类别一组，组内按「变量二」的类别排开 */
-  function drawGrouped(T, rowLabels, colLabels, axisLabel, unitPct) {
-    const ax = yAxis(Math.max(...T.flat()), axisLabel, unitPct);
-    const band = (W - M.left - M.right) / T.length;
-    let g = ax.svg;
-    T.forEach((row, i) => {
-      const inner = band * 0.74 / row.length;
-      row.forEach((v, j) => {
-        const x = M.left + band * i + band * 0.13 + inner * j;
-        const y = px(v, 0, ax.top, H - M.bottom, M.top);
-        g += `<path class="bar" fill="${colorOf(j)}" d="${barPath(x, y, inner - 2, H - M.bottom - y)}">` +
-             `<title>${escapeHtml(rowLabels[i])} · ${escapeHtml(colLabels[j])}: ${unitPct ? fmtPct(v) : v}</title></path>`;
-        if (row.length <= 4) g += `<text class="val-label" x="${x + (inner - 2) / 2}" y="${y - 6}" text-anchor="middle" font-size="11">${unitPct ? fmtPct(v) : v}</text>`;
-      });
-      g += xLabel(rowLabels[i], M.left + band * i + band / 2, H - M.bottom + 22);
-    });
-    return g;
-  }
-  /* 分段条形图：每根条拉到 100%，按「变量二」的条件分布切段 */
-  function drawSegmented(T, rowLabels, colLabels) {
-    const band = (W - M.left - M.right) / T.length;
-    let g = yAxis(100, translations[lang].cat_pct_axis, true).svg;
-    T.forEach((row, i) => {
-      const n = sum(row), bw = band * 0.52, x = M.left + band * i + (band - bw) / 2;
-      let acc = 0;
-      row.forEach((v, j) => {
-        const p0 = pct(acc, n), p1 = pct(acc + v, n);
-        const y1 = px(p1, 0, 100, H - M.bottom, M.top), y0 = px(p0, 0, 100, H - M.bottom, M.top);
-        g += `<rect class="bar" fill="${colorOf(j)}" x="${x}" y="${y1}" width="${bw}" height="${Math.max(0, y0 - y1)}">` +
-             `<title>${escapeHtml(rowLabels[i])} · ${escapeHtml(colLabels[j])}: ${fmtPct(pct(v, n))}</title></rect>`;
-        if (p1 - p0 > 6) g += `<text class="val-label" x="${x + bw / 2}" y="${(y0 + y1) / 2 + 4}" text-anchor="middle" fill="#fff">${fmtPct(pct(v, n))}</text>`;
-        acc += v;
-      });
-      g += xLabel(rowLabels[i], M.left + band * i + band / 2, H - M.bottom + 22);
-    });
-    return g;
+      `<span><i style="background:${Charts.colorOf(i)}"></i>${escapeHtml(l)}</span>`).join('');
   }
 
   /* ---------- 渲染 ---------- */

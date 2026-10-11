@@ -19,8 +19,9 @@ const Charts = (() => {
     const pow = Math.pow(10, Math.floor(Math.log10(rawMax || 1)));
     return [1, 2, 2.5, 5, 10].map(m => m * pow).find(s => rawMax / s <= 5) || 10 * pow;
   }
-  function niceTop(rawMax, isPct) {
+  function niceTop(rawMax, isPct, pctStep) {
     if (isPct) {
+      if (pctStep) return { top: 100, step: pctStep };
       const top = Math.min(100, Math.ceil(rawMax / 10) * 10);
       return { top, step: top <= 20 ? 5 : top <= 50 ? 10 : 20 };
     }
@@ -38,22 +39,25 @@ const Charts = (() => {
   const X = (v, lo, hi, G) => G.M.left + (G.W - G.M.right - G.M.left) * (v - lo) / ((hi - lo) || 1);
 
   /* 纵轴：网格线 + 刻度 + 轴标题。返回 { svg, top } —— top 是画条形要用的同一个轴顶。 */
-  function axisY(rawMax, label, G, isPct) {
-    const { top, step } = niceTop(rawMax, isPct);
+  function axisY(rawMax, label, G, isPct, pctStep) {
+    const { top, step } = niceTop(rawMax, isPct, pctStep);
     let s = '';
     for (let v = 0; v <= top + 1e-9; v += step) {
       const y = G.M.top + (G.H - G.M.bottom - G.M.top) * (1 - v / top);
       s += `<line class="grid" x1="${G.M.left}" y1="${y}" x2="${G.W - G.M.right}" y2="${y}"/>` +
-           `<text class="val-label" x="${G.M.left - 9}" y="${y + 4}" text-anchor="end">${Number.isInteger(step) ? v : v.toFixed(1)}${isPct ? '%' : ''}</text>`;
+           `<text class="val-label" x="${G.M.left - (G.yLabelDx ?? 9)}" y="${y + 4}" text-anchor="end">${Number.isInteger(step) ? v : v.toFixed(1)}${isPct ? '%' : ''}</text>`;
     }
     s += `<line class="baseline" x1="${G.M.left}" y1="${G.H - G.M.bottom}" x2="${G.W - G.M.right}" y2="${G.H - G.M.bottom}"/>`;
-    s += `<text class="axis-title" transform="translate(16 ${(G.M.top + G.H - G.M.bottom) / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(label)}</text>`;
+    // 传空标题就不画 —— 多组对比时几张小图共用一条说明，各自不再重复标注
+    // titleX 跟着各页的左边距走（左边距宽的页面要往右挪一点），默认 13
+    if (label) s += `<text class="axis-title" transform="translate(${G.titleX ?? 13} ${(G.M.top + G.H - G.M.bottom) / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(label)}</text>`;
     return { svg: s, top };
   }
 
   /* 连续型横轴：等距刻度 + 轴标题 */
   function axisX(lo, hi, label, G) {
-    const step = niceStep((hi - lo) / 5), d = decimalsFor(step);
+    // 画布很宽时分更多格，否则刻度之间会空得没法读数
+    const step = niceStep((hi - lo) / (G.W > 800 ? 8 : 5)), d = decimalsFor(step);
     let s = '';
     for (let x = Math.ceil(lo / step) * step; x <= hi + 1e-9; x += step) {
       const p = X(x, lo, hi, G);
@@ -70,7 +74,7 @@ const Charts = (() => {
     if (s.length <= 9) return `<text class="cat-label" x="${cx}" y="${y}" text-anchor="middle">${escapeHtml(s)}</text>`;
     const cut = s.lastIndexOf('/') + 1 || Math.ceil(s.length / 2);
     return `<text class="cat-label" x="${cx}" y="${y}" text-anchor="middle">${escapeHtml(s.slice(0, cut))}</text>` +
-           `<text class="cat-label" x="${cx}" y="${y + 15}" text-anchor="middle">${escapeHtml(s.slice(cut))}</text>`;
+           `<text class="cat-label" x="${cx}" y="${y + 16}" text-anchor="middle">${escapeHtml(s.slice(cut))}</text>`;
   }
 
   /* ---------- 分箱 ---------- */
@@ -110,15 +114,15 @@ const Charts = (() => {
       const y = G.M.top + (G.H - G.M.bottom - G.M.top) * (1 - v / ax.top);
       s += `<path class="bar" fill="${colorOf(i)}" d="${barPath(x, y, w, G.H - G.M.bottom - y)}">` +
            `<title>${escapeHtml(labels[i])}: ${pct ? fmtPct(v) : v}</title></path>`;
-      s += `<text class="val-label" x="${G.M.left + band * i + band / 2}" y="${y - 6}" text-anchor="middle">${pct ? fmtPct(v) : v}</text>`;
-      s += catLabel(labels[i], G.M.left + band * i + band / 2, G.H - G.M.bottom + 21);
+      s += `<text class="val-label" x="${G.M.left + band * i + band / 2}" y="${y - 7}" text-anchor="middle">${pct ? fmtPct(v) : v}</text>`;
+      s += catLabel(labels[i], G.M.left + band * i + band / 2, G.H - G.M.bottom + 22);
     });
     return s;
   }
 
   function pie({ values, labels, geom }) {
     const G = g(geom);
-    const n = sum(values), cx = G.W / 2, cy = G.H / 2 - 6, r = Math.min(G.H, G.W) / 2 - 46;
+    const n = sum(values), cx = G.W / 2, cy = G.H / 2 - 10, r = Math.min(G.H, G.W) / 2 - 60;
     const nonZero = values.filter(v => v > 0).length;
     let a0 = -Math.PI / 2, s = '';
     values.forEach((v, i) => {
@@ -154,9 +158,9 @@ const Charts = (() => {
         s += `<path class="bar" fill="${colorOf(j)}" d="${barPath(x, y, Math.max(1, inner - 2), G.H - G.M.bottom - y)}">` +
              `<title>${escapeHtml(rowLabels[i])} · ${escapeHtml(colLabels[j])}: ${pct ? fmtPct(v) : v}</title></path>`;
         if (row.length <= 4)
-          s += `<text class="val-label" x="${x + (inner - 2) / 2}" y="${y - 5}" text-anchor="middle" font-size="11">${pct ? fmtPct(v) : v}</text>`;
+          s += `<text class="val-label" x="${x + (inner - 2) / 2}" y="${y - 6}" text-anchor="middle" font-size="11">${pct ? fmtPct(v) : v}</text>`;
       });
-      s += catLabel(rowLabels[i], G.M.left + band * i + band / 2, G.H - G.M.bottom + 21);
+      s += catLabel(rowLabels[i], G.M.left + band * i + band / 2, G.H - G.M.bottom + 22);
     });
     return s;
   }
@@ -180,26 +184,30 @@ const Charts = (() => {
           s += `<text class="val-label" x="${x + bw / 2}" y="${(y0 + y1) / 2 + 4}" text-anchor="middle" fill="#fff">${fmtPct(pctOf(v, n))}</text>`;
         acc += v;
       });
-      s += catLabel(rowLabels[i], G.M.left + band * i + band / 2, G.H - G.M.bottom + 21);
+      s += catLabel(rowLabels[i], G.M.left + band * i + band / 2, G.H - G.M.bottom + 22);
     });
     return s;
   }
 
   /* ---------- 定量数据 ---------- */
-  function hist({ values, binW, pct, yLabel, xLabel, geom, color = 0 }) {
+  /* binsOverride / yTopOverride：多组对比时，几张直方图必须共用同一套分箱边界
+     和同一个纵轴上限，否则没法直接比较。 */
+  function hist({ values, binW, pct, yLabel, xLabel, geom, color = 0, binsOverride, yTopOverride, showPct = true }) {
     const G = g(geom);
-    const { bins, lo, hi } = histogram(values, binW);
+    const { bins, lo, hi } = binsOverride || histogram(values, binW);
     const n = values.length;
-    const ys = bins.map(b => pct ? pctOf(b.n, n) : b.n);
-    const ax = axisY(Math.max(...ys), yLabel, G, pct);
+    const counts = binsOverride ? binsOverride.counts : bins.map(b => b.n);
+    const ys = counts.map(c => pct ? pctOf(c, n) : c);
+    const ax = axisY(yTopOverride !== undefined ? yTopOverride : Math.max(...ys), yLabel, G, pct);
     let s = ax.svg + axisX(lo, hi, xLabel, G);
     const bw = (G.W - G.M.right - G.M.left) / bins.length;
     const d = decimalsFor(binW);
     bins.forEach((b, i) => {
-      if (!b.n) return;                            // 空组不画：直方图的空隙必须代表「这里没有数据」
+      const c = counts[i];
+      if (!c) return;                              // 空组不画：直方图的空隙必须代表「这里没有数据」
       const h = (G.H - G.M.bottom - G.M.top) * (ys[i] / ax.top);
       s += `<rect class="hist-bar" fill="${colorOf(color)}" x="${G.M.left + bw * i}" y="${G.H - G.M.bottom - h}" width="${bw}" height="${h}">` +
-           `<title>[${b.lo.toFixed(d)}, ${b.hi.toFixed(d)})　${b.n}　${fmtPct(pctOf(b.n, n))}</title></rect>`;
+           `<title>[${b.lo.toFixed(d)}, ${b.hi.toFixed(d)})　${c}${showPct ? '　' + fmtPct(pctOf(c, n)) : ''}</title></rect>`;
     });
     return s;
   }
@@ -224,33 +232,30 @@ const Charts = (() => {
   }
 
   /* 累积相对频数曲线（肩形图）：点画在每组的右端点上 */
-  function ogive({ values, binW, yLabel, xLabel, geom }) {
+  function ogive({ values, binW, yLabel, xLabel, geom, pctStep = 25 }) {
     const G = g(geom);
     const { bins, lo, hi } = histogram(values, binW);
     const n = values.length;
-    const ax = axisY(100, yLabel, G, true);
+    const ax = axisY(100, yLabel, G, true, pctStep);
     let s = ax.svg + axisX(lo, hi, xLabel, G);
     const Y = p => G.M.top + (G.H - G.M.bottom - G.M.top) * (1 - p / ax.top);
-    const pts = [[X(lo, lo, hi, G), Y(0)]];
-    let acc = 0;
     const d = decimalsFor(binW);
-    bins.forEach(b => { acc += b.n; pts.push([X(b.hi, lo, hi, G), Y(pctOf(acc, n))]); });
-    s += `<polyline class="ogive-line" fill="none" points="${pts.map(p => p.join(',')).join(' ')}"/>`;
-    acc = 0;
-    bins.forEach(b => {
-      acc += b.n;
-      s += `<circle class="ogive-dot" cx="${X(b.hi, lo, hi, G)}" cy="${Y(pctOf(acc, n))}" r="3.5">` +
-           `<title>≤ ${b.hi.toFixed(d)}　${acc} / ${n}　${fmtPct(pctOf(acc, n))}</title></circle>`;
-    });
+    let acc = 0;
+    const pts = [[lo, 0]];                           // 曲线从左端 0% 起步
+    for (const b of bins) { acc += b.n; pts.push([b.hi, pctOf(acc, n)]); }
+    s += `<polyline class="ogive-line" fill="none" points="${pts.map(([x, p]) => `${X(x, lo, hi, G)},${Y(p)}`).join(' ')}"/>`;
+    for (const [x, p] of pts)
+      s += `<circle class="ogive-dot" cx="${X(x, lo, hi, G)}" cy="${Y(p)}" r="3">` +
+           `<title>≤ ${x.toFixed(d)}　${p.toFixed(1)}%</title></circle>`;
     return s;
   }
 
   /* 箱线图。横轴只标五数概括这五个值；标签挤到一起时自动换行，
      所以高度是算出来的 —— 返回 { svg, h }。 */
-  function box({ values, xLabel, geom, color = 0 }) {
+  function box({ values, xLabel, geom, outlierLabel }) {
     const G = g(geom);
     const f = fiveNumber(values);
-    const pad = (f.max - f.min) * 0.05 || 1;
+    const pad = (f.max - f.min) * 0.04 || 1;
     const lo = f.min - pad, hi = f.max + pad;
     const d = Math.max(1, decimalsFor(Math.abs(f.iqr || 1) / 10));
     const inside = f.sorted.filter(v => v >= f.lowerFence && v <= f.upperFence);
@@ -271,31 +276,36 @@ const Charts = (() => {
     const GG = { ...G, H };
     const x = v => X(v, lo, hi, GG);
     const cy = GG.M.top + (G.H - G.M.bottom - G.M.top) / 2;
-    const half = 26;
+    const half = 30;
 
     let s = `<line class="baseline" x1="${GG.M.left}" y1="${H - GG.M.bottom}" x2="${GG.W - GG.M.right}" y2="${H - GG.M.bottom}"/>`;
     marks.forEach((m, i) => {
       s += `<line class="tickmark" x1="${m.x}" y1="${H - GG.M.bottom}" x2="${m.x}" y2="${H - GG.M.bottom + 5}"/>` +
            `<text class="val-label" x="${m.x}" y="${H - GG.M.bottom + 17 + rows[i] * 13}" text-anchor="middle">${m.v.toFixed(d)}</text>`;
     });
-    s += `<text class="axis-title" x="${(GG.M.left + GG.W - GG.M.right) / 2}" y="${H - 6}" text-anchor="middle">${escapeHtml(xLabel)}</text>`;
+    s += `<text class="axis-title" x="${(GG.M.left + GG.W - GG.M.right) / 2}" y="${H - 4}" text-anchor="middle">${escapeHtml(xLabel)}</text>`;
     s += `<line class="box-whisker" x1="${x(wLo)}" y1="${cy}" x2="${x(f.q1)}" y2="${cy}"/>` +
          `<line class="box-whisker" x1="${x(f.q3)}" y1="${cy}" x2="${x(wHi)}" y2="${cy}"/>` +
          `<line class="box-whisker" x1="${x(wLo)}" y1="${cy - 11}" x2="${x(wLo)}" y2="${cy + 11}"/>` +
          `<line class="box-whisker" x1="${x(wHi)}" y1="${cy - 11}" x2="${x(wHi)}" y2="${cy + 11}"/>`;
-    s += `<rect class="box-body" fill="${colorOf(color)}" fill-opacity=".25" stroke="${colorOf(color)}" ` +
-         `x="${x(f.q1)}" y="${cy - half}" width="${Math.max(1, x(f.q3) - x(f.q1))}" height="${half * 2}">` +
+    // 单个箱线图的配色完全交给 CSS（.box-body）—— 不要写内联 fill/fill-opacity，
+    // 否则 CSS 里没定义的 fill-opacity 会生效，箱体会被淡化。
+    s += `<rect class="box-body" x="${x(f.q1)}" y="${cy - half}" width="${Math.max(1, x(f.q3) - x(f.q1))}" height="${half * 2}">` +
          `<title>Q₁ ${f.q1.toFixed(d)}　M ${f.median.toFixed(d)}　Q₃ ${f.q3.toFixed(d)}　IQR ${f.iqr.toFixed(d)}</title></rect>`;
     s += `<line class="box-median" x1="${x(f.median)}" y1="${cy - half}" x2="${x(f.median)}" y2="${cy + half}"/>`;
-    for (const v of outs) s += `<circle class="box-outlier" cx="${x(v)}" cy="${cy}" r="3.5"><title>${v.toFixed(d)}</title></circle>`;
+    const tag = outlierLabel ? escapeHtml(outlierLabel) + ': ' : '';
+    for (const v of outs)
+      s += `<circle class="box-outlier" cx="${x(v)}" cy="${cy}" r="3.5"><title>${tag}${v.toFixed(d)}</title></circle>`;
+    if (outs.length && outlierLabel)
+      s += `<text class="val-label" x="${GG.W - GG.M.right}" y="${GG.M.top + 12}" text-anchor="end">${escapeHtml(outlierLabel)}: ${outs.length}</text>`;
     return { svg: s, h: H, outliers: outs.length };
   }
 
   /* 并排箱线图：若干组共用一条数轴 */
-  function boxGroups({ groups, xLabel, geom }) {
+  function boxGroups({ groups, xLabel, geom, outlierLabel }) {
     const G = g(geom);
     const all = groups.flatMap(gr => gr.values);
-    const pad = (Math.max(...all) - Math.min(...all)) * 0.05 || 1;
+    const pad = (Math.max(...all) - Math.min(...all)) * 0.04 || 1;   // 0.04 与各页原实现一致，改了会多出一个刻度
     const lo = Math.min(...all) - pad, hi = Math.max(...all) + pad;
     const d = 1;
     const band = (G.H - G.M.bottom - G.M.top) / groups.length;
@@ -317,8 +327,9 @@ const Charts = (() => {
            `x="${x(f.q1)}" y="${cy - half}" width="${Math.max(1, x(f.q3) - x(f.q1))}" height="${half * 2}">` +
            `<title>${escapeHtml(grp.label)}　Q₁ ${f.q1.toFixed(d)}　M ${f.median.toFixed(d)}　Q₃ ${f.q3.toFixed(d)}　IQR ${f.iqr.toFixed(d)}</title></rect>`;
       s += `<line class="box-median" x1="${x(f.median)}" y1="${cy - half}" x2="${x(f.median)}" y2="${cy + half}"/>`;
+      const tag = outlierLabel ? escapeHtml(outlierLabel) + ': ' : '';
       for (const v of f.sorted.filter(v => v < f.lowerFence || v > f.upperFence))
-        s += `<circle class="box-outlier" cx="${x(v)}" cy="${cy}" r="3.5"><title>${v.toFixed(d)}</title></circle>`;
+        s += `<circle class="box-outlier" cx="${x(v)}" cy="${cy}" r="3.5"><title>${tag}${v.toFixed(d)}</title></circle>`;
     });
     return s;
   }
