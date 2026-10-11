@@ -14,6 +14,14 @@
   Object.assign(translations.zh, {
     custom_title: '自定义数据',
     custom_desc: '用你自己的数据画图。传一个 Excel / CSV，或者直接在下面手敲、从 Excel 粘贴。数据只在你这台电脑上，不会上传到任何地方。',
+    custom_guide_title: '选几个变量，就出哪些图',
+    custom_guide: [
+      ['1 个分类变量', '频数表 ＋ 条形图 ＋ 饼图'],
+      ['2 个分类变量', '列联表（计数／行%／列%／总%）＋ 并排条形图 ＋ 分段条形图'],
+      ['1 个定量变量', '直方图（组距可调）＋ 点图 ＋ 肩形图 ＋ 箱线图 ＋ 茎叶图'],
+      ['1 个定量 ＋ 1 个分类', '并排箱线图 ＋ 同刻度直方图 ＋ 背靠背茎叶图'],
+      ['3 列及以上', '只画并排箱线图，把几个变量放在同一条数轴上比'],
+    ],
     custom_src_file: '选文件', custom_src_manual: '手动输入',
     custom_pick: '选择文件…', custom_sheet: '工作表',
     custom_file_hint: '支持 .xlsx / .xls / .csv。默认第一行是表头。',
@@ -58,7 +66,7 @@
     custom_b2b_need2: '背靠背茎叶图需要分组变量恰好有 2 个类别，当前有 {n} 个。',
     custom_stem_label: '茎',
     custom_clear_all: '清除当前数据',
-    custom_sample: '载入示例数据',
+    custom_sample: '载入示例：各季度航班延误',
     custom_sample_name: '各季度航班延误时长（示例）',
     custom_sample_note: '虚构的示例数据，用来演示多列并排箱线图：某机场四个季度各抽查 15 个航班的延误小时数。',
     custom_q1: '第一季度', custom_q2: '第二季度', custom_q3: '第三季度', custom_q4: '第四季度',
@@ -68,6 +76,14 @@
   Object.assign(translations.en, {
     custom_title: 'Your Own Data',
     custom_desc: 'Make the Ch3–5 displays from your own data. Upload an Excel/CSV file, or type or paste values below. Everything stays on this computer — nothing is uploaded.',
+    custom_guide_title: 'What you get for each choice of variables',
+    custom_guide: [
+      ['1 categorical', 'Frequency table + bar chart + pie chart'],
+      ['2 categorical', 'Contingency table (counts / row% / column% / table%) + side-by-side bar + segmented bar'],
+      ['1 quantitative', 'Histogram (adjustable bins) + dotplot + ogive + boxplot + stem-and-leaf'],
+      ['1 quantitative + 1 categorical', 'Side-by-side boxplots + histograms on one scale + back-to-back stem-and-leaf'],
+      ['3 or more columns', 'Side-by-side boxplots only — several variables on one axis'],
+    ],
     custom_src_file: 'Choose a file', custom_src_manual: 'Type or paste',
     custom_pick: 'Choose file…', custom_sheet: 'Sheet',
     custom_file_hint: 'Accepts .xlsx / .xls / .csv. The first row is treated as the header.',
@@ -112,7 +128,7 @@
     custom_b2b_need2: 'A back-to-back stem-and-leaf needs exactly 2 groups; this variable has {n}.',
     custom_stem_label: 'Stem',
     custom_clear_all: 'Clear current data',
-    custom_sample: 'Load sample data',
+    custom_sample: 'Load sample: flight delays by quarter',
     custom_sample_name: 'Flight delay hours by quarter (sample)',
     custom_sample_note: 'Made-up sample data for trying out side-by-side boxplots: delay in hours for 15 sampled flights in each quarter at one airport.',
     custom_q1: 'Q1', custom_q2: 'Q2', custom_q3: 'Q3', custom_q4: 'Q4',
@@ -272,6 +288,7 @@
         <h1 data-i18n="custom_title">${escapeHtml(t.custom_title)}</h1>
         <p data-i18n="custom_desc">${escapeHtml(t.custom_desc)}</p>
       </div></div>
+      <details id="customGuide" class="chart-guide" open></details>
       <div id="customSrcSwitch" class="chart-switch"></div>
       <section id="customFilePanel" class="controls">
         <label><span data-i18n="custom_pick">${escapeHtml(t.custom_pick)}</span>
@@ -465,8 +482,18 @@
   }
 
   /* ---------- 渲染 ---------- */
+  function renderGuide() {
+    const t = T();
+    const open = $('customGuide').open;            // 保住用户自己折叠/展开的状态
+    $('customGuide').innerHTML =
+      `<summary>${escapeHtml(t.custom_guide_title)}</summary>` +
+      `<ul>${t.custom_guide.map(([k, v]) => `<li><b>${escapeHtml(k)}</b> → ${escapeHtml(v)}</li>`).join('')}</ul>`;
+    $('customGuide').open = open;
+  }
+
   function render() {
     const t = T();
+    renderGuide();
     $('customSrcSwitch').querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.src === state.src)));
     $('customFilePanel').hidden = state.src !== 'file';
     $('customManualPanel').hidden = state.src !== 'manual';

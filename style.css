@@ -317,3 +317,9 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .outlier-xy { display:flex; gap:6px; }
 .outlier-xy select { width:130px; }
 #outlierFile { width:auto; padding:6px 0; border:0; font:13px inherit; }
+
+/* 自定义数据页顶部的「选几个变量出哪些图」说明 */
+.chart-guide { margin:16px 0 4px; padding:12px 16px; border:1px solid var(--line); border-radius:8px; background:var(--soft); }
+.chart-guide summary { color:var(--navy); font-size:14px; font-weight:700; cursor:pointer; }
+.chart-guide ul { margin:10px 0 2px; padding-left:20px; color:#42515e; font-size:13px; line-height:1.9; }
+.chart-guide b { color:var(--navy); }
