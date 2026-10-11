@@ -314,3 +314,6 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .manual-grid #gridAddCol:hover { border-color:var(--blue); background:#f4f9fd; }
 .manual-grid .grid-delcol { margin-left:4px; border:0; border-radius:3px; padding:0 5px; background:transparent; color:#9aa5af; font:inherit; cursor:pointer; }
 .manual-grid .grid-delcol:hover { background:#fdf3f2; color:#c73932; }
+.outlier-xy { display:flex; gap:6px; }
+.outlier-xy select { width:130px; }
+#outlierFile { width:auto; padding:6px 0; border:0; font:13px inherit; }

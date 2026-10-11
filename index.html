@@ -82,6 +82,10 @@
           <button id="outlierClear" type="button" class="reset" data-i18n="outlier_clear" disabled>清空数据点</button>
           <label class="check"><input id="outlierFit" type="checkbox"> <span data-i18n="outlier_fit">显示最佳拟合线</span></label>
           <span id="outlierFitStats" class="outlier-fit-stats" hidden aria-live="polite">b₀ = —　b₁ = —</span>
+          <label><span data-i18n="outlier_import">导入数据</span>
+            <input id="outlierFile" type="file" accept=".xlsx,.xls,.csv"></label>
+          <label id="outlierCols" hidden><span data-i18n="outlier_xy">X / Y 变量</span>
+            <span class="outlier-xy"><select id="outlierX"></select><select id="outlierY"></select></span></label>
         </section>
         <p class="hint" data-i18n="outlier_hint"></p>
         <section class="outlier-stats" aria-live="polite" data-i18n-aria="outlier_stats_aria">
