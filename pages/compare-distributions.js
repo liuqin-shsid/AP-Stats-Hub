@@ -6,6 +6,7 @@
   Object.assign(translations.zh, {
     cmp_title: '比较分布',
     cmp_desc: '同一份数据、同样两组，换三种画法对比——看中心、离散程度、形状和离群点分别怎么显现出来。',
+    cmp_dataset: '选择数据集',
     cmp_binwidth: '组距', cmp_bins: '组数',
     cmp_box: '并排箱线图', cmp_hist: '同刻度直方图对比', cmp_stem: '背靠背茎叶图',
     cmp_stat_group: '组', cmp_n: 'n', cmp_mean: '均值 x̄', cmp_median: '中位数 M', cmp_sd: '样本标准差 s',
@@ -19,6 +20,7 @@
   Object.assign(translations.en, {
     cmp_title: 'Comparing Distributions',
     cmp_desc: 'One batch of data, the same two groups, shown three ways — see how center, spread, shape and outliers each come through.',
+    cmp_dataset: 'Dataset',
     cmp_binwidth: 'Bin width', cmp_bins: 'Bins',
     cmp_box: 'Side-by-side boxplots', cmp_hist: 'Histograms on one scale', cmp_stem: 'Back-to-back stem-and-leaf',
     cmp_stat_group: 'Group', cmp_n: 'n', cmp_mean: 'Mean x̄', cmp_median: 'Median M', cmp_sd: 'Sample SD s',
@@ -85,6 +87,9 @@
         <h1 data-i18n="cmp_title">${escapeHtml(t.cmp_title)}</h1>
         <p data-i18n="cmp_desc">${escapeHtml(t.cmp_desc)}</p>
       </div></div>
+      <section class="controls" data-i18n-aria="controls_aria">
+        <label><span data-i18n="cmp_dataset">${escapeHtml(t.cmp_dataset)}</span><select id="cmpDataset"></select></label>
+      </section>
       <p id="cmpNote" class="hint"></p>
       <div id="cmpStats" class="freq-table-wrap"></div>
       <div id="cmpBox" class="chart-pair"></div>
@@ -97,7 +102,16 @@
       <div id="cmpHists" class="chart-pair"></div>
       <div id="cmpStem" class="chart-pair"></div>`;
     $('cmpBin').addEventListener('input', e => { state.binW = binChoices(range())[Number(e.target.value)]; render(); });
+    $('cmpDataset').addEventListener('change', e => {
+      state.ds = e.target.value; state.binW = null; syncBin(); render();
+    });
+    syncDataset();
     syncBin();
+  }
+  /* 下拉文字要跟着语言重新标注，否则切英文后还是中文 */
+  function syncDataset() {
+    setOptions($('cmpDataset'), DATA.order, state.ds, id => DATA.sets[id].name[lang]);
+    $('cmpDataset').value = state.ds;
   }
   function syncBin() {
     const choices = binChoices(range());
@@ -175,5 +189,5 @@
   buildUI();
   render();
   document.addEventListener('apstats:tool', e => { if (e.detail === 'compare') render(); });
-  document.addEventListener('apstats:language', () => { render(); });
+  document.addEventListener('apstats:language', () => { syncDataset(); render(); });
 })();

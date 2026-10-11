@@ -20,4 +20,18 @@ module.exports = [
       { v: 'S/W',   zh: '南部 / 西部',   en: 'South & West' },
     ],
   },
+  {
+    id: 'baseball',
+    file: 'data/source/Ch05_Baseball.xls',
+    name: { zh: '棒球队场均得分', en: 'Baseball Runs per Game' },
+    note: { zh: '教材 Ch5 · 30 支球队，按联盟分成两组', en: 'Textbook Ch5 · 30 teams in two leagues' },
+    variable: { zh: '场均得分', en: 'Average Runs per Game' },
+    groupName: { zh: '联盟', en: 'League' },
+    value: r => num(r['Avg Runs']),
+    group: r => r['League'],
+    levels: [
+      { v: 'American', zh: '美国联盟', en: 'American League' },
+      { v: 'National', zh: '国家联盟', en: 'National League' },
+    ],
+  },
 ];
