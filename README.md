@@ -121,6 +121,8 @@ vendor/              第三方库：SheetJS、PapaParse、jStat、KaTeX
 
 `displays` 可选：`hist` 直方图、`dot` 点图、`stem` 茎叶图、`ogive` 累积频率曲线、`box` 箱线图。点图和茎叶图只适合小数据量（几十到一两百），数据多了改用直方图。
 
+「比较分布」的配置多一个 `groupName` 和 `levels`（分组的顺序就按 `levels` 写的顺序），`displays` 换成 `box` 并排箱线图、`hist` 同刻度直方图、`stem` 背靠背茎叶图。**背靠背茎叶图只能放两组**（茎在中间、叶往两边长），分成三组以上就别写 `stem`——写了转换脚本会直接报错提醒你。
+
 **第三步**：在仓库根目录跑一次转换。
 
 ```bash

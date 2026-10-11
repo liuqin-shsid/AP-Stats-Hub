@@ -177,8 +177,13 @@ function buildGrouped() {
     }
     const unknown = [...new Set(raw.map(r => String(cfg.group(r))))].filter(g => !index.has(g) && g !== 'null');
     if (unknown.length) { console.error(`  \u2717 ${cfg.id} 有未声明的分组：${unknown.join('、')}`); failed = true; }
+    if ((cfg.displays || []).includes('stem') && cfg.levels.length !== 2) {
+      console.error(`  \u2717 ${cfg.id} 有 ${cfg.levels.length} 组，背靠背茎叶图只能放两组，请去掉 displays 里的 'stem'`);
+      failed = true;
+    }
 
-    sets[cfg.id] = { name: cfg.name, note: cfg.note, variable: cfg.variable, groupName: cfg.groupName, groups };
+    sets[cfg.id] = { name: cfg.name, note: cfg.note, variable: cfg.variable,
+                     groupName: cfg.groupName, displays: cfg.displays, groups };
     order.push(cfg.id);
     console.log(`  \u2713 ${cfg.id.padEnd(16)} ` + groups.map(g => `${g.zh} n=${g.values.length}`).join('  ')
                 + (dropped ? `（丢弃 ${dropped} 行）` : ''));

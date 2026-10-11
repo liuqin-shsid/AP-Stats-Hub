@@ -359,21 +359,27 @@ const Charts = (() => {
     if (v.length < 2) return '—';
     const { leaf, stemSize, split } = stemSpec(v);
     const per = 10 / split;
+    /* 行号 ri 连续编号（茎 × split + 第几个分茎），这样中间空着的行也能排出来。
+       茎叶图必须把范围内每一个茎都列出来，空茎留白——间断本身就是要看的信息。 */
     const rows = new Map();
     for (const x of v) {
       const scaled = Math.round(x / leaf), st = Math.floor(scaled / 10), d = scaled - st * 10;
-      const key = st * 10 + Math.floor(d / per);
-      if (!rows.has(key)) rows.set(key, []);
-      rows.get(key).push(d);
+      const ri = st * split + Math.floor(d / per);
+      if (!rows.has(ri)) rows.set(ri, []);
+      rows.get(ri).push(d);
     }
-    const keys = [...rows.keys()].sort((a, b) => b - a);  // 大的在上，与教材一致
-    const width = Math.max(...keys.map(k => String(Math.floor(k / 10)).length));
-    const body = keys.map(k => `${String(Math.floor(k / 10)).padStart(width)} | ${rows.get(k).sort((a, b) => a - b).join('')}`).join('\n');
-    const d0 = rows.get(keys[0]).slice().sort((a, b) => a - b)[0], st0 = Math.floor(keys[0] / 10);
+    const filled = [...rows.keys()];
+    const keys = [];
+    for (let ri = Math.max(...filled); ri >= Math.min(...filled); ri--) keys.push(ri);
+    const stemOf = ri => Math.floor(ri / split);
+    const width = Math.max(...keys.map(k => String(stemOf(k)).length));
+    const body = keys.map(k =>
+      `${String(stemOf(k)).padStart(width)} | ${(rows.get(k) || []).sort((a, b) => a - b).join('')}`).join('\n');
+    const d0 = rows.get(keys[0]).slice().sort((a, b) => a - b)[0], st0 = stemOf(keys[0]);
     const read = (readTpl || '{k} | {d} = {v}').replace('{k}', st0).replace('{d}', d0)
       .replace('{v}', (st0 * stemSize + d0 * leaf).toFixed(decimalsFor(leaf)));
     const dropped = all.length - v.length;
-    const crowded = Math.max(...keys.map(k => rows.get(k).length)) > 80;
+    const crowded = Math.max(...keys.map(k => (rows.get(k) || []).length)) > 80;
     return `${body}\n\n${read}`
       + (dropped && negNote ? `\n${negNote.replace('{n}', dropped)}` : '')
       + (crowded && crowdedNote ? `\n\n${crowdedNote}` : '');
@@ -395,7 +401,9 @@ const Charts = (() => {
       return m;
     };
     const L = bucket(groups[0].values), R = bucket(groups[1].values);
-    const stems = [...new Set([...L.keys(), ...R.keys()])].sort((a, b) => a - b);
+    const filled = [...new Set([...L.keys(), ...R.keys()])];
+    const stems = [];                                     // 中间空着的茎也要占一行
+    for (let st = Math.min(...filled); st <= Math.max(...filled); st++) stems.push(st);
     const leftStr = s => (L.get(s) || []).sort((a, b) => b - a).join('');   // 左侧从茎往外读，越外越大
     const rightStr = s => (R.get(s) || []).sort((a, b) => a - b).join('');
     const body = stems.map(st =>
