@@ -90,7 +90,11 @@
     const r = sxy / Math.sqrt(sxx * syy);
     return { slope, intercept, r, r2: r * r };
   }
-  const fmt = v => (Number.isFinite(v) ? Number(v.toPrecision(6)).toString() : '—');
+  const fmt = v => {
+  if (!Number.isFinite(v)) return '—';
+  if (Math.abs(v) < 1e-9) return '0';   // 极小值（浮点误差）直接显示为 0
+  return Number(v.toPrecision(6)).toString();
+};
 
   // ---------- 坐标 ----------
   function scaleLinear(value, d, a, b) {
