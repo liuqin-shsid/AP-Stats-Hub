@@ -92,8 +92,8 @@
   }
   const fmt = v => {
   if (!Number.isFinite(v)) return '—';
-  if (Math.abs(v) < 1e-9) return '0';   // 极小值（浮点误差）直接显示为 0
-  return Number(v.toPrecision(6)).toString();
+  if (Math.abs(v) < 1e-6) return '0';   // 极小值（浮点误差）直接显示为 0
+  return Number(v.toPrecision(3)).toString();
 };
 
   // ---------- 坐标 ----------
