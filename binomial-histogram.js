@@ -248,7 +248,9 @@
       x2: SIZE.m.left, y2: SIZE.h - SIZE.m.bottom,
     }));
 
-    const barW = Math.max(1, (sx(1) - sx(0)) * 0.8);
+    // Bars — width fills the whole unit so adjacent bars touch (histogram look).
+    // Factor 1.02 adds a tiny overlap to avoid anti-aliasing hairline seams.
+    const barW = Math.max(1, (sx(1) - sx(0)) * 1.02);
     for (let k = 0; k <= n; k++) {
       const h = (SIZE.h - SIZE.m.bottom) - sy(pmfValues[k]);
       if (h <= 0) continue;
