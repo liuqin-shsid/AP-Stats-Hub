@@ -19,11 +19,16 @@
     binomial_invalid_p: 'p 必须在 0 与 1 之间。',
     binomial_invalid_input: '输入无效：n 为整数，p 为 0–1 之间的数。',
     binomial_aria: '二项分布直方图',
-    // --- 新增翻译 ---
-    binomial_model_title: '概率模型 (Probability Model)',
     binomial_table_k: 'k (成功次数)',
     binomial_table_prob: 'P(X = k)',
     binomial_table_empty: '请先绘图以显示数据',
+    binomial_stat_title: '统计指标',
+    binomial_stat_mean: 'E(X) = np',
+    binomial_stat_sd: 'SD(X) = √(npq)',
+    // --- 新增翻译 ---
+    binomial_formula_title: '概率质量函数 (PMF)',
+    binomial_formula_text: 'P(X = k) = ₙCₖ · pᵏ · (1-p)ⁿ⁻ᵏ',
+    binomial_formula_k_range: 'k = 0, 1, ..., n',
   });
   Object.assign(translations.en, {
     binomial_title: 'Binomial Distribution',
@@ -39,17 +44,21 @@
     binomial_invalid_p: 'p must be between 0 and 1.',
     binomial_invalid_input: 'Invalid input — n must be an integer, p a number.',
     binomial_aria: 'Binomial distribution histogram',
-    // --- 新增翻译 ---
-    binomial_model_title: 'Probability Model',
     binomial_table_k: 'k (Successes)',
     binomial_table_prob: 'P(X = k)',
     binomial_table_empty: 'Plot to see data',
+    binomial_stat_title: 'Statistics',
+    binomial_stat_mean: 'E(X) = np',
+    binomial_stat_sd: 'SD(X) = √(npq)',
+    // --- 新增翻译 ---
+    binomial_formula_title: 'Probability Mass Function (PMF)',
+    binomial_formula_text: 'P(X = k) = ₙCₖ · pᵏ · (1-p)ⁿ⁻ᵏ',
+    binomial_formula_k_range: 'k = 0, 1, ..., n',
   });
 
   /* ---------- Constants ---------- */
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const SIZE = { w: 1000, h: 610, m: { left: 86, right: 38, top: 32, bottom: 75 } };
-  const MODEL_SIZE = { w: 400, h: 260, m: { left: 40, right: 20, top: 20, bottom: 40 } }; // 右侧模型图尺寸
   const COLORS = {
     bar: 'steelblue',
     barStroke: '#1d2935',
@@ -58,7 +67,6 @@
     tick: '#5b6874',
     label: '#263844',
     mean: '#c73932',
-    modelDot: '#3b82f6', // 模型图颜色
   };
 
   /* ---------- PMF (log-gamma based for numerical stability) ---------- */
@@ -131,7 +139,6 @@
       </section>
       <p id="binomialHint" class="hint" role="status"></p>
       
-      <!-- 新增：左右分栏布局 -->
       <div class="binomial-layout">
         <!-- 左侧：直方图 -->
         <div class="binomial-chart-area">
@@ -140,12 +147,30 @@
           </section>
         </div>
         
-        <!-- 右侧：概率模型 + 表格 -->
+        <!-- 右侧：公式 + 统计指标 + 表格 -->
         <div class="binomial-model-area">
-          <div class="model-card">
-            <h3 data-i18n="binomial_model_title">概率模型 (Probability Model)</h3>
-            <svg id="binomialModelChart" viewBox="0 0 400 260" role="img"></svg>
+          
+          <!-- 新增：公式面板 -->
+          <div class="binomial-formula-panel">
+            <h4 data-i18n="binomial_formula_title">概率质量函数 (PMF)</h4>
+            <div class="formula-display" id="binomialFormulaDisplay">
+              P(X = k) = ₙCₖ · pᵏ · (1-p)ⁿ⁻ᵏ
+            </div>
           </div>
+
+          <!-- 统计指标面板 -->
+          <div class="binomial-stats-panel">
+            <h4 data-i18n="binomial_stat_title">统计指标</h4>
+            <div class="stat-row">
+              <span class="stat-label" data-i18n="binomial_stat_mean">E(X) = np</span>
+              <span class="stat-value" id="statMeanVal">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label" data-i18n="binomial_stat_sd">SD(X) = √(npq)</span>
+              <span class="stat-value" id="statSdVal">—</span>
+            </div>
+          </div>
+
           <div class="probability-table-container">
             <table class="probability-table">
               <thead>
@@ -198,7 +223,6 @@
   /* ---------- Chart rendering ---------- */
   function renderChart() {
     const svg = document.getElementById('binomialChart');
-    const modelSvg = document.getElementById('binomialModelChart');
     const tbody = document.getElementById('binomialTableBody');
     if (!svg) return;
     const t = translations[lang];
@@ -206,7 +230,6 @@
 
     // 清理旧图表
     clearSvg(svg);
-    if (modelSvg) clearSvg(modelSvg);
     if (tbody) tbody.innerHTML = '';
 
     // 错误处理
@@ -314,6 +337,9 @@
     }
 
     const mean = n * p;
+    const variance = n * p * (1 - p);
+    const sd = Math.sqrt(variance);
+
     svg.appendChild(svgEl('line', {
       x1: sx(mean), x2: sx(mean),
       y1: SIZE.m.top, y2: SIZE.h - SIZE.m.bottom,
@@ -353,44 +379,30 @@
     svg.appendChild(title);
 
     // ==========================================
-    // 2. 绘制右侧概率模型图 (点阵图)
+    // 2. 更新统计指标面板
     // ==========================================
-    if (modelSvg) {
-      const msx = makeScale([-0.5, n + 0.5], [MODEL_SIZE.m.left, MODEL_SIZE.w - MODEL_SIZE.m.right]);
-      const msy = makeScale([0, yMax], [MODEL_SIZE.h - MODEL_SIZE.m.bottom, MODEL_SIZE.m.top]);
-      
-      // 绘制底部轴线
-      modelSvg.appendChild(svgEl('line', {
-        class: 'axis',
-        x1: MODEL_SIZE.m.left, y1: MODEL_SIZE.h - MODEL_SIZE.m.bottom,
-        x2: MODEL_SIZE.w - MODEL_SIZE.m.right, y2: MODEL_SIZE.h - MODEL_SIZE.m.bottom,
-      }));
-      
-      // 绘制每个 k 对应的圆点
-      for (let k = 0; k <= n; k++) {
-        if (pmfValues[k] < 0.0001) continue; // 忽略极小概率
-        modelSvg.appendChild(svgEl('circle', {
-          cx: msx(k),
-          cy: msy(pmfValues[k]),
-          r: 4,
-          fill: COLORS.modelDot,
-          'fill-opacity': 0.8,
-        }));
-      }
-      
-      // 绘制均值虚线
-      const meanX = msx(mean);
-      modelSvg.appendChild(svgEl('line', {
-        x1: meanX, x2: meanX,
-        y1: MODEL_SIZE.m.top, y2: MODEL_SIZE.h - MODEL_SIZE.m.bottom,
-        stroke: COLORS.mean,
-        'stroke-width': 1.5,
-        'stroke-dasharray': '4 3',
-      }));
+    const statMeanEl = document.getElementById('statMeanVal');
+    const statSdEl = document.getElementById('statSdVal');
+    if (statMeanEl) statMeanEl.textContent = `${fmt(mean, 2)}`;
+    if (statSdEl) statSdEl.textContent = `${fmt(sd, 4)}`;
+
+    // ==========================================
+    // 3. 更新公式面板（代入 n 和 p 的数值）
+    // ==========================================
+    const formulaEl = document.getElementById('binomialFormulaDisplay');
+    if (formulaEl) {
+      // 用 HTML 的 <sub> 和 <sup> 标签来渲染角标和下标
+      formulaEl.innerHTML = `
+        P(X = k) = <sub>${n}</sub>C<sub>k</sub> · 
+        (${p})<sup>k</sup> · 
+        (1 - ${p})<sup>${n}-k</sup>
+        <br>
+        <span style="font-size: 13px; color: #64717d;">k = 0, 1, ..., ${n}</span>
+      `;
     }
 
     // ==========================================
-    // 3. 填充表格数据
+    // 4. 填充表格数据
     // ==========================================
     if (tbody) {
       // 表头动态翻译
