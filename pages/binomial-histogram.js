@@ -19,6 +19,11 @@
     binomial_invalid_p: 'p 必须在 0 与 1 之间。',
     binomial_invalid_input: '输入无效：n 为整数，p 为 0–1 之间的数。',
     binomial_aria: '二项分布直方图',
+    // --- 新增翻译 ---
+    binomial_model_title: '概率模型 (Probability Model)',
+    binomial_table_k: 'k (成功次数)',
+    binomial_table_prob: 'P(X = k)',
+    binomial_table_empty: '请先绘图以显示数据',
   });
   Object.assign(translations.en, {
     binomial_title: 'Binomial Distribution',
@@ -34,11 +39,17 @@
     binomial_invalid_p: 'p must be between 0 and 1.',
     binomial_invalid_input: 'Invalid input — n must be an integer, p a number.',
     binomial_aria: 'Binomial distribution histogram',
+    // --- 新增翻译 ---
+    binomial_model_title: 'Probability Model',
+    binomial_table_k: 'k (Successes)',
+    binomial_table_prob: 'P(X = k)',
+    binomial_table_empty: 'Plot to see data',
   });
 
   /* ---------- Constants ---------- */
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const SIZE = { w: 1000, h: 610, m: { left: 86, right: 38, top: 32, bottom: 75 } };
+  const MODEL_SIZE = { w: 400, h: 260, m: { left: 40, right: 20, top: 20, bottom: 40 } }; // 右侧模型图尺寸
   const COLORS = {
     bar: 'steelblue',
     barStroke: '#1d2935',
@@ -47,6 +58,7 @@
     tick: '#5b6874',
     label: '#263844',
     mean: '#c73932',
+    modelDot: '#3b82f6', // 模型图颜色
   };
 
   /* ---------- PMF (log-gamma based for numerical stability) ---------- */
@@ -118,9 +130,37 @@
         <button id="binomialPlot" class="reset" type="button" data-i18n="binomial_plot">绘图</button>
       </section>
       <p id="binomialHint" class="hint" role="status"></p>
-      <section class="chart-card binomial-card">
-        <svg id="binomialChart" viewBox="0 0 1000 610" role="img" data-i18n-aria="binomial_aria"></svg>
-      </section>
+      
+      <!-- 新增：左右分栏布局 -->
+      <div class="binomial-layout">
+        <!-- 左侧：直方图 -->
+        <div class="binomial-chart-area">
+          <section class="chart-card binomial-card">
+            <svg id="binomialChart" viewBox="0 0 1000 610" role="img" data-i18n-aria="binomial_aria"></svg>
+          </section>
+        </div>
+        
+        <!-- 右侧：概率模型 + 表格 -->
+        <div class="binomial-model-area">
+          <div class="model-card">
+            <h3 data-i18n="binomial_model_title">概率模型 (Probability Model)</h3>
+            <svg id="binomialModelChart" viewBox="0 0 400 260" role="img"></svg>
+          </div>
+          <div class="probability-table-container">
+            <table class="probability-table">
+              <thead>
+                <tr>
+                  <th data-i18n="binomial_table_k">k (成功次数)</th>
+                  <th data-i18n="binomial_table_prob">P(X = k)</th>
+                </tr>
+              </thead>
+              <tbody id="binomialTableBody">
+                <tr><td colspan="2" style="text-align:center; color:#888;" data-i18n="binomial_table_empty">请先绘图以显示数据</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     `;
 
     const nInput = document.getElementById('binomialN');
@@ -158,27 +198,21 @@
   /* ---------- Chart rendering ---------- */
   function renderChart() {
     const svg = document.getElementById('binomialChart');
+    const modelSvg = document.getElementById('binomialModelChart');
+    const tbody = document.getElementById('binomialTableBody');
     if (!svg) return;
     const t = translations[lang];
     const hint = document.getElementById('binomialHint');
 
-    if (!state.lastValid && !state.error) {
-      hint.textContent = t.binomial_need_plot;
-      hint.className = 'hint';
-      clearSvg(svg);
-      const placeholder = svgEl('text', {
-        x: SIZE.w / 2, y: SIZE.h / 2, 'text-anchor': 'middle',
-        class: 'binomial-empty',
-      });
-      placeholder.textContent = t.binomial_need_plot;
-      svg.appendChild(placeholder);
-      return;
-    }
+    // 清理旧图表
+    clearSvg(svg);
+    if (modelSvg) clearSvg(modelSvg);
+    if (tbody) tbody.innerHTML = '';
 
+    // 错误处理
     if (state.error) {
       hint.textContent = t[state.error];
       hint.className = 'hint danger';
-      clearSvg(svg);
       const err = svgEl('text', {
         x: SIZE.w / 2, y: SIZE.h / 2, 'text-anchor': 'middle',
         class: 'binomial-error',
@@ -188,9 +222,21 @@
       return;
     }
 
+    // 未绘图提示
+    if (!state.lastValid) {
+      hint.textContent = t.binomial_need_plot;
+      hint.className = 'hint';
+      const placeholder = svgEl('text', {
+        x: SIZE.w / 2, y: SIZE.h / 2, 'text-anchor': 'middle',
+        class: 'binomial-empty',
+      });
+      placeholder.textContent = t.binomial_need_plot;
+      svg.appendChild(placeholder);
+      return;
+    }
+
     hint.textContent = '';
     hint.className = 'hint';
-    clearSvg(svg);
 
     const { n, p } = state.lastValid;
     const kValues = [];
@@ -201,6 +247,9 @@
     }
     const yMax = Math.max(...pmfValues, 1e-12) * 1.08;
 
+    // ==========================================
+    // 1. 绘制左侧直方图
+    // ==========================================
     const sx = makeScale([-0.5, n + 0.5], [SIZE.m.left, SIZE.w - SIZE.m.right]);
     const sy = makeScale([0, yMax], [SIZE.h - SIZE.m.bottom, SIZE.m.top]);
 
@@ -302,6 +351,61 @@
     });
     title.textContent = `B(n=${n}, p=${p})`;
     svg.appendChild(title);
+
+    // ==========================================
+    // 2. 绘制右侧概率模型图 (点阵图)
+    // ==========================================
+    if (modelSvg) {
+      const msx = makeScale([-0.5, n + 0.5], [MODEL_SIZE.m.left, MODEL_SIZE.w - MODEL_SIZE.m.right]);
+      const msy = makeScale([0, yMax], [MODEL_SIZE.h - MODEL_SIZE.m.bottom, MODEL_SIZE.m.top]);
+      
+      // 绘制底部轴线
+      modelSvg.appendChild(svgEl('line', {
+        class: 'axis',
+        x1: MODEL_SIZE.m.left, y1: MODEL_SIZE.h - MODEL_SIZE.m.bottom,
+        x2: MODEL_SIZE.w - MODEL_SIZE.m.right, y2: MODEL_SIZE.h - MODEL_SIZE.m.bottom,
+      }));
+      
+      // 绘制每个 k 对应的圆点
+      for (let k = 0; k <= n; k++) {
+        if (pmfValues[k] < 0.0001) continue; // 忽略极小概率
+        modelSvg.appendChild(svgEl('circle', {
+          cx: msx(k),
+          cy: msy(pmfValues[k]),
+          r: 4,
+          fill: COLORS.modelDot,
+          'fill-opacity': 0.8,
+        }));
+      }
+      
+      // 绘制均值虚线
+      const meanX = msx(mean);
+      modelSvg.appendChild(svgEl('line', {
+        x1: meanX, x2: meanX,
+        y1: MODEL_SIZE.m.top, y2: MODEL_SIZE.h - MODEL_SIZE.m.bottom,
+        stroke: COLORS.mean,
+        'stroke-width': 1.5,
+        'stroke-dasharray': '4 3',
+      }));
+    }
+
+    // ==========================================
+    // 3. 填充表格数据
+    // ==========================================
+    if (tbody) {
+      // 表头动态翻译
+      const thK = document.querySelector('th[data-i18n="binomial_table_k"]');
+      const thP = document.querySelector('th[data-i18n="binomial_table_prob"]');
+      if (thK) thK.textContent = t.binomial_table_k;
+      if (thP) thP.textContent = t.binomial_table_prob;
+
+      // 填充数据行
+      for (let k = 0; k <= n; k++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${k}</td><td>${pmfValues[k].toFixed(6)}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
   }
 
   /* ---------- Language / navigation hooks ---------- */
