@@ -8,7 +8,7 @@ body { margin:0; min-width:980px; color:var(--text); font-family:"Segoe UI","Mic
 .content { width:calc(100% - 205px); max-width:1360px; padding:28px 38px 34px; }.page-heading { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; }.page-heading h1 { margin:0 0 7px; color:var(--navy); font-size:25px; }.page-heading p { margin:0; color:#64717d; font-size:14px; }
 .controls { display:flex; align-items:end; flex-wrap:wrap; gap:13px 16px; padding:18px 20px; border:1px solid var(--line); border-radius:8px; background:#fff; }.controls label { display:flex; flex-direction:column; gap:6px; color:#42515e; font-size:13px; font-weight:600; }.controls select { width:190px; height:34px; padding:0 9px; border:1px solid #c9d2da; border-radius:5px; background:#fff; color:var(--text); font:14px inherit; }.controls .check { flex-direction:row; align-items:center; height:34px; gap:6px; font-size:14px; cursor:pointer; }.controls input { accent-color:var(--blue); }.delete-check { color:#a13a2e!important; }.reset { height:34px; padding:0 15px; border:0; border-radius:5px; background:var(--blue); color:#fff; font:600 14px inherit; cursor:pointer; }.reset:hover { background:#1d679f; }
 .hint { margin:10px 2px 16px; color:#687581; font-size:13px; }.hint.danger { color:#b13a2e; font-weight:600; }.stats { min-height:89px; padding:15px 18px; border-left:4px solid var(--blue); background:#f7fafc; }.equation { margin-bottom:7px; color:#9f3027; font-size:18px; font-weight:700; }.stats #metrics { font-size:14px; }.count { margin-top:7px; color:#6d7983; font-size:13px; }
-.chart-card { height:620px; margin-top:18px; padding:5px; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; } #chart { display:block; width:100%; height:100%; user-select:none; }.grid { stroke:#dfe6eb; stroke-width:1; }.axis { stroke:#50606d; stroke-width:1.2; }.tick { fill:#5b6874; font-size:14px; }.axis-label { fill:#263844; font-size:16px; font-weight:600; }.point { fill:#2878b8; stroke:#fff; stroke-width:1.5; cursor:grab; }.point.delete { fill:#cf493c; cursor:pointer; }.fit-line { stroke:#c73932; stroke-width:2.5; }.fit-label { fill:#a92e29; font-size:14px; font-weight:600; }
+.chart-card { height:620px; margin-top:18px; padding:5px; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#fff; } #chart,#residChart { display:block; width:100%; height:auto; user-select:none; }.grid { stroke:#dfe6eb; stroke-width:1; }.axis { stroke:#50606d; stroke-width:1.2; }.tick { fill:#5b6874; font-size:14px; }.axis-label { fill:#263844; font-size:16px; font-weight:600; }.point { fill:#2878b8; stroke:#fff; stroke-width:1.5; cursor:grab; }.point.delete { fill:#cf493c; cursor:pointer; }.fit-line { stroke:#c73932; stroke-width:2.5; }.fit-label { fill:#a92e29; font-size:14px; font-weight:600; }
 footer { height:48px; padding:0 34px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--line); color:#7a8791; font-size:13px; }
 
 [hidden] { display:none!important; }
@@ -200,4 +200,193 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 }
 @media (max-width: 800px) {
   #proportionPage .prop-charts { grid-template-columns: minmax(0, 1fr); }
+}
+/* ---------- 分类数据的展示 ---------- */
+/* 分类配色：Okabe–Ito 色觉障碍友好配色，已通过全配对校验（ΔE 全部达标）。
+   按固定顺序分配，不循环使用；超过 5 类归入「其他」。 */
+:root {
+  --cat-1:#0072B2; --cat-2:#D55E00; --cat-3:#009E73; --cat-4:#CC79A7; --cat-5:#E69F00;
+  --cat-other:#6b7280;
+}
+.chart-switch { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 0; }
+.chart-switch button { border:1px solid #c9d2da; border-radius:5px; padding:7px 14px; background:#fff; color:var(--navy); font:inherit; font-size:13px; cursor:pointer; }
+.chart-switch button:hover { background:#eaf1f6; }
+.chart-switch button[aria-pressed="true"] { border-color:var(--blue); background:#dfeef9; font-weight:600; }
+
+.freq-table-wrap { margin-top:18px; overflow-x:auto; }
+.freq-table { border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+.freq-table th, .freq-table td { padding:8px 14px; border:1px solid var(--line); text-align:right; white-space:nowrap; }
+.freq-table thead th { background:#f7fafc; color:var(--navy); font-weight:700; }
+.freq-table tbody th { background:#f7fafc; color:var(--navy); font-weight:600; text-align:left; }
+.freq-table .corner { background:#eef3f7; }
+/* 边际分布（行列合计）—— 教材里专门强调的概念，底色区分 */
+.freq-table .margin { background:#eef3f7; font-weight:700; color:var(--navy); }
+.freq-table .swatch { display:inline-block; width:11px; height:11px; margin-right:7px; border-radius:2px; vertical-align:-1px; }
+.freq-caption { margin:0 0 8px; color:#64717d; font-size:13px; }
+
+.cat-chart-card { margin-top:14px; padding:10px 8px 6px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+/* 两张图并排：每页就两种图，不用点击切换，也省掉一屏的纵向滚动 */
+.chart-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:14px; }
+.chart-panel { min-width:0; padding:10px 10px 6px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.chart-panel h2 { margin:0 2px 4px; color:var(--navy); font-size:15px; font-weight:700; }
+@media (max-width:980px) { .chart-pair { grid-template-columns:minmax(0,1fr); } }
+.cat-chart { display:block; width:100%; height:auto; }
+.cat-chart .bar { stroke:#fff; stroke-width:2; }          /* 2px 同色描边 = 色块之间的间隙 */
+.cat-chart .slice { stroke:#fff; stroke-width:2; }
+.cat-chart .val-label { fill:#42515e; font-size:12px; font-variant-numeric:tabular-nums; }
+/* 压在彩色扇区上的文字：白字 + 深色描边，保证任何底色下都读得清 */
+.cat-chart .pie-label { fill:#fff; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:3px; }
+.cat-chart .cat-label { fill:#42515e; font-size:13px; }
+.cat-chart .axis-title { fill:#263844; font-size:13px; font-weight:600; }
+.cat-chart .baseline { stroke:#50606d; stroke-width:1.2; }
+.cat-chart .grid { stroke:#eef2f5; stroke-width:1; }
+.cat-legend { display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 4px 2px; color:#42515e; font-size:13px; }
+.cat-legend span { display:flex; align-items:center; gap:7px; }
+.cat-legend i { width:12px; height:12px; border-radius:2px; }
+
+/* ---------- 定量数据的展示 ---------- */
+.bin-control { display:grid; grid-template-columns:auto minmax(160px,340px) auto; align-items:center; gap:14px; margin:16px 0 4px; color:#42515e; font-size:13px; font-weight:600; }
+.bin-control input { margin:0; accent-color:var(--blue); cursor:pointer; }
+.bin-control output { color:var(--navy); font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+.quant-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:1px; margin-top:14px; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:var(--line); }
+.quant-stats>div { min-width:0; padding:12px 14px; background:#f7fafc; }
+.quant-stats span { display:block; margin-bottom:4px; color:#64717d; font-size:12px; }
+.quant-stats strong { display:block; color:var(--navy); font-size:17px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+/* 直方图的条必须相接：空隙只能来自数据本身。用深色描边分隔，不留白缝。 */
+.cat-chart .hist-bar { fill:var(--cat-1); stroke:#004f7d; stroke-width:.75; }
+.cat-chart .dot { fill:var(--cat-1); }
+.cat-chart .scatter-dot { fill:var(--cat-1); stroke:#fff; stroke-width:1.2; }
+.cat-chart .scatter-fit { stroke:#c73932; stroke-width:2.2; }
+/* 累积频率曲线 */
+.cat-chart .ogive-line { fill:none; stroke:var(--cat-2); stroke-width:2.2; }
+.cat-chart .ogive-dot { fill:var(--cat-2); }
+/* 箱线图：须线只到围栏内最远的点，围栏不画；离群点单独标出 */
+.cat-chart .box-body { fill:#dfeef9; stroke:var(--cat-1); stroke-width:1.6; }
+.cat-chart .box-median { stroke:#c73932; stroke-width:2.4; }
+.cat-chart .box-whisker { stroke:var(--cat-1); stroke-width:1.6; }
+.cat-chart .box-outlier { fill:#c73932; stroke:#fff; stroke-width:1; }
+/* 占满整行的面板（并排箱线图、背靠背茎叶图） */
+.chart-pair .span-2 { grid-column:1 / -1; }
+.panel-note { margin:6px 2px 2px; color:#64717d; font-size:12px; line-height:1.55; }
+.cat-chart .tickmark { stroke:#50606d; stroke-width:1; }
+.cat-chart .marker-median { stroke:#c73932; stroke-width:2; stroke-dasharray:6 4; }
+.cat-chart .marker-mean { stroke:#D55E00; stroke-width:2; stroke-dasharray:2 3; }
+.cat-chart .marker-label { font-size:12px; font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px; }
+.cat-chart .marker-median-text { fill:#c73932; }
+.cat-chart .marker-mean-text { fill:#D55E00; }
+.stem-plot { margin:0; padding:6px 4px 10px; color:var(--navy); font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; white-space:pre; overflow-x:auto; }
+
+/* 背靠背茎叶图：茎在中间一列，两组的叶向两侧生长 */
+.stem-table { margin:4px auto 0; border-collapse:collapse; font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+.stem-table th { padding:4px 12px 8px; color:var(--navy); font-family:inherit; font-size:13px; font-weight:700; }
+.stem-table th:first-child { text-align:right; }
+.stem-table th:last-child { text-align:left; }
+.stem-table td { padding:1px 12px; color:var(--navy); letter-spacing:.06em; }
+.stem-table .leaf-left { text-align:right; }
+.stem-table .leaf-right { text-align:left; }
+.stem-table .stem-col { border-left:1px solid var(--line); border-right:1px solid var(--line); text-align:center; font-weight:700; background:#f7fafc; }
+
+/* 相关关系探究：散点图在上、残差图在下。
+   限个最大宽度，否则在宽屏上按 1000×610 的比例会高得离谱。 */
+.corr-charts { display:grid; gap:14px; max-width:900px; margin-top:18px; }
+/* 相关关系探究：残差图样式 */
+/* 零线画成弱虚线：它只是个参照基准，不该比数据点更抢眼 */
+.zero-resid-line { stroke:#9aa5af; stroke-width:1.2; stroke-dasharray:6 5; }
+.resid-drop { stroke:#c73932; stroke-width:1.2; opacity:.5; }
+.resid-point { fill:#2878b8; stroke:#fff; stroke-width:1.5; }
+.resid-empty { fill:#64717d; font-size:20px; }
+
+/* ---------- 自定义数据 ---------- */
+.manual-grid-wrap { max-height:420px; margin:14px 0 10px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
+.manual-grid { width:100%; border-collapse:collapse; font-size:13px; }
+.manual-grid th, .manual-grid td { padding:0; border:1px solid var(--line); }
+.manual-grid thead th { position:sticky; top:0; z-index:2; padding:7px 10px; background:#eef3f7; color:var(--navy); font-weight:700; }
+.manual-grid tbody th { padding:6px 10px; background:#f7fafc; color:#64717d; font-weight:600; text-align:left; white-space:nowrap; }
+.manual-grid .grid-rownum { color:#9aa5af; font-weight:400; text-align:right; font-variant-numeric:tabular-nums; }
+.manual-grid input, .manual-grid select { width:100%; height:30px; padding:0 8px; border:0; background:transparent; color:var(--text); font:13px inherit; }
+.manual-grid input:focus, .manual-grid select:focus { outline:2px solid var(--blue); outline-offset:-2px; background:#f4f9fd; }
+.manual-grid .grid-name input { font-weight:600; }
+.var-preview { color:#64717d; font-weight:400; text-align:left!important; max-width:380px; overflow:hidden; text-overflow:ellipsis; }
+#customFile { width:auto; padding:6px 0; border:0; font:13px inherit; }
+.var-check { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; margin:0; padding:8px 14px 10px; border:1px solid var(--line); border-radius:8px; }
+.var-check legend { padding:0 6px; color:var(--navy); font-size:13px; font-weight:700; }
+.var-check-item { display:inline-flex; align-items:center; gap:6px; color:var(--text); font-size:13px; cursor:pointer; }
+.var-check-item input { width:15px; height:15px; margin:0; accent-color:var(--blue); cursor:pointer; }
+.cat-legend.span-2 { grid-column:1 / -1; }
+.cat-chart .ogive-line { stroke:var(--cat-2); stroke-width:2.5; }
+.cat-chart .ogive-dot { fill:var(--cat-2); }
+.manual-grid .grid-addcol-cell { background:transparent; border:0; padding:0 6px; }
+.manual-grid #gridAddCol { height:28px; padding:0 10px; border:1px dashed #c9d2da; border-radius:5px; background:#fff; color:var(--blue); font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+.manual-grid #gridAddCol:hover { border-color:var(--blue); background:#f4f9fd; }
+.manual-grid .grid-delcol { margin-left:4px; border:0; border-radius:3px; padding:0 5px; background:transparent; color:#9aa5af; font:inherit; cursor:pointer; }
+.manual-grid .grid-delcol:hover { background:#fdf3f2; color:#c73932; }
+.outlier-xy { display:flex; gap:6px; }
+.outlier-xy select { width:130px; }
+#outlierFile { width:auto; padding:6px 0; border:0; font:13px inherit; }
+
+/* 自定义数据页顶部的「选几个变量出哪些图」说明 */
+.chart-guide { margin:16px 0 4px; padding:12px 16px; border:1px solid var(--line); border-radius:8px; background:var(--soft); }
+.chart-guide summary { color:var(--navy); font-size:14px; font-weight:700; cursor:pointer; }
+.chart-guide ul { margin:10px 0 2px; padding-left:20px; color:#42515e; font-size:13px; line-height:1.9; }
+.chart-guide b { color:var(--navy); }
+
+/* ---------- z-score 手绘页 ---------- */
+.zscore-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+.zscore-pair .chart-panel {
+  min-width: 0;
+  padding: 14px 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.zscore-pair .chart-panel h2 {
+  margin: 0 6px 8px;
+  color: var(--navy);
+  font-size: 16px;
+}
+.zscore-pair svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+.zscore-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin: 10px 6px 4px;
+  padding: 10px 12px;
+  background: #f7fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #42515e;
+}
+.zscore-stats > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.zscore-stats span {
+  color: #64717d;
+}
+.zscore-stats strong {
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .zscore-pair { grid-template-columns: 1fr; }
+}
+/* z-score 页：拟合线按钮激活状态 */
+.controls .secondary-button.active-toggle {
+  background: #fdecea;
+  border-color: #e6b0aa;
+  color: #a93226;
 }

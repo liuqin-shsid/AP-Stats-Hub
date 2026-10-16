@@ -1,0 +1,12 @@
+{
+  "name": "ap-stats-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AP Stats Hub —— 静态教学网站。本 package.json 只服务于 tools/ 下的数据转换脚本，网站本身不需要构建。",
+  "scripts": {
+    "build:data": "node tools/build-data.js"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
+  }
+}
