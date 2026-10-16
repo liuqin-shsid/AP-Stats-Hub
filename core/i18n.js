@@ -34,6 +34,8 @@ const translations = {
     best_fit_line: '最佳拟合直线',
     slope: '斜率',
     intercept: '截距',
+    nav_binomial: '概率分布',
+binomial_title: '二项分布',
   },
   en: {
     brand: 'AP Stats Hub',
@@ -68,6 +70,8 @@ const translations = {
     best_fit_line: 'Best-Fit Line',
     slope: 'Slope',
     intercept: 'Intercept',
+    nav_binomial: 'Probability Distribution',
+    binomial_title: 'Binomial Distribution',
   },
 };
 let lang = localStorage.getItem('apstats-lang') || 'zh';
