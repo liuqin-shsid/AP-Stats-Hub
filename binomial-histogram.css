@@ -1,0 +1,60 @@
+/* Scoped styles for the Binomial Histogram feature. Safe to add without
+   touching style.css. All selectors are prefixed with #binomialPage. */
+
+#binomialPage .binomial-controls {
+  align-items: end;
+}
+
+#binomialPage .binomial-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #42515e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#binomialPage .binomial-field input[type="number"] {
+  width: 160px;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #c9d2da;
+  border-radius: 5px;
+  background: #fff;
+  color: #1d2935;
+  font: 14px inherit;
+}
+
+#binomialPage .binomial-field input[type="number"]:focus {
+  outline: 3px solid #69a9dc;
+  outline-offset: 2px;
+  border-color: #2878b8;
+}
+
+#binomialPage .binomial-card {
+  height: 620px;
+  margin-top: 18px;
+  padding: 5px;
+  border: 1px solid #e4e9ee;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+#binomialPage #binomialChart {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+#binomialPage .binomial-empty,
+#binomialPage .binomial-error {
+  fill: #64717d;
+  font-size: 17px;
+}
+
+#binomialPage .binomial-error {
+  fill: #b13a2e;
+  font-weight: 600;
+}
