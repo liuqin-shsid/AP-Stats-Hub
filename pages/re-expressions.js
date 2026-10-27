@@ -2,41 +2,31 @@
 (function () {
   'use strict';
 
-  // 注册多语言
+  // 翻译字典补充（解决侧边栏和页面里的英文问题）
   if (typeof translations !== 'undefined') {
     translations.zh = translations.zh || {};
     translations.en = translations.en || {};
+    translations.zh['reexpr_title'] = '重新表达';
+    translations.zh['reexpr_desc'] = '通过点击或输入函数生成散点，观察变换 x 或 y 对线性拟合和残差的影响。';
+    translations.en['reexpr_title'] = 'Re-expression';
+    translations.en['reexpr_desc'] = 'Add points or generate a function, explore how transforming x or y affects linear fit and residuals.';
+    
+    // 补充内部使用的翻译
     Object.assign(translations.zh, {
-      reexpr_title: '重新表达 (Re-expression)',
-      reexpr_desc: '通过点击或输入函数生成散点，观察变换 x 或 y 对线性拟合和残差的影响。',
-      reexpr_xlabel: '对 X 变换:',
-      reexpr_ylabel: '对 Y 变换:',
-      reexpr_fitBtn: '拟合 & 显示残差',
-      reexpr_clearBtn: '清空全部',
-      reexpr_funcLabel: '生成函数 y =',
-      reexpr_genBtn: '生成散点',
-      reexpr_topTitle: '原始数据',
-      reexpr_botTitle: '重新表达后的数据',
-      reexpr_residTitle: '残差图',
+      reexpr_xlabel: '对 X 变换:', reexpr_ylabel: '对 Y 变换:', reexpr_fitBtn: '拟合 & 显示残差',
+      reexpr_clearBtn: '清空全部', reexpr_funcLabel: '生成函数 y =', reexpr_genBtn: '生成散点',
+      reexpr_topTitle: '原始数据', reexpr_botTitle: '重新表达后的数据', reexpr_residTitle: '残差图',
       reexpr_invalidFunc: '无效的函数'
     });
     Object.assign(translations.en, {
-      reexpr_title: 'Re-expression',
-      reexpr_desc: 'Add points or generate a function, explore how transforming x or y affects linear fit and residuals.',
-      reexpr_xlabel: 'Re-express x:',
-      reexpr_ylabel: 'Re-express y:',
-      reexpr_fitBtn: 'Fit & Show Residuals',
-      reexpr_clearBtn: 'Clear All',
-      reexpr_funcLabel: 'Function y =',
-      reexpr_genBtn: 'Generate Points',
-      reexpr_topTitle: 'Original Data',
-      reexpr_botTitle: 'Re-expressed Data',
-      reexpr_residTitle: 'Residuals',
+      reexpr_xlabel: 'Re-express x:', reexpr_ylabel: 'Re-express y:', reexpr_fitBtn: 'Fit & Show Residuals',
+      reexpr_clearBtn: 'Clear All', reexpr_funcLabel: 'Function y =', reexpr_genBtn: 'Generate Points',
+      reexpr_topTitle: 'Original Data', reexpr_botTitle: 'Re-expressed Data', reexpr_residTitle: 'Residuals',
       reexpr_invalidFunc: 'Invalid Function'
     });
   }
 
-  const t = (key) => (translations[lang] && translations[lang][key]) || key;
+  const t = (key) => (typeof lang !== 'undefined' && translations[lang] && translations[lang][key]) ? translations[lang][key] : key;
 
   const TRANSFORMS = {
     'none': { fx: v => v, label: { zh: '无', en: 'None' }, eq: { zh: 'x', en: 'x' } },
@@ -51,10 +41,15 @@
   let xTf = 'none', yTf = 'none';
   let points = [];
   let showFit = false;
+  let domInitialized = false;
 
   function initDOM() {
     const page = document.getElementById('reexprPage');
     if (!page) return;
+
+    // 防止重复注入 DOM
+    if (domInitialized) return;
+    domInitialized = true;
 
     page.innerHTML = `
       <div class="page-heading">
@@ -132,6 +127,8 @@
   function createButtons() {
     const xGroup = document.getElementById('reexprXGroup');
     const yGroup = document.getElementById('reexprYGroup');
+    if (!xGroup || !yGroup) return;
+    
     xGroup.innerHTML = ''; yGroup.innerHTML = '';
     
     Object.keys(TRANSFORMS).forEach(id => {
@@ -197,6 +194,7 @@
   }
 
   function drawPanel(svgMain, svgResid, divEq, mode) {
+    if (!svgMain || !svgResid || !divEq) return;
     clearSVG(svgMain); clearSVG(svgResid); divEq.innerHTML = '';
 
     const w = 400, h = 300, m = { left: 45, right: 15, top: 25, bottom: 35 };
@@ -288,10 +286,8 @@
     });
 
     let xEq = TRANSFORMS[xTf].eq[lang] || TRANSFORMS[xTf].eq['en'];
-    let yEq = TRANSFORMS[yTf].eq[lang] || TRANSFORMS[yTf].eq['en'];
     if (xTf === 'none') xEq = 'x';
-    if (yTf === 'none') yEq = 'y';
-
+    
     let sign = fit.b0 >= 0 ? '+' : '-';
     divEq.innerHTML = `<div style="font-family:serif; font-size:20px;">ŷ = ${fit.b0.toFixed(3)} ${sign} ${Math.abs(fit.b1).toFixed(3)} · ${xEq}</div>
                        <div style="margin-top:10px; font-size:16px;">R² = ${fit.r2.toFixed(4)}</div>`;
@@ -354,6 +350,15 @@
     } catch (err) { alert(t('reexpr_invalidFunc') + ": " + expr); }
   }
 
+  // 监听切换工具、切换语言事件
+  document.addEventListener('apstats:tool', (e) => {
+    if (e.detail === 'reexpr') {
+      if (!domInitialized) initDOM();
+      if (typeof applyLang === 'function') applyLang();
+      render();
+    }
+  });
+
   document.addEventListener('apstats:language', () => { 
     if (document.getElementById('reexprPage')) { 
       createButtons(); 
@@ -362,6 +367,7 @@
     } 
   });
 
+  // 启动时预先初始化
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDOM);
   } else {
