@@ -6,7 +6,7 @@
   if (typeof translations !== 'undefined') {
     translations.zh = translations.zh || {};
     translations.en = translations.en || {};
-    translations.zh['reexpr_title'] = '重新表达';
+    translations.zh['reexpr_title'] = '数据变换';
     translations.zh['reexpr_desc'] = '通过点击或输入函数生成散点，观察变换 x 或 y 对线性拟合和残差的影响。';
     translations.en['reexpr_title'] = 'Re-expression';
     translations.en['reexpr_desc'] = 'Add points or generate a function, explore how transforming x or y affects linear fit and residuals.';
@@ -27,14 +27,16 @@
 
   const t = (key) => (typeof lang !== 'undefined' && translations[lang] && translations[lang][key]) ? translations[lang][key] : key;
 
+  /* label.x / label.y  变换按钮在"对 X 变换 / 对 Y 变换"两行上显示的标准数学记号
+     eqLatex / eqPlain  拟合方程里该变换的写法：前者给 KaTeX 渲染，后者是无 KaTeX 时的纯文本兜底 */
   const TRANSFORMS = {
-    'none': { fx: v => v, label: { zh: '无', en: 'None' }, eq: { zh: 'x', en: 'x' } },
-    'log': { fx: v => Math.log(v), label: { zh: 'log', en: 'log' }, eq: { zh: '\\log(x)', en: '\\log(x)' } },
-    'inv': { fx: v => 1 / v, label: { zh: '1/x', en: '1/x' }, eq: { zh: '\\frac{1}{x}', en: '1/x' } },
-    'sqrt': { fx: v => Math.sqrt(v), label: { zh: '√x', en: '√x' }, eq: { zh: '\\sqrt{x}', en: '\\sqrt{x}' } },
-    'sq': { fx: v => v * v, label: { zh: 'x²', en: 'x²' }, eq: { zh: 'x^2', en: 'x^2' } },
-    'ninv': { fx: v => -1 / v, label: { zh: '-1/x', en: '-1/x' }, eq: { zh: '-\\frac{1}{x}', en: '-1/x' } },
-    'nsqrt': { fx: v => -1 / Math.sqrt(v), label: { zh: '-1/√x', en: '-1/√x' }, eq: { zh: '-\\frac{1}{\\sqrt{x}}', en: '-1/\\sqrt{x}' } }
+    'none':  { fx: v => v,               label: { x: 'x',      y: 'y'      }, eqLatex: 'x',                    eqPlain: 'x' },
+    'log':   { fx: v => Math.log(v),     label: { x: 'log(x)', y: 'log(y)' }, eqLatex: '\\log(x)',             eqPlain: 'log(x)' },
+    'inv':   { fx: v => 1 / v,           label: { x: '1/x',    y: '1/y'    }, eqLatex: '\\dfrac{1}{x}',        eqPlain: '1/x' },
+    'sqrt':  { fx: v => Math.sqrt(v),    label: { x: '√x',     y: '√y'     }, eqLatex: '\\sqrt{x}',            eqPlain: '√x' },
+    'sq':    { fx: v => v * v,           label: { x: 'x²',     y: 'y²'     }, eqLatex: 'x^2',                  eqPlain: 'x²' },
+    'ninv':  { fx: v => -1 / v,          label: { x: '−1/x',   y: '−1/y'   }, eqLatex: '-\\dfrac{1}{x}',       eqPlain: '−1/x' },
+    'nsqrt': { fx: v => -1 / Math.sqrt(v), label: { x: '−1/√x', y: '−1/√y' }, eqLatex: '-\\dfrac{1}{\\sqrt{x}}', eqPlain: '−1/√x' }
   };
 
   let xTf = 'none', yTf = 'none';
@@ -75,13 +77,13 @@
         </div>
       </section>
 
-      <section class="controls" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
-        <div style="display:flex; align-items:center;">
-          <span style="width:100px; font-weight:bold; color:#17324d;" data-i18n="reexpr_xlabel"></span>
+      <section class="controls" style="margin-top:10px; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start; gap:10px;">
+        <div style="display:flex; align-items:center; justify-content:flex-start;">
+          <span style="width:100px; flex-shrink:0; font-weight:bold; color:#17324d;" data-i18n="reexpr_xlabel"></span>
           <div id="reexprXGroup" style="display:flex; gap:5px; flex-wrap:wrap;"></div>
         </div>
-        <div style="display:flex; align-items:center;">
-          <span style="width:100px; font-weight:bold; color:#17324d;" data-i18n="reexpr_ylabel"></span>
+        <div style="display:flex; align-items:center; justify-content:flex-start;">
+          <span style="width:100px; flex-shrink:0; font-weight:bold; color:#17324d;" data-i18n="reexpr_ylabel"></span>
           <div id="reexprYGroup" style="display:flex; gap:5px; flex-wrap:wrap;"></div>
         </div>
       </section>
@@ -141,13 +143,13 @@
     Object.keys(TRANSFORMS).forEach(id => {
       let btn = document.createElement('button');
       btn.className = 'secondary-button'; btn.dataset.id = id;
-      btn.textContent = TRANSFORMS[id].label[lang] || TRANSFORMS[id].label['en'];
+      btn.textContent = TRANSFORMS[id].label.x;
       btn.onclick = () => { xTf = id; updateButtons(); renderGraphs(); };
       xGroup.appendChild(btn);
 
       let btnY = document.createElement('button');
       btnY.className = 'secondary-button'; btnY.dataset.id = id;
-      btnY.textContent = TRANSFORMS[id].label[lang] || TRANSFORMS[id].label['en'];
+      btnY.textContent = TRANSFORMS[id].label.y;
       btnY.onclick = () => { yTf = id; updateButtons(); renderGraphs(); };
       yGroup.appendChild(btnY);
     });
@@ -177,6 +179,14 @@
     return e;
   }
   function scale(v, d0, d1, a, b) { return a + (v - d0) * (b - a) / ((d1 - d0) || 1); }
+
+  /* 数学公式渲染：优先用 KaTeX 输出标准数学记号；KaTeX 不可用时退回纯文本（绝不让 \log 这类源码露出来）。 */
+  function renderMath(node, tex, plain) {
+    if (typeof katex !== 'undefined' && katex.render) {
+      try { katex.render(tex, node, { throwOnError: false }); return; } catch (e) { /* 退回纯文本 */ }
+    }
+    node.textContent = plain;
+  }
 
   function getLinearFit(x, y) {
     if (x.length < 2) return null;
@@ -292,12 +302,18 @@
       svgResid.appendChild(el('circle', { cx: sxRes(pred), cy: syRes(fit.residuals[i]), r: 5, fill: '#e67e22', stroke: '#b85c0f', 'stroke-width': 1.5 }));
     });
 
-    let xEq = TRANSFORMS[xTf].eq[lang] || TRANSFORMS[xTf].eq['en'];
-    if (xTf === 'none') xEq = 'x';
-    
-    let sign = fit.b0 >= 0 ? '+' : '-';
-    divEq.innerHTML = `<div style="font-family:serif; font-size:20px;">ŷ = ${fit.b0.toFixed(3)} ${sign} ${Math.abs(fit.b1).toFixed(3)} · ${xEq}</div>
-                       <div style="margin-top:10px; font-size:16px;">R² = ${fit.r2.toFixed(4)}</div>`;
+    let xEqLatex = TRANSFORMS[xTf].eqLatex;
+    let xEqPlain = TRANSFORMS[xTf].eqPlain;
+
+    /* 运算符取 b1 的符号（旧代码误用了 b0 的符号，斜率为负时会显示成加法） */
+    let sign = fit.b1 >= 0 ? '+' : '−';
+    divEq.innerHTML = '<div style="font-size:19px;"></div><div style="margin-top:10px; font-size:15px; color:#42515e;"></div>';
+    renderMath(divEq.children[0],
+      `\\hat{y} = ${fit.b0.toFixed(3)}\\;${sign}\\;${Math.abs(fit.b1).toFixed(3)}\\cdot ${xEqLatex}`,
+      `ŷ = ${fit.b0.toFixed(3)} ${sign} ${Math.abs(fit.b1).toFixed(3)} · ${xEqPlain}`);
+    renderMath(divEq.children[1],
+      `R^2 = ${fit.r2.toFixed(4)}`,
+      `R² = ${fit.r2.toFixed(4)}`);
   }
 
   function renderGraphs() {
@@ -387,4 +403,3 @@
   }
 
 })();
-
