@@ -4,24 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AP Stats Hub</title>
-  <!-- 第三方库全部本地化：不依赖 CDN，断网和 file:// 下都能用 -->
-  <link rel="stylesheet" href="vendor/katex/katex.embedded.css">
-  <script src="vendor/xlsx.full.min.js"></script>
-  <script src="vendor/papaparse.min.js"></script>
-  <script src="vendor/jstat.min.js"></script>
-  <script src="vendor/katex/katex.min.js"></script>
-  <!-- 数据：由 tools/build-data.js 从 data/source/ 的 Excel 生成 -->
-  <script src="data/regression.js"></script>
-  <script src="data/display.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="style.css">
-  <!-- 二项分布页面专属样式 -->
-  <link rel="stylesheet" href="pages/binomial-histogram.css">
 </head>
 <body>
   <header class="site-header"><div class="brand" data-i18n="brand">AP Stats Hub</div><button id="langToggle" class="lang-toggle" type="button">EN</button></header>
   <div class="layout">
-    <!-- 侧边栏由 core/sidebar.js 依据 core/pages.js 的清单生成 -->
-    <aside class="sidebar"></aside>
+    <aside class="sidebar">
+      <div class="sidebar-title" data-i18n="sidebar_title">学习工具</div>
+      <div class="nav-group" data-i18n="nav_linreg">线性回归教学</div>
+      <nav aria-label="线性回归教学" data-i18n-aria="nav_linreg">
+        <button id="correlationNav" class="nav-item tool-nav active" type="button" data-tool="correlation" data-i18n="heading_title" aria-current="page" aria-controls="correlationPage">相关关系探究</button>
+        <button id="scatterNav" class="nav-item tool-nav" type="button" data-tool="scatter" data-i18n="scatter_title" aria-controls="scatterPage">散点图</button>
+        <button id="outlierNav" class="nav-item tool-nav" type="button" data-tool="outlier" data-i18n="outlier_title" aria-controls="outlierPage">异常值点</button>
+        <button id="linearNav" class="nav-item tool-nav" type="button" data-tool="linear" data-i18n="linear_title" aria-controls="linearPage">线性函数</button>
+        <button id="zscoreNav" class="nav-item tool-nav" type="button" data-tool="zscore" data-i18n="zscore_title" aria-controls="zscorePage">z-score 标准化</button>
+        <button id="reexprNav" class="nav-item tool-nav" type="button" data-tool="reexpr" data-i18n="reexpr_title" aria-controls="reexprPage">重新表达</button>
+      </nav>
+    </aside>
     <main class="content">
       <div id="correlationPage">
       <div class="page-heading">
@@ -47,12 +48,7 @@
         <div id="metrics">r: —　|　R²: —　|　Slope: —　|　Intercept: —</div>
         <div id="count" class="count">数据点：0</div>
       </section>
-      <div class="corr-charts">
-        <section class="chart-panel"><h2 data-i18n="corr_scatter_title">散点图与最佳拟合线</h2>
-          <svg id="chart" viewBox="0 0 1000 610" role="img" data-i18n-aria="chart_aria" aria-label="互动散点图"></svg></section>
-        <section class="chart-panel"><h2 data-i18n="corr_resid_title">残差图</h2>
-          <svg id="residChart" viewBox="0 0 1000 400" role="img" data-i18n-aria="resid_aria" aria-label="残差图"></svg></section>
-      </div>
+      <section class="chart-card"><svg id="chart" viewBox="0 0 1000 610" role="img" data-i18n-aria="chart_aria" aria-label="互动散点图"></svg></section>
       </div>
       <div id="scatterPage" hidden>
         <div class="page-heading"><div><h1 data-i18n="scatter_title">散点图</h1><p data-i18n="scatter_desc"></p></div></div>
@@ -84,10 +80,6 @@
           <button id="outlierClear" type="button" class="reset" data-i18n="outlier_clear" disabled>清空数据点</button>
           <label class="check"><input id="outlierFit" type="checkbox"> <span data-i18n="outlier_fit">显示最佳拟合线</span></label>
           <span id="outlierFitStats" class="outlier-fit-stats" hidden aria-live="polite">b₀ = —　b₁ = —</span>
-          <label><span data-i18n="outlier_import">导入数据</span>
-            <input id="outlierFile" type="file" accept=".xlsx,.xls,.csv"></label>
-          <label id="outlierCols" hidden><span data-i18n="outlier_xy">X / Y 变量</span>
-            <span class="outlier-xy"><select id="outlierX"></select><select id="outlierY"></select></span></label>
         </section>
         <p class="hint" data-i18n="outlier_hint"></p>
         <section class="outlier-stats" aria-live="polite" data-i18n-aria="outlier_stats_aria">
@@ -130,47 +122,44 @@
           </section>
         </div>
       </div>
-      <!-- 页面容器：内容由对应的 pages/*.js 动态注入 -->
-      <div id="catPage" hidden></div>
-      <div id="quantPage" hidden></div>
-      <div id="cmpPage" hidden></div>
-      <div id="customPage" hidden></div>
-      <!-- 新增页面容器：内容由 pages/zscore.js 动态注入 -->
-      <div id="zscorePage" hidden></div>
-      <!-- 新增页面容器：内容由 pages/sampling-mean.js 动态注入 -->
-      <div id="samplingPage" hidden></div>
-      <!-- 新增页面容器：内容由 pages/sampling-proportion.js 动态注入 -->
-      <div id="proportionPage" hidden></div>
-      <!-- 新增页面容器：内容由 binomial-histogram.js 动态注入 -->
-      <div id="binomialPage" hidden></div>
+      
+      <!-- 6. Re-expression Page -->
+      <div id="reexprPage" hidden></div>
+
+      <!-- (z-score page 保留在原来的项目脚本中，无需我们在 HTML 里写) -->
     </main>
   </div>
-  <footer><span>© 2026</span><span>SHSID AP Stats Hub</span></footer>
-  <!-- 共用基础设施 -->
-  <script src="core/dom.js"></script>
-  <script src="core/plot.js"></script>
-  <script src="core/stats.js"></script>
-  <script src="core/i18n.js"></script>
-  <script src="core/data.js"></script>
-  <script src="core/pages.js"></script>
-  <script src="core/router.js"></script>
-  <script src="core/sidebar.js"></script>
-  <script src="core/charts.js"></script>
-  <!-- 各页面（加载顺序 = 语言/数据事件的响应顺序，勿随意调换） -->
-  <script src="pages/display-categorical.js"></script>
-  <script src="pages/display-quantitative.js"></script>
-  <script src="pages/compare-distributions.js"></script>
-  <script src="pages/custom-data.js"></script>
-  <script src="pages/correlation.js"></script>
-  <script src="pages/scatter.js"></script>
-  <script src="pages/outlier.js"></script>
-  <script src="pages/linear.js"></script>
-  <script src="pages/zscore.js"></script>
-  <script src="pages/sampling-mean.js"></script>
-  <script src="pages/sampling-proportion.js"></script>
-  <!-- 新增：二项分布页面逻辑 -->
-  <script src="pages/binomial-histogram.js"></script>
-  <!-- 启动：必须最后 -->
-  <script src="core/boot.js"></script>
+  <footer><span>© 2026</span><span>liuqin@shsid.org</span></footer>
+  
+  <script src="app.js"></script>
+  <script src="scatterplot.js"></script>
+  <script src="outliers.js"></script>
+  <script src="linear-function.js"></script>
+  
+  <!-- 桥接内联脚本：让你的原版 scatterplot.js 能处理 reexpr 和 zscore -->
+  <script>
+    (function () {
+      function initBridge() {
+        if (typeof showTool !== 'function') return setTimeout(initBridge, 50);
+        const originalShowTool = showTool;
+        window.showTool = function(tool) {
+          originalShowTool(tool); // 让原有逻辑跑一遍
+          // 补充新工具的隐藏/显示
+          const reexprEl = document.getElementById('reexprPage');
+          if (reexprEl) reexprEl.hidden = (tool !== 'reexpr');
+          const zscoreEl = document.getElementById('zscorePage'); // 假设你原来的 z-score 叫这个
+          if (zscoreEl) zscoreEl.hidden = (tool !== 'zscore');
+        };
+        
+        // 重新绑定导航按钮
+        document.querySelectorAll('[data-tool]').forEach(button => {
+          button.addEventListener('click', () => window.showTool(button.dataset.tool));
+        });
+      }
+      initBridge();
+    })();
+  </script>
+
+  <script src="reexpr.js"></script>
 </body>
 </html>
