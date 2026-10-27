@@ -41,6 +41,16 @@
   let points = [];
   let showFit = false;
 
+  // 本页自己的翻译填充：只更新本页的 data-i18n 元素，绝不调用全局 applyLang。
+  // 全局 applyLang 会派发 apstats:language 事件；若在本页的事件监听里再调它，
+  // 就会形成 applyLang → apstats:language → applyLang 的无限递归，整站卡死。
+  function applyReexprI18n() {
+    const dict = (typeof translations !== 'undefined' && translations[lang]) ? translations[lang] : {};
+    document.querySelectorAll('#reexprPage [data-i18n]').forEach(el => {
+      if (dict[el.dataset.i18n] !== undefined) el.textContent = dict[el.dataset.i18n];
+    });
+  }
+
   // 每次调用都重新构建 DOM 并绑定事件，彻底抛弃 domInitialized 锁
   function renderPage() {
     const page = document.getElementById('reexprPage');
@@ -117,7 +127,7 @@
     svgTop.addEventListener('mousedown', handleCanvasClick);
 
     createButtons();
-    if (typeof applyLang === 'function') applyLang(); 
+    applyReexprI18n();
     renderGraphs();
   }
 
@@ -354,10 +364,13 @@
     }
   });
 
-  document.addEventListener('apstats:language', function() {
-    if (document.getElementById('reexprPage') && document.getElementById('reexprPage').innerHTML.trim() !== '') {
+  // 语言切换：通过全局 languageHooks 登记（在 applyLang 内部执行），
+  // 只做本页自己的刷新，不再调用 applyLang，避免无限递归。
+  onLanguageApply(function () {
+    const page = document.getElementById('reexprPage');
+    if (page && page.innerHTML.trim() !== '') {
       createButtons();
-      if (typeof applyLang === 'function') applyLang();
+      applyReexprI18n();
       renderGraphs();
     }
   });
@@ -374,3 +387,4 @@
   }
 
 })();
+
