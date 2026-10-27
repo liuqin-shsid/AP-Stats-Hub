@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  // 翻译字典补充（解决侧边栏和页面里的英文问题）
+  // 1. 补充翻译字典
   if (typeof translations !== 'undefined') {
     translations.zh = translations.zh || {};
     translations.en = translations.en || {};
@@ -11,7 +11,6 @@
     translations.en['reexpr_title'] = 'Re-expression';
     translations.en['reexpr_desc'] = 'Add points or generate a function, explore how transforming x or y affects linear fit and residuals.';
     
-    // 补充内部使用的翻译
     Object.assign(translations.zh, {
       reexpr_xlabel: '对 X 变换:', reexpr_ylabel: '对 Y 变换:', reexpr_fitBtn: '拟合 & 显示残差',
       reexpr_clearBtn: '清空全部', reexpr_funcLabel: '生成函数 y =', reexpr_genBtn: '生成散点',
@@ -41,16 +40,13 @@
   let xTf = 'none', yTf = 'none';
   let points = [];
   let showFit = false;
-  let domInitialized = false;
 
-  function initDOM() {
+  // 每次调用都重新构建 DOM 并绑定事件，彻底抛弃 domInitialized 锁
+  function renderPage() {
     const page = document.getElementById('reexprPage');
     if (!page) return;
 
-    // 防止重复注入 DOM
-    if (domInitialized) return;
-    domInitialized = true;
-
+    // 重建 HTML
     page.innerHTML = `
       <div class="page-heading">
         <div>
@@ -107,11 +103,12 @@
       </div>
     `;
 
-    document.getElementById('reexprFitBtn').onclick = () => { showFit = !showFit; render(); };
+    // 绑定事件
+    document.getElementById('reexprFitBtn').onclick = () => { showFit = !showFit; renderGraphs(); };
     document.getElementById('reexprClearBtn').onclick = () => {
       points = []; showFit = false;
       document.getElementById('reexprFuncInput').value = '';
-      render();
+      renderGraphs();
     };
     document.getElementById('reexprGenBtn').onclick = generatePoints;
     
@@ -120,8 +117,8 @@
     svgTop.addEventListener('mousedown', handleCanvasClick);
 
     createButtons();
-    if (typeof applyLang === 'function') applyLang(); // 让 data-i18n 立即生效
-    render();
+    if (typeof applyLang === 'function') applyLang(); 
+    renderGraphs();
   }
 
   function createButtons() {
@@ -135,13 +132,13 @@
       let btn = document.createElement('button');
       btn.className = 'secondary-button'; btn.dataset.id = id;
       btn.textContent = TRANSFORMS[id].label[lang] || TRANSFORMS[id].label['en'];
-      btn.onclick = () => { xTf = id; updateButtons(); render(); };
+      btn.onclick = () => { xTf = id; updateButtons(); renderGraphs(); };
       xGroup.appendChild(btn);
 
       let btnY = document.createElement('button');
       btnY.className = 'secondary-button'; btnY.dataset.id = id;
       btnY.textContent = TRANSFORMS[id].label[lang] || TRANSFORMS[id].label['en'];
-      btnY.onclick = () => { yTf = id; updateButtons(); render(); };
+      btnY.onclick = () => { yTf = id; updateButtons(); renderGraphs(); };
       yGroup.appendChild(btnY);
     });
     updateButtons();
@@ -293,7 +290,7 @@
                        <div style="margin-top:10px; font-size:16px;">R² = ${fit.r2.toFixed(4)}</div>`;
   }
 
-  function render() {
+  function renderGraphs() {
     drawPanel(document.getElementById('reexprSvgTop'), document.getElementById('reexprSvgResidTop'), document.getElementById('reexprEquTop'), 'top');
     drawPanel(document.getElementById('reexprSvgBot'), document.getElementById('reexprSvgResidBot'), document.getElementById('reexprEquBot'), 'bottom');
   }
@@ -319,14 +316,14 @@
     const yv = scale(py, 300 - m.bottom, m.top, yMin, yMax);
 
     if (e.button === 0) {
-      if (xv > 0 && yv > 0) { points.push({ x: xv, y: yv }); render(); }
+      if (xv > 0 && yv > 0) { points.push({ x: xv, y: yv }); renderGraphs(); }
     } else if (e.button === 2 && points.length > 0) {
       let minDist = Infinity, idx = -1;
       points.forEach((p, i) => {
         let d = Math.hypot(p.x - xv, p.y - yv);
         if (d < minDist) { minDist = d; idx = i; }
       });
-      if (idx !== -1) { points.splice(idx, 1); render(); }
+      if (idx !== -1) { points.splice(idx, 1); renderGraphs(); }
     }
   }
 
@@ -346,32 +343,34 @@
         let yv = func(xv);
         if (isFinite(yv) && yv > 0) points.push({ x: xv, y: yv });
       }
-      showFit = true; render();
+      showFit = true; renderGraphs();
     } catch (err) { alert(t('reexpr_invalidFunc') + ": " + expr); }
   }
 
-  // 监听切换工具、切换语言事件
-  document.addEventListener('apstats:tool', (e) => {
+  // 监听事件：只要触发切换页面或切换语言，立刻重绘整个 DOM
+  document.addEventListener('apstats:tool', function(e) {
     if (e.detail === 'reexpr') {
-      if (!domInitialized) initDOM();
-      if (typeof applyLang === 'function') applyLang();
-      render();
+      renderPage();
     }
   });
 
-  document.addEventListener('apstats:language', () => { 
-    if (document.getElementById('reexprPage')) { 
-      createButtons(); 
+  document.addEventListener('apstats:language', function() {
+    if (document.getElementById('reexprPage') && document.getElementById('reexprPage').innerHTML.trim() !== '') {
+      createButtons();
       if (typeof applyLang === 'function') applyLang();
-      render(); 
-    } 
+      renderGraphs();
+    }
   });
 
-  // 启动时预先初始化
+  // 兜底：如果用户直接打开或刷新在 reexpr 页面，启动时直接渲染
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDOM);
+    document.addEventListener('DOMContentLoaded', () => {
+      const page = document.getElementById('reexprPage');
+      if (page && !page.hidden) renderPage();
+    });
   } else {
-    initDOM();
+    const page = document.getElementById('reexprPage');
+    if (page && !page.hidden) renderPage();
   }
 
 })();
