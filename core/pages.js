@@ -8,7 +8,6 @@ const NAV_GROUPS = [
   { key:'display',  labelKey:'nav_display' },
   { key:'linreg',   labelKey:'nav_linreg' },
   { key:'sampling', labelKey:'nav_sampling' },
-  { key:'binomial', labelKey:'nav_binomial' }, // <-- 新增：二项分布分组
 ];
 
 /* tool     侧边栏按钮的 data-tool 值，也是 apstats:tool 事件的 detail
@@ -25,7 +24,8 @@ const PAGES = [
   { tool:'outlier',      group:'linreg',  pageId:'outlierPage',     titleKey:'outlier_title' },
   { tool:'linear',       group:'linreg',  pageId:'linearPage',      titleKey:'linear_title' },
   { tool:'zscore',       group:'linreg',  pageId:'zscorePage',      titleKey:'zscore_title' },
+  // ↓↓↓ 新增的 Re-expression 工具 ↓↓↓
+  { tool:'reexpr',       group:'linreg',  pageId:'reexprPage',      titleKey:'reexpr_title' },
   { tool:'sampling',     group:'sampling', pageId:'samplingPage',   titleKey:'sampling_title' },
   { tool:'proportion',   group:'sampling', pageId:'proportionPage', titleKey:'proportion_title' },
-  { tool:'binomial',     group:'binomial', pageId:'binomialPage',   titleKey:'binomial_title' }, // <-- 新增：二项分布页面
 ];
