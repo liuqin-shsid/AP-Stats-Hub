@@ -19,6 +19,16 @@
     binomial_invalid_p: 'p 必须在 0 与 1 之间。',
     binomial_invalid_input: '输入无效：n 为整数，p 为 0–1 之间的数。',
     binomial_aria: '二项分布直方图',
+    binomial_table_k: 'k (成功次数)',
+    binomial_table_prob: 'P(X = k)',
+    binomial_table_empty: '请先绘图以显示数据',
+    binomial_stat_title: '统计指标',
+    binomial_stat_mean: 'E(X) = np',
+    binomial_stat_sd: 'SD(X) = √(npq)',
+    // --- 新增翻译 ---
+    binomial_formula_title: '概率质量函数 (PMF)',
+    binomial_formula_text: 'P(X = k) = ₙCₖ · pᵏ · (1-p)ⁿ⁻ᵏ',
+    binomial_formula_k_range: 'k = 0, 1, ..., n',
   });
   Object.assign(translations.en, {
     binomial_title: 'Binomial Distribution',
@@ -34,6 +44,16 @@
     binomial_invalid_p: 'p must be between 0 and 1.',
     binomial_invalid_input: 'Invalid input — n must be an integer, p a number.',
     binomial_aria: 'Binomial distribution histogram',
+    binomial_table_k: 'k (Successes)',
+    binomial_table_prob: 'P(X = k)',
+    binomial_table_empty: 'Plot to see data',
+    binomial_stat_title: 'Statistics',
+    binomial_stat_mean: 'E(X) = np',
+    binomial_stat_sd: 'SD(X) = √(npq)',
+    // --- 新增翻译 ---
+    binomial_formula_title: 'Probability Mass Function (PMF)',
+    binomial_formula_text: 'P(X = k) = ₙCₖ · pᵏ · (1-p)ⁿ⁻ᵏ',
+    binomial_formula_k_range: 'k = 0, 1, ..., n',
   });
 
   /* ---------- Constants ---------- */
@@ -118,9 +138,54 @@
         <button id="binomialPlot" class="reset" type="button" data-i18n="binomial_plot">绘图</button>
       </section>
       <p id="binomialHint" class="hint" role="status"></p>
-      <section class="chart-card binomial-card">
-        <svg id="binomialChart" viewBox="0 0 1000 610" role="img" data-i18n-aria="binomial_aria"></svg>
-      </section>
+      
+      <div class="binomial-layout">
+        <!-- 左侧：直方图 -->
+        <div class="binomial-chart-area">
+          <section class="chart-card binomial-card">
+            <svg id="binomialChart" viewBox="0 0 1000 610" role="img" data-i18n-aria="binomial_aria"></svg>
+          </section>
+        </div>
+        
+        <!-- 右侧：公式 + 统计指标 + 表格 -->
+        <div class="binomial-model-area">
+          
+          <!-- 新增：公式面板 -->
+          <div class="binomial-formula-panel">
+            <h4 data-i18n="binomial_formula_title">概率质量函数 (PMF)</h4>
+            <div class="formula-display" id="binomialFormulaDisplay">
+              P(X = k) = ₙCₖ · pᵏ · (1-p)ⁿ⁻ᵏ
+            </div>
+          </div>
+
+          <!-- 统计指标面板 -->
+          <div class="binomial-stats-panel">
+            <h4 data-i18n="binomial_stat_title">统计指标</h4>
+            <div class="stat-row">
+              <span class="stat-label" data-i18n="binomial_stat_mean">E(X) = np</span>
+              <span class="stat-value" id="statMeanVal">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label" data-i18n="binomial_stat_sd">SD(X) = √(npq)</span>
+              <span class="stat-value" id="statSdVal">—</span>
+            </div>
+          </div>
+
+          <div class="probability-table-container">
+            <table class="probability-table">
+              <thead>
+                <tr>
+                  <th data-i18n="binomial_table_k">k (成功次数)</th>
+                  <th data-i18n="binomial_table_prob">P(X = k)</th>
+                </tr>
+              </thead>
+              <tbody id="binomialTableBody">
+                <tr><td colspan="2" style="text-align:center; color:#888;" data-i18n="binomial_table_empty">请先绘图以显示数据</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     `;
 
     const nInput = document.getElementById('binomialN');
@@ -158,27 +223,19 @@
   /* ---------- Chart rendering ---------- */
   function renderChart() {
     const svg = document.getElementById('binomialChart');
+    const tbody = document.getElementById('binomialTableBody');
     if (!svg) return;
     const t = translations[lang];
     const hint = document.getElementById('binomialHint');
 
-    if (!state.lastValid && !state.error) {
-      hint.textContent = t.binomial_need_plot;
-      hint.className = 'hint';
-      clearSvg(svg);
-      const placeholder = svgEl('text', {
-        x: SIZE.w / 2, y: SIZE.h / 2, 'text-anchor': 'middle',
-        class: 'binomial-empty',
-      });
-      placeholder.textContent = t.binomial_need_plot;
-      svg.appendChild(placeholder);
-      return;
-    }
+    // 清理旧图表
+    clearSvg(svg);
+    if (tbody) tbody.innerHTML = '';
 
+    // 错误处理
     if (state.error) {
       hint.textContent = t[state.error];
       hint.className = 'hint danger';
-      clearSvg(svg);
       const err = svgEl('text', {
         x: SIZE.w / 2, y: SIZE.h / 2, 'text-anchor': 'middle',
         class: 'binomial-error',
@@ -188,9 +245,21 @@
       return;
     }
 
+    // 未绘图提示
+    if (!state.lastValid) {
+      hint.textContent = t.binomial_need_plot;
+      hint.className = 'hint';
+      const placeholder = svgEl('text', {
+        x: SIZE.w / 2, y: SIZE.h / 2, 'text-anchor': 'middle',
+        class: 'binomial-empty',
+      });
+      placeholder.textContent = t.binomial_need_plot;
+      svg.appendChild(placeholder);
+      return;
+    }
+
     hint.textContent = '';
     hint.className = 'hint';
-    clearSvg(svg);
 
     const { n, p } = state.lastValid;
     const kValues = [];
@@ -201,6 +270,9 @@
     }
     const yMax = Math.max(...pmfValues, 1e-12) * 1.08;
 
+    // ==========================================
+    // 1. 绘制左侧直方图
+    // ==========================================
     const sx = makeScale([-0.5, n + 0.5], [SIZE.m.left, SIZE.w - SIZE.m.right]);
     const sy = makeScale([0, yMax], [SIZE.h - SIZE.m.bottom, SIZE.m.top]);
 
@@ -265,6 +337,9 @@
     }
 
     const mean = n * p;
+    const variance = n * p * (1 - p);
+    const sd = Math.sqrt(variance);
+
     svg.appendChild(svgEl('line', {
       x1: sx(mean), x2: sx(mean),
       y1: SIZE.m.top, y2: SIZE.h - SIZE.m.bottom,
@@ -302,6 +377,47 @@
     });
     title.textContent = `B(n=${n}, p=${p})`;
     svg.appendChild(title);
+
+    // ==========================================
+    // 2. 更新统计指标面板
+    // ==========================================
+    const statMeanEl = document.getElementById('statMeanVal');
+    const statSdEl = document.getElementById('statSdVal');
+    if (statMeanEl) statMeanEl.textContent = `${fmt(mean, 2)}`;
+    if (statSdEl) statSdEl.textContent = `${fmt(sd, 4)}`;
+
+    // ==========================================
+    // 3. 更新公式面板（代入 n 和 p 的数值）
+    // ==========================================
+    const formulaEl = document.getElementById('binomialFormulaDisplay');
+    if (formulaEl) {
+      // 用 HTML 的 <sub> 和 <sup> 标签来渲染角标和下标
+      formulaEl.innerHTML = `
+        P(X = k) = <sub>${n}</sub>C<sub>k</sub> · 
+        (${p})<sup>k</sup> · 
+        (1 - ${p})<sup>${n}-k</sup>
+        <br>
+        <span style="font-size: 13px; color: #64717d;">k = 0, 1, ..., ${n}</span>
+      `;
+    }
+
+    // ==========================================
+    // 4. 填充表格数据
+    // ==========================================
+    if (tbody) {
+      // 表头动态翻译
+      const thK = document.querySelector('th[data-i18n="binomial_table_k"]');
+      const thP = document.querySelector('th[data-i18n="binomial_table_prob"]');
+      if (thK) thK.textContent = t.binomial_table_k;
+      if (thP) thP.textContent = t.binomial_table_prob;
+
+      // 填充数据行
+      for (let k = 0; k <= n; k++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${k}</td><td>${pmfValues[k].toFixed(6)}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
   }
 
   /* ---------- Language / navigation hooks ---------- */

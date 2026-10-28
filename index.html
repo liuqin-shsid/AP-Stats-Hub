@@ -14,6 +14,7 @@
   <script src="data/regression.js"></script>
   <script src="data/display.js"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pages/binomial-histogram.css">
 </head>
 <body>
   <header class="site-header"><div class="brand" data-i18n="brand">AP Stats Hub</div><button id="langToggle" class="lang-toggle" type="button">EN</button></header>
@@ -128,22 +129,24 @@
           </section>
         </div>
       </div>
+      
       <!-- 页面容器：内容由对应的 pages/*.js 动态注入 -->
       <div id="catPage" hidden></div>
       <div id="quantPage" hidden></div>
       <div id="cmpPage" hidden></div>
       <div id="customPage" hidden></div>
-      <!-- 新增页面容器：内容由 pages/zscore.js 动态注入 -->
       <div id="zscorePage" hidden></div>
-      <!-- 新增页面容器：内容由 pages/sampling-mean.js 动态注入 -->
+      
+      <!-- ★ 新增：Re-expression 的容器 -->
+      <div id="reexprPage" hidden></div>
+
       <div id="samplingPage" hidden></div>
-      <!-- 新增页面容器：内容由 pages/sampling-proportion.js 动态注入 -->
       <div id="proportionPage" hidden></div>
-      <!-- 新增页面容器：内容由 binomial-histogram.js 动态注入 -->
       <div id="binomialPage" hidden></div>
     </main>
   </div>
   <footer><span>© 2026</span><span>SHSID AP Stats Hub</span></footer>
+  
   <!-- 共用基础设施 -->
   <script src="core/dom.js"></script>
   <script src="core/plot.js"></script>
@@ -154,7 +157,8 @@
   <script src="core/router.js"></script>
   <script src="core/sidebar.js"></script>
   <script src="core/charts.js"></script>
-  <!-- 各页面（加载顺序 = 语言/数据事件的响应顺序，勿随意调换） -->
+  
+  <!-- 各页面 -->
   <script src="pages/display-categorical.js"></script>
   <script src="pages/display-quantitative.js"></script>
   <script src="pages/compare-distributions.js"></script>
@@ -164,8 +168,14 @@
   <script src="pages/outlier.js"></script>
   <script src="pages/linear.js"></script>
   <script src="pages/zscore.js"></script>
+  
+  <!-- ★ 新增：Re-expression 的脚本 -->
+  <script src="pages/re-expression.js"></script>
+
+  <script src="pages/binomial-histogram.js"></script>
   <script src="pages/sampling-mean.js"></script>
   <script src="pages/sampling-proportion.js"></script>
+  
   <!-- 启动：必须最后 -->
   <script src="core/boot.js"></script>
 </body>

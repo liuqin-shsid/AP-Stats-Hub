@@ -7,6 +7,7 @@
 const NAV_GROUPS = [
   { key:'display',  labelKey:'nav_display' },
   { key:'linreg',   labelKey:'nav_linreg' },
+  { key:'prob',     labelKey:'nav_binomial' },
   { key:'sampling', labelKey:'nav_sampling' },
 ];
 
@@ -26,6 +27,7 @@ const PAGES = [
   { tool:'zscore',       group:'linreg',  pageId:'zscorePage',      titleKey:'zscore_title' },
   // ↓↓↓ 新增的 Re-expression 工具 ↓↓↓
   { tool:'reexpr',       group:'linreg',  pageId:'reexprPage',      titleKey:'reexpr_title' },
+  { tool:'binomial',     group:'prob',    pageId:'binomialPage',    titleKey:'binomial_title' },
   { tool:'sampling',     group:'sampling', pageId:'samplingPage',   titleKey:'sampling_title' },
   { tool:'proportion',   group:'sampling', pageId:'proportionPage', titleKey:'proportion_title' },
 ];

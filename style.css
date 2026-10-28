@@ -390,3 +390,8 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
   border-color: #e6b0aa;
   color: #a93226;
 }
+/* Re-expression 网格 */
+.reexpr-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 15px; margin-top: 18px; }
+.reexpr-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; min-width: 0; }
+.reexpr-equ { display: flex; align-items: center; justify-content: center; background: #f7f9fb; text-align: center; }
+.reexpr-chart { display: block; width: 100%; height: auto; user-select: none; cursor: crosshair; }

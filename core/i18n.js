@@ -35,7 +35,7 @@ const translations = {
     slope: '斜率',
     intercept: '截距',
     nav_binomial: '概率分布',
-binomial_title: '二项分布',
+    binomial_title: '二项分布',
   },
   en: {
     brand: 'AP Stats Hub',

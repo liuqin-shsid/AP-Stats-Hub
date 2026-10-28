@@ -1,0 +1,190 @@
+/* Scoped styles for the Binomial Histogram feature. Safe to add without
+   touching style.css. All selectors are prefixed with #binomialPage. */
+
+#binomialPage .binomial-controls {
+  align-items: end;
+}
+
+#binomialPage .binomial-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #42515e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#binomialPage .binomial-field input[type="number"] {
+  width: 160px;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #c9d2da;
+  border-radius: 5px;
+  background: #fff;
+  color: #1d2935;
+  font: 14px inherit;
+}
+
+#binomialPage .binomial-field input[type="number"]:focus {
+  outline: 3px solid #69a9dc;
+  outline-offset: 2px;
+  border-color: #2878b8;
+}
+
+/* --- 左右分栏布局 --- */
+#binomialPage .binomial-layout {
+  display: flex;
+  gap: 24px;
+  margin-top: 18px;
+  align-items: flex-start;
+}
+
+#binomialPage .binomial-chart-area {
+  flex: 2; /* 左侧直方图占大头 */
+  min-width: 0;
+}
+
+#binomialPage .binomial-model-area {
+  flex: 1; /* 右侧数据区占小头 */
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 320px;
+}
+
+/* 左侧直方图卡片样式 */
+#binomialPage .binomial-card {
+  height: 610px; 
+  padding: 5px;
+  border: 1px solid #e4e9ee;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* --- 统计指标区域 --- */
+#binomialPage .binomial-stats-panel {
+  background: #f8fafc;
+  border: 1px solid #e4e9ee;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#binomialPage .binomial-stats-panel h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #17324d;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+#binomialPage .stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+#binomialPage .stat-label {
+  color: #64717d;
+}
+
+#binomialPage .stat-value {
+  font-weight: 600;
+  color: #1d2935;
+  font-family: 'Courier New', monospace;
+  background: #edf2f7;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* --- 新增：概率质量函数公式展示面板 --- */
+#binomialPage .binomial-formula-panel {
+  background: #f8fafc;
+  border: 1px solid #e4e9ee;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+#binomialPage .binomial-formula-panel h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #17324d;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+#binomialPage .formula-display {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px 8px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 16px;
+  color: #1d2935;
+  text-align: center;
+  line-height: 1.8;
+  word-wrap: break-word;
+  border: 1px solid #e2e8f0;
+}
+
+#binomialPage .formula-display sub,
+#binomialPage .formula-display sup {
+  font-size: 0.75em;
+}
+
+/* --- 表格样式 --- */
+#binomialPage .probability-table-container {
+  border: 1px solid #e4e9ee;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 450px; 
+  overflow-y: auto;
+}
+
+#binomialPage .probability-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+#binomialPage .probability-table th,
+#binomialPage .probability-table td {
+  border: 1px solid #eee;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+#binomialPage .probability-table th {
+  background-color: #f4f7f9;
+  font-weight: 600;
+  color: #42515e;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+#binomialPage .probability-table tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+#binomialPage #binomialChart {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+#binomialPage .binomial-empty,
+#binomialPage .binomial-error {
+  fill: #64717d;
+  font-size: 17px;
+}
+
+#binomialPage .binomial-error {
+  fill: #b13a2e;
+  font-weight: 600;
+}
