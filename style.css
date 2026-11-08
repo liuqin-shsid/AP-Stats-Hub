@@ -303,4 +303,140 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .manual-grid thead th { position:sticky; top:0; z-index:2; padding:7px 10px; background:#eef3f7; color:var(--navy); font-weight:700; }
 .manual-grid tbody th { padding:6px 10px; background:#f7fafc; color:#64717d; font-weight:600; text-align:left; white-space:nowrap; }
 .manual-grid .grid-rownum { color:#9aa5af; font-weight:400; text-align:right; font-variant-numeric:tabular-nums; }
-.manual-grid input, .manual-grid select { width:100%; height:30px; padding:0 8px
+.manual-grid input, .manual-grid select { width:100%; height:30px; padding:0 8px; border:0; background:transparent; color:var(--text); font:13px inherit; }
+.manual-grid input:focus, .manual-grid select:focus { outline:2px solid var(--blue); outline-offset:-2px; background:#f4f9fd; }
+.manual-grid .grid-name input { font-weight:600; }
+.var-preview { color:#64717d; font-weight:400; text-align:left!important; max-width:380px; overflow:hidden; text-overflow:ellipsis; }
+#customFile { width:auto; padding:6px 0; border:0; font:13px inherit; }
+.var-check { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; margin:0; padding:8px 14px 10px; border:1px solid var(--line); border-radius:8px; }
+.var-check legend { padding:0 6px; color:var(--navy); font-size:13px; font-weight:700; }
+.var-check-item { display:inline-flex; align-items:center; gap:6px; color:var(--text); font-size:13px; cursor:pointer; }
+.var-check-item input { width:15px; height:15px; margin:0; accent-color:var(--blue); cursor:pointer; }
+.cat-legend.span-2 { grid-column:1 / -1; }
+.cat-chart .ogive-line { stroke:var(--cat-2); stroke-width:2.5; }
+.cat-chart .ogive-dot { fill:var(--cat-2); }
+.manual-grid .grid-addcol-cell { background:transparent; border:0; padding:0 6px; }
+.manual-grid #gridAddCol { height:28px; padding:0 10px; border:1px dashed #c9d2da; border-radius:5px; background:#fff; color:var(--blue); font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+.manual-grid #gridAddCol:hover { border-color:var(--blue); background:#f4f9fd; }
+.manual-grid .grid-delcol { margin-left:4px; border:0; border-radius:3px; padding:0 5px; background:transparent; color:#9aa5af; font:inherit; cursor:pointer; }
+.manual-grid .grid-delcol:hover { background:#fdf3f2; color:#c73932; }
+.outlier-xy { display:flex; gap:6px; }
+.outlier-xy select { width:130px; }
+#outlierFile { width:auto; padding:6px 0; border:0; font:13px inherit; }
+
+/* 自定义数据页顶部的「选几个变量出哪些图」说明 */
+.chart-guide { margin:16px 0 4px; padding:12px 16px; border:1px solid var(--line); border-radius:8px; background:var(--soft); }
+.chart-guide summary { color:var(--navy); font-size:14px; font-weight:700; cursor:pointer; }
+.chart-guide ul { margin:10px 0 2px; padding-left:20px; color:#42515e; font-size:13px; line-height:1.9; }
+.chart-guide b { color:var(--navy); }
+
+/* ---------- z-score 手绘页 ---------- */
+.zscore-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+.zscore-pair .chart-panel {
+  min-width: 0;
+  padding: 14px 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.zscore-pair .chart-panel h2 {
+  margin: 0 6px 8px;
+  color: var(--navy);
+  font-size: 16px;
+}
+.zscore-pair svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+.zscore-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin: 10px 6px 4px;
+  padding: 10px 12px;
+  background: #f7fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #42515e;
+}
+.zscore-stats > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.zscore-stats span {
+  color: #64717d;
+}
+.zscore-stats strong {
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .zscore-pair { grid-template-columns: 1fr; }
+}
+/* z-score 页：拟合线按钮激活状态 */
+.controls .secondary-button.active-toggle {
+  background: #fdecea;
+  border-color: #e6b0aa;
+  color: #a93226;
+}
+
+/* Re-expression 网格 */
+.reexpr-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 15px; margin-top: 18px; }
+.reexpr-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; min-width: 0; }
+.reexpr-equ { display: flex; align-items: center; justify-content: center; background: #f7f9fb; text-align: center; }
+.reexpr-chart { display: block; width: 100%; height: auto; user-select: none; cursor: crosshair; }
+
+/* =========================================
+   二项分布页面布局 (Binomial Layout)
+========================================= */
+.binomial-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 15px;
+}
+@media (max-width: 900px) {
+  .binomial-layout { grid-template-columns: 1fr; }
+}
+.binomial-info-panel {
+  padding: 20px;
+  background: #f7fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.binomial-info-panel h3 {
+  margin-top: 0;
+  color: var(--navy);
+  font-size: 16px;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 5px;
+}
+.binomial-formula {
+  font-size: 16px;
+  margin: 15px 0;
+}
+.table-scroll {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+#binomTableWrapper {
+  display: none;
+  margin-top: 15px;
+}
+#binomTableWrapper.show {
+  display: block;
+}
