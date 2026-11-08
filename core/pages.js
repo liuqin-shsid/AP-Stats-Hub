@@ -24,6 +24,7 @@ const PAGES = [
   { tool:'outlier',      group:'linreg',  pageId:'outlierPage',     titleKey:'outlier_title' },
   { tool:'linear',       group:'linreg',  pageId:'linearPage',      titleKey:'linear_title' },
   { tool:'zscore',       group:'linreg',  pageId:'zscorePage',      titleKey:'zscore_title' },
+  { tool:'binomial', group:'display', pageId:'binomialPage', titleKey:'binomial_title' },
   // ↓↓↓ 新增的 Re-expression 工具 ↓↓↓
   { tool:'reexpr',       group:'linreg',  pageId:'reexprPage',      titleKey:'reexpr_title' },
   { tool:'sampling',     group:'sampling', pageId:'samplingPage',   titleKey:'sampling_title' },
