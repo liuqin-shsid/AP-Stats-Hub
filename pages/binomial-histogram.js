@@ -1,4 +1,4 @@
-/* Binomial Distribution (二项分布) —— 包含图表、公式、自适应表格 */
+/* Binomial Distribution (二项分布) */
 (() => {
   Object.assign(translations.zh, {
     binomial_title: '二项分布',
@@ -7,7 +7,8 @@
     binomial_p: '成功概率 (p)',
     binomial_pmf: '概率质量函数 (PMF)',
     binomial_stats: '统计指标',
-    binomial_show_table: '展开/收起概率分布表',
+    binomial_show_table: '显示概率分布表',
+    binomial_hide_table: '隐藏概率分布表',
   });
 
   Object.assign(translations.en, {
@@ -17,10 +18,11 @@
     binomial_p: 'Probability of success (p)',
     binomial_pmf: 'Probability Mass Function (PMF)',
     binomial_stats: 'Statistics',
-    binomial_show_table: 'Show/Hide probability table',
+    binomial_show_table: 'Show probability table',
+    binomial_hide_table: 'Hide probability table',
   });
 
-  const state = { n: 20, p: 0.2, built: false };
+  const state = { n: 20, p: 0.2, built: false, showTable: false };
 
   function combination(n, k) {
     if (k < 0 || k > n) return 0;
@@ -40,7 +42,6 @@
     const t = translations[lang];
     const page = document.getElementById('binomialPage');
     
-    // 注意：这里使用了 class="binomial-layout" 来实现左右分栏
     page.innerHTML = `
       <div class="page-heading"><div>
         <h1 data-i18n="binomial_title">${t.binomial_title}</h1>
@@ -60,12 +61,12 @@
       </section>
 
       <div class="binomial-layout">
-        <!-- 左侧：直方图 -->
+        <!-- 左侧：图表 -->
         <section class="chart-panel" style="margin-top:0; padding:10px;">
           <svg id="binomChart" viewBox="0 0 600 400" style="width:100%; height:auto;"></svg>
         </section>
 
-        <!-- 右侧：PMF 和 统计指标 -->
+        <!-- 右侧：信息面板 -->
         <section class="binomial-info-panel">
           <h3 data-i18n="binomial_pmf">${t.binomial_pmf}</h3>
           <div class="binomial-formula" id="binomFormula"></div>
@@ -73,19 +74,18 @@
           <h3 data-i18n="binomial_stats" style="margin-top:20px;">${t.binomial_stats}</h3>
           <div id="binomStats" style="font-size:16px; line-height:1.8; margin-bottom:20px;"></div>
 
-          <!-- n > 20 时才显示这个下拉框 -->
-          <div id="binomTableWrapper">
-            <details>
-              <summary style="cursor:pointer; font-weight:bold; color:var(--blue);" id="binomTableSummary">${t.binomial_show_table}</summary>
-              <div class="table-scroll">
-                <table id="binomTable" style="width:100%; border-collapse:collapse; text-align:center; font-size:14px;"></table>
-              </div>
-            </details>
+          <!-- 表格区域（默认显示按钮，表格隐藏） -->
+          <div id="binomTableWrapper" style="display:block;">
+            <button id="binomToggleBtn" class="secondary-button" style="margin-bottom:10px; width:100%;">${t.binomial_show_table}</button>
+            <div class="table-scroll" id="binomTableScroll" style="display:none;">
+              <table id="binomTable" style="width:100%; border-collapse:collapse; text-align:center; font-size:14px;"></table>
+            </div>
           </div>
         </section>
       </div>
     `;
 
+    // 绑定事件
     document.getElementById('binomN').addEventListener('change', e => {
       let val = parseInt(e.target.value);
       if (isNaN(val) || val < 1) val = 1;
@@ -99,6 +99,20 @@
       state.p = parseFloat(e.target.value);
       document.getElementById('binomPValue').textContent = state.p.toFixed(2);
       updateAll();
+    });
+
+    // 表格展开/收起按钮
+    document.getElementById('binomToggleBtn').addEventListener('click', () => {
+      state.showTable = !state.showTable;
+      const tableScroll = document.getElementById('binomTableScroll');
+      const btn = document.getElementById('binomToggleBtn');
+      if (state.showTable) {
+        tableScroll.style.display = 'block';
+        btn.textContent = translations[lang].binomial_hide_table;
+      } else {
+        tableScroll.style.display = 'none';
+        btn.textContent = translations[lang].binomial_show_table;
+      }
     });
 
     updateAll();
@@ -155,7 +169,6 @@
   }
 
   function updateAll() {
-    const t = translations[lang];
     const n = state.n;
     const p = state.p;
     const q = 1 - p;
@@ -178,19 +191,13 @@
       SD(X) = &radic;(npq) = <strong>${sd.toFixed(4)}</strong>
     `;
 
-    const tableWrapper = document.getElementById('binomTableWrapper');
+    // 不管 n 是多少，表格数据都重新计算并填充
     const table = document.getElementById('binomTable');
-
-    if (n > 20) {
-      tableWrapper.style.display = 'block';
-      let tr = `<tr style="background:#eee;"><th>k</th><th>P(X=k)</th></tr>`;
-      probs.forEach((prob, k) => {
-        tr += `<tr><td style="padding:4px; border-bottom:1px solid #eee;">${k}</td><td style="padding:4px; border-bottom:1px solid #eee;">${prob.toFixed(6)}</td></tr>`;
-      });
-      table.innerHTML = tr;
-    } else {
-      tableWrapper.style.display = 'none';
-    }
+    let tr = `<tr style="background:#eee;"><th>k</th><th>P(X=k)</th></tr>`;
+    probs.forEach((prob, k) => {
+      tr += `<tr><td style="padding:4px; border-bottom:1px solid #eee;">${k}</td><td style="padding:4px; border-bottom:1px solid #eee;">${prob.toFixed(6)}</td></tr>`;
+    });
+    table.innerHTML = tr;
 
     drawChart(probs);
   }
