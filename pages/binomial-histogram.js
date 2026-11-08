@@ -42,6 +42,7 @@
     const t = translations[lang];
     const page = document.getElementById('binomialPage');
     
+    // 输入框并排布局
     page.innerHTML = `
       <div class="page-heading"><div>
         <h1 data-i18n="binomial_title">${t.binomial_title}</h1>
@@ -49,15 +50,19 @@
       </div></div>
       
       <section class="controls" data-i18n-aria="controls_aria">
-        <label>
-          <span data-i18n="binomial_n">${t.binomial_n}</span>
-          <input type="number" id="binomN" value="${state.n}" min="1" max="100" style="width:80px;">
-        </label>
-        <label>
-          <span data-i18n="binomial_p">${t.binomial_p}</span>
-          <input type="range" id="binomP" value="${state.p}" min="0.01" max="0.99" step="0.01" style="width:150px;">
-          <span id="binomPValue" style="display:inline-block; width:30px;">${state.p}</span>
-        </label>
+        <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+          <!-- 试验次数 n -->
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="color:#42515e; font-size:13px; font-weight:600;" data-i18n="binomial_n">${t.binomial_n}</span>
+            <input type="number" id="binomN" value="${state.n}" min="2" max="100" step="1" style="width:80px; height:34px; padding:0 8px; border:1px solid #c9d2da; border-radius:5px;">
+          </div>
+
+          <!-- 成功概率 p -->
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="color:#42515e; font-size:13px; font-weight:600;" data-i18n="binomial_p">${t.binomial_p}</span>
+            <input type="number" id="binomP" value="${state.p}" min="0" max="1" step="0.01" style="width:80px; height:34px; padding:0 8px; border:1px solid #c9d2da; border-radius:5px;">
+          </div>
+        </div>
       </section>
 
       <div class="binomial-layout">
@@ -74,7 +79,7 @@
           <h3 data-i18n="binomial_stats" style="margin-top:20px;">${t.binomial_stats}</h3>
           <div id="binomStats" style="font-size:16px; line-height:1.8; margin-bottom:20px;"></div>
 
-          <!-- 表格区域（默认显示按钮，表格隐藏） -->
+          <!-- 表格区域 -->
           <div id="binomTableWrapper" style="display:block;">
             <button id="binomToggleBtn" class="secondary-button" style="margin-bottom:10px; width:100%;">${t.binomial_show_table}</button>
             <div class="table-scroll" id="binomTableScroll" style="display:none;">
@@ -85,23 +90,48 @@
       </div>
     `;
 
-    // 绑定事件
-    document.getElementById('binomN').addEventListener('change', e => {
-      let val = parseInt(e.target.value);
-      if (isNaN(val) || val < 1) val = 1;
+    // 绑定 n 输入事件
+    document.getElementById('binomN').addEventListener('input', e => {
+      let val = parseFloat(e.target.value);
+      if (isNaN(val)) return;
+      // 限制范围 2-100
+      if (val < 2) val = 2;
       if (val > 100) val = 100;
-      e.target.value = val;
-      state.n = val;
+      state.n = Math.floor(val);
       updateAll();
     });
+    // 失焦时如果清空了，恢复合法值
+    document.getElementById('binomN').addEventListener('change', e => {
+      if (e.target.value === '' || isNaN(state.n)) {
+        state.n = 20;
+        e.target.value = state.n;
+        updateAll();
+      } else {
+        e.target.value = state.n;
+      }
+    });
 
+    // 绑定 p 输入事件
     document.getElementById('binomP').addEventListener('input', e => {
-      state.p = parseFloat(e.target.value);
-      document.getElementById('binomPValue').textContent = state.p.toFixed(2);
+      let val = parseFloat(e.target.value);
+      if (isNaN(val)) return;
+      // 限制范围 0-1
+      if (val < 0) val = 0;
+      if (val > 1) val = 1;
+      state.p = val;
       updateAll();
     });
+    document.getElementById('binomP').addEventListener('change', e => {
+      if (e.target.value === '' || isNaN(state.p)) {
+        state.p = 0.2;
+        e.target.value = state.p;
+        updateAll();
+      } else {
+        e.target.value = state.p;
+      }
+    });
 
-    // 表格展开/收起按钮
+    // 表格展开/收起
     document.getElementById('binomToggleBtn').addEventListener('click', () => {
       state.showTable = !state.showTable;
       const tableScroll = document.getElementById('binomTableScroll');
@@ -149,6 +179,7 @@
                  </rect>`;
       }
       
+      // 坐标轴刻度：防止数字太密重叠
       const step = state.n > 30 ? Math.ceil(state.n / 15) : 1;
       if (k % step === 0 || k === state.n) {
         html += `<text x="${sx(k)}" y="${h - m.bottom + 15}" text-anchor="middle" font-size="12" fill="#333">${k}</text>`;
@@ -191,7 +222,7 @@
       SD(X) = &radic;(npq) = <strong>${sd.toFixed(4)}</strong>
     `;
 
-    // 不管 n 是多少，表格数据都重新计算并填充
+    // 填充表格
     const table = document.getElementById('binomTable');
     let tr = `<tr style="background:#eee;"><th>k</th><th>P(X=k)</th></tr>`;
     probs.forEach((prob, k) => {
