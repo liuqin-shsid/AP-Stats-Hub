@@ -14,6 +14,8 @@
   <script src="data/regression.js"></script>
   <script src="data/display.js"></script>
   <link rel="stylesheet" href="style.css">
+  <!-- 二项分布独立的 CSS -->
+  <link rel="stylesheet" href="binomial-histogram.css">
 </head>
 <body>
   <header class="site-header"><div class="brand" data-i18n="brand">AP Stats Hub</div><button id="langToggle" class="lang-toggle" type="button">EN</button></header>
@@ -135,13 +137,10 @@
       <div id="cmpPage" hidden></div>
       <div id="customPage" hidden></div>
       <div id="zscorePage" hidden></div>
-      
-      <!-- ★ 新增：Re-expression 的容器 -->
       <div id="reexprPage" hidden></div>
-
+      <div id="binomialPage" hidden></div>
       <div id="samplingPage" hidden></div>
       <div id="proportionPage" hidden></div>
-      <div id="binomialPage" hidden></div>
     </main>
   </div>
   <footer><span>© 2026</span><span>SHSID AP Stats Hub</span></footer>
@@ -168,10 +167,7 @@
   <script src="pages/linear.js"></script>
   <script src="pages/zscore.js"></script>
   <script src="pages/binomial-histogram.js"></script>
-  
-  <!-- ★ 新增：Re-expression 的脚本 -->
   <script src="pages/re-expression.js"></script>
-
   <script src="pages/sampling-mean.js"></script>
   <script src="pages/sampling-proportion.js"></script>
   
