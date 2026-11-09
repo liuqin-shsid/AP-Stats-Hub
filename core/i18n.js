@@ -5,6 +5,7 @@ const translations = {
     brand: 'AP Stats Hub',
     sidebar_title: '学习工具',
     nav_linreg: '线性回归教学',
+    nav_probability: '概率模型', // 👈 与 pages.js 里的 group 对应
     nav_sampling: '抽样分布',
     heading_title: '相关关系探究',
     heading_desc: '拖动数据点，观察最佳拟合线、相关系数与 R² 的变化。',
@@ -34,13 +35,14 @@ const translations = {
     best_fit_line: '最佳拟合直线',
     slope: '斜率',
     intercept: '截距',
-    nav_binomial: '概率分布',
+    zscore_title: 'z-score 标准化',
     binomial_title: '二项分布',
   },
   en: {
     brand: 'AP Stats Hub',
     sidebar_title: 'Learning tools',
     nav_linreg: 'Linear Regression',
+    nav_probability: 'Probability Model', // 👈 英文分组名
     nav_sampling: 'Sampling Distributions',
     heading_title: 'Correlation Explorer',
     heading_desc: 'Drag the data points and watch the best-fit line, correlation, and R² update live.',
@@ -70,7 +72,7 @@ const translations = {
     best_fit_line: 'Best-Fit Line',
     slope: 'Slope',
     intercept: 'Intercept',
-    nav_binomial: 'Probability Distribution',
+    zscore_title: 'z-score Standardization',
     binomial_title: 'Binomial Distribution',
   },
 };

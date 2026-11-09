@@ -390,8 +390,53 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
   border-color: #e6b0aa;
   color: #a93226;
 }
+
 /* Re-expression 网格 */
 .reexpr-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 15px; margin-top: 18px; }
 .reexpr-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; min-width: 0; }
 .reexpr-equ { display: flex; align-items: center; justify-content: center; background: #f7f9fb; text-align: center; }
 .reexpr-chart { display: block; width: 100%; height: auto; user-select: none; cursor: crosshair; }
+
+/* =========================================
+   二项分布页面布局 (Binomial Layout)
+========================================= */
+.binomial-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 15px;
+}
+@media (max-width: 900px) {
+  .binomial-layout { grid-template-columns: 1fr; }
+}
+.binomial-info-panel {
+  padding: 20px;
+  background: #f7fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.binomial-info-panel h3 {
+  margin-top: 0;
+  color: var(--navy);
+  font-size: 16px;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 5px;
+}
+.binomial-formula {
+  font-size: 16px;
+  margin: 15px 0;
+}
+.table-scroll {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+#binomTableWrapper {
+  display: none;
+  margin-top: 15px;
+}
+#binomTableWrapper.show {
+  display: block;
+}
