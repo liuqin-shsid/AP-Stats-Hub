@@ -42,7 +42,6 @@
     const t = translations[lang];
     const page = document.getElementById('binomialPage');
     
-    // 输入框并排布局
     page.innerHTML = `
       <div class="page-heading"><div>
         <h1 data-i18n="binomial_title">${t.binomial_title}</h1>
@@ -94,13 +93,11 @@
     document.getElementById('binomN').addEventListener('input', e => {
       let val = parseFloat(e.target.value);
       if (isNaN(val)) return;
-      // 限制范围 2-100
       if (val < 2) val = 2;
       if (val > 100) val = 100;
       state.n = Math.floor(val);
       updateAll();
     });
-    // 失焦时如果清空了，恢复合法值
     document.getElementById('binomN').addEventListener('change', e => {
       if (e.target.value === '' || isNaN(state.n)) {
         state.n = 20;
@@ -115,7 +112,6 @@
     document.getElementById('binomP').addEventListener('input', e => {
       let val = parseFloat(e.target.value);
       if (isNaN(val)) return;
-      // 限制范围 0-1
       if (val < 0) val = 0;
       if (val > 1) val = 1;
       state.p = val;
@@ -155,9 +151,12 @@
     const m = { top: 30, right: 20, bottom: 40, left: 50 };
     const maxProb = Math.max(...probs);
     
-    const sx = k => m.left + (k / state.n) * (w - m.left - m.right);
+    // 修复1：居中计算，同时让 k=0 不会被 Y 轴切掉
+    const sx = k => m.left + ((k + 0.5) / (state.n + 1)) * (w - m.left - m.right);
     const sy = p => h - m.bottom - (p / maxProb) * (h - m.top - m.bottom);
-    const barWidth = (w - m.left - m.right) / (state.n + 1) - 2;
+    
+    // 修复2：加上 0.5 像素，填满柱子之间的白缝
+    const barWidth = (w - m.left - m.right) / (state.n + 1) + 0.5;
 
     let html = `<text x="${w/2}" y="20" text-anchor="middle" font-weight="bold">B(n=${state.n}, p=${state.p.toFixed(2)})</text>`;
 
@@ -179,7 +178,6 @@
                  </rect>`;
       }
       
-      // 坐标轴刻度：防止数字太密重叠
       const step = state.n > 30 ? Math.ceil(state.n / 15) : 1;
       if (k % step === 0 || k === state.n) {
         html += `<text x="${sx(k)}" y="${h - m.bottom + 15}" text-anchor="middle" font-size="12" fill="#333">${k}</text>`;
@@ -222,7 +220,6 @@
       SD(X) = &radic;(npq) = <strong>${sd.toFixed(4)}</strong>
     `;
 
-    // 填充表格
     const table = document.getElementById('binomTable');
     let tr = `<tr style="background:#eee;"><th>k</th><th>P(X=k)</th></tr>`;
     probs.forEach((prob, k) => {
