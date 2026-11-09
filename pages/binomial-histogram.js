@@ -76,6 +76,7 @@
           <div class="binomial-formula" id="binomFormula"></div>
           
           <h3 data-i18n="binomial_stats" style="margin-top:20px;">${t.binomial_stats}</h3>
+          <!-- 这里用 div 包裹，方便用 KaTeX 渲染 -->
           <div id="binomStats" style="font-size:16px; line-height:1.8; margin-bottom:20px;"></div>
 
           <!-- 表格区域 -->
@@ -151,11 +152,10 @@
     const m = { top: 30, right: 20, bottom: 40, left: 50 };
     const maxProb = Math.max(...probs);
     
-    // 修复1：居中计算，同时让 k=0 不会被 Y 轴切掉
+    // 让 k=0 不被 Y 轴切掉
     const sx = k => m.left + ((k + 0.5) / (state.n + 1)) * (w - m.left - m.right);
     const sy = p => h - m.bottom - (p / maxProb) * (h - m.top - m.bottom);
-    
-    // 修复2：加上 0.5 像素，填满柱子之间的白缝
+    // 柱子之间无缝连接
     const barWidth = (w - m.left - m.right) / (state.n + 1) + 0.5;
 
     let html = `<text x="${w/2}" y="20" text-anchor="middle" font-weight="bold">B(n=${state.n}, p=${state.p.toFixed(2)})</text>`;
@@ -208,18 +208,40 @@
     }
 
     const nStr = n === 1 ? '' : n;
+    // 渲染组合数公式
     document.getElementById('binomFormula').innerHTML = `
       P(X = k) = <sub>${nStr}</sub>C<sub>k</sub> &middot; (${p.toFixed(2)})<sup>k</sup> &middot; (1 - ${p.toFixed(2)})<sup>${n}-k</sup><br>
       <span style="font-size:14px; color:#666;">k = 0, 1, ..., ${n}</span>
     `;
 
+    // ==========================================
+    // 使用 KaTeX 渲染统计指标 (核心修改)
+    // ==========================================
     const mean = n * p;
     const sd = Math.sqrt(n * p * q);
-    document.getElementById('binomStats').innerHTML = `
-      E(X) = np = <strong>${mean.toFixed(2)}</strong><br>
-      SD(X) = &radic;(npq) = <strong>${sd.toFixed(4)}</strong>
-    `;
+    const statsEl = document.getElementById('binomStats');
+    statsEl.innerHTML = ''; // 先清空
 
+    const divE = document.createElement('div');
+    const divSD = document.createElement('div');
+    divSD.style.marginTop = '8px';
+
+    if (window.katex) {
+      katex.render(`E(X) = np = ${mean.toFixed(2)}`, divE, { throwOnError: false });
+      katex.render(`SD(X) = \\sqrt{npq} = ${sd.toFixed(4)}`, divSD, { throwOnError: false });
+      statsEl.appendChild(divE);
+      statsEl.appendChild(divSD);
+    } else {
+      // 如果 KaTeX 没有加载成功，回退到普通文本
+      statsEl.innerHTML = `
+        E(X) = np = <strong>${mean.toFixed(2)}</strong><br>
+        SD(X) = &radic;(npq) = <strong>${sd.toFixed(4)}</strong>
+      `;
+    }
+
+    // ==========================================
+    // 填充表格
+    // ==========================================
     const table = document.getElementById('binomTable');
     let tr = `<tr style="background:#eee;"><th>k</th><th>P(X=k)</th></tr>`;
     probs.forEach((prob, k) => {
