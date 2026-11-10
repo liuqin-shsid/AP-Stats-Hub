@@ -440,3 +440,51 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 #binomTableWrapper.show {
   display: block;
 }
+
+/* ---------- 正态分布页 ---------- */
+.controls .seg-label { gap:6px; }
+.seg { display:flex; border:1px solid #c9d2da; border-radius:6px; overflow:hidden; background:#fff; }
+.seg button { height:34px; padding:0 14px; border:0; border-right:1px solid #e3e9ee; background:#fff;
+  color:#5b6874; font:600 13px inherit; cursor:pointer; white-space:nowrap; }
+.seg button:last-child { border-right:0; }
+.seg button:hover { background:#f2f7fb; }
+.seg button.on { background:var(--blue); color:#fff; }
+.normal-args { display:flex; align-items:end; gap:13px 16px; }
+.normal-args input { width:120px; }
+.normal-args .preset { display:flex; align-items:center; gap:6px; color:#687581; font-size:13px; }
+.normal-args .preset button { height:28px; padding:0 10px; border:1px solid #c9d2da; border-radius:5px;
+  background:#fff; color:var(--blue); font:600 13px inherit; cursor:pointer; }
+.normal-args .preset button:hover { border-color:var(--blue); background:#f2f7fb; }
+.normal-args .preset button.on { border-color:var(--blue); background:var(--blue); color:#fff; }
+.controls #nMu, .controls #nSigma { width:110px; height:34px; padding:0 9px;
+  border:1px solid #c9d2da; border-radius:5px; font:14px inherit; color:var(--text); }
+
+.normal-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:14px 0 4px; }
+.normal-stats > div { padding:12px 16px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+.normal-stats .wide { grid-column:span 1; }
+.normal-stats span { display:block; margin-bottom:3px; color:#687581; font-size:12.5px; }
+.normal-stats strong { color:var(--navy); font-size:19px; font-variant-numeric:tabular-nums; }
+.normal-stats strong b { color:#9f3027; }
+@media (max-width:900px){ .normal-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.normal-chart-panel { margin-top:12px; padding:8px 10px; }
+.normal-chart-panel svg { display:block; width:100%; height:auto; touch-action:none; user-select:none; }
+.n-curve { fill:none; stroke:var(--navy); stroke-width:2.4; }
+.n-area { fill:rgba(21,101,168,.26); stroke:none; }
+.n-base { stroke:#50606d; stroke-width:1.2; }
+.n-mu { stroke:#8a97a3; stroke-width:1.4; stroke-dasharray:5 4; }
+.n-mu-text { fill:#5b6874; font-size:13px; font-weight:600; }
+.n-tick { stroke:#8a97a3; stroke-width:1; }
+.n-tick-x { fill:#42515e; font-size:12.5px; font-variant-numeric:tabular-nums; }
+.n-tick-z { fill:#8a97a3; font-size:12.5px; font-variant-numeric:tabular-nums; }
+.n-axis { fill:#263844; font-size:12.5px; font-weight:600; }
+.n-bound { stroke:#c73932; stroke-width:2; }
+.n-bound-text { fill:#a92e29; font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
+.n-handle circle { fill:#c73932; stroke:#fff; stroke-width:2; cursor:ew-resize; }
+.n-handle path { stroke:#fff; stroke-width:1.5; fill:none; pointer-events:none; }
+.n-area-text { fill:#14456f; font-size:18px; font-weight:700; paint-order:stroke;
+  stroke:#fff; stroke-width:4px; font-variant-numeric:tabular-nums; }
+.n-emp { stroke:#9aa5af; stroke-width:1.2; }
+.n-emp-text { fill:#687581; font-size:12px; font-weight:600; }
+.n-grab { fill:transparent; cursor:ew-resize; }
+.normal-chart-panel svg.dragging { cursor:ew-resize; }
