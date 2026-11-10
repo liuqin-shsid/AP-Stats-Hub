@@ -17,6 +17,7 @@ const PAGES = [
   { tool:'linear',       group:'linreg',  pageId:'linearPage',      titleKey:'linear_title' },
   { tool:'zscore',       group:'linreg',  pageId:'zscorePage',      titleKey:'zscore_title' },
   { tool:'reexpr',       group:'linreg',  pageId:'reexprPage',      titleKey:'reexpr_title' },
+  { tool:'normal',       group:'probability', pageId:'normalPage',    titleKey:'normal_title' },
   { tool:'binomial',     group:'probability', pageId:'binomialPage',  titleKey:'binomial_title' },
   { tool:'sampling',     group:'sampling', pageId:'samplingPage',   titleKey:'sampling_title' },
   { tool:'proportion',   group:'sampling', pageId:'proportionPage', titleKey:'proportion_title' },
