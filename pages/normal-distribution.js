@@ -208,7 +208,8 @@
     } else {
       html = `<label><span>${escapeHtml(t.normal_area_in)}</span><input id="nArea" type="number" step="0.01" min="0" max="1" value="${state.area}"></label>`
            + `<div class="preset"><span>${escapeHtml(t.normal_presets)}</span>`
-           + [0.90, 0.95, 0.99].map(v => `<button type="button" data-area="${v}">${v}</button>`).join('')
+           + [0.90, 0.95, 0.99].map(v =>
+               `<button type="button" data-area="${v}"${Math.abs(state.area - v) < 1e-9 ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>${v}</button>`).join('')
            + `</div>`;
     }
     $('nArgs').innerHTML = html;
@@ -312,7 +313,7 @@
            `<rect class="n-grab" data-b="${key}" x="${p - 13}" y="${M.top - 20}" width="26" height="${base - M.top + 20}"/>` +
            `<g class="n-handle" data-b="${key}"><circle cx="${p}" cy="${M.top - 9}" r="9"/>` +
            `<path d="M ${p - 3.5} ${M.top - 12} L ${p - 3.5} ${M.top - 6} M ${p + 3.5} ${M.top - 12} L ${p + 3.5} ${M.top - 6}"/></g>` +
-           `<text class="n-bound-text" x="${p}" y="${base + 62}" text-anchor="middle">${fx(v)}　(z = ${fz(zOf(v, state.mu, state.sigma))})</text>`;
+           `<text class="n-bound-text" data-b="${key}" x="${p}" y="${base + 60}" text-anchor="middle">${fx(v)}　(z = ${fz(zOf(v, state.mu, state.sigma))})</text>`;
     }
 
     // 面积标签贴在阴影上
@@ -321,6 +322,28 @@
       s += `<text class="n-area-text" x="${px(mid)}" y="${base - 14}" text-anchor="middle">${fp(area)}</text>`;
     }
     $('nChart').innerHTML = s;
+    layoutBoundLabels(base);
+  }
+
+  /* 两个边界离得近时标签会叠在一起。插进 DOM 之后用 getBBox 实测宽度，
+     真的重叠了就把上界那条挪到第二行；顺便把跑出画布的标签拉回来。 */
+  function layoutBoundLabels(base) {
+    const labels = [...$('nChart').querySelectorAll('.n-bound-text')];
+    if (!labels.length) return;
+    const clamp = el => {
+      const b = el.getBBox();
+      const x = Number(el.getAttribute('x'));
+      if (b.x < 4) el.setAttribute('x', x + (4 - b.x));
+      else if (b.x + b.width > W - 4) el.setAttribute('x', x - (b.x + b.width - (W - 4)));
+    };
+    labels.forEach(clamp);
+    if (labels.length < 2) return;
+    const [a, b] = labels;
+    const ba = a.getBBox(), bb = b.getBBox();
+    if (ba.x + ba.width + 8 > bb.x) {          // 会撞上 → 第二个下移一行
+      b.setAttribute('y', base + 77);
+      clamp(b);
+    }
   }
 
   /* 把拖到的位置写回状态。
@@ -413,6 +436,11 @@
      keepAll : 拖动过程中连输入框的值也先不同步，拖完再统一刷新 */
   function syncSegs() {
     const page = $('normalPage');
+    page.querySelectorAll('[data-area]').forEach(b => {
+      const on = Math.abs(state.area - Number(b.dataset.area)) < 1e-9;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
     page.querySelectorAll('[data-mode]').forEach(b => {
       const on = b.dataset.mode === state.mode;
       b.classList.toggle('on', on);

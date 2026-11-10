@@ -455,6 +455,7 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
 .normal-args .preset button { height:28px; padding:0 10px; border:1px solid #c9d2da; border-radius:5px;
   background:#fff; color:var(--blue); font:600 13px inherit; cursor:pointer; }
 .normal-args .preset button:hover { border-color:var(--blue); background:#f2f7fb; }
+.normal-args .preset button.on { border-color:var(--blue); background:var(--blue); color:#fff; }
 .controls #nMu, .controls #nSigma { width:110px; height:34px; padding:0 9px;
   border:1px solid #c9d2da; border-radius:5px; font:14px inherit; color:var(--text); }
 
