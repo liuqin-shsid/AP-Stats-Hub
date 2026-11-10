@@ -485,3 +485,5 @@ button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
   stroke:#fff; stroke-width:4px; font-variant-numeric:tabular-nums; }
 .n-emp { stroke:#9aa5af; stroke-width:1.2; }
 .n-emp-text { fill:#687581; font-size:12px; font-weight:600; }
+.n-grab { fill:transparent; cursor:ew-resize; }
+.normal-chart-panel svg.dragging { cursor:ew-resize; }

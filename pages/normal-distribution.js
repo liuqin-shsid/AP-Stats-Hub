@@ -238,6 +238,15 @@
   const headroom = () => state.empirical ? 1.34 : 1.08;   // 开经验法则时给顶部腾出空间
   const py = d => M.top + (H - M.bottom - M.top) * (1 - d / (peak() * headroom()));
 
+  let fullCurve = { key: '', d: '' };
+  const curveKey = () => `${state.mu}|${state.sigma}|${state.empirical}`;
+  function fullCurvePath() {
+    if (fullCurve.key !== curveKey()) {
+      const [l, r] = domain();
+      fullCurve = { key: curveKey(), d: curvePath(l, r) };
+    }
+    return fullCurve.d;
+  }
   function curvePath(from, to) {
     const n = 240, [l, r] = domain();
     const a = Math.max(from, l), b = Math.min(to, r);
@@ -276,7 +285,7 @@
 
     // 曲线 + 基线
     s += `<line class="n-base" x1="${M.left}" y1="${base}" x2="${W - M.right}" y2="${base}"/>`;
-    s += `<path class="n-curve" d="${curvePath(l, r)}"/>`;
+    s += `<path class="n-curve" d="${fullCurvePath()}"/>`;
 
     // μ 中线
     s += `<line class="n-mu" x1="${px(state.mu)}" y1="${py(peak())}" x2="${px(state.mu)}" y2="${base}"/>` +
@@ -300,7 +309,8 @@
       if (v < l || v > r) continue;
       const p = px(v);
       s += `<line class="n-bound" x1="${p}" y1="${M.top}" x2="${p}" y2="${base}"/>` +
-           `<g class="n-handle" data-b="${key}"><circle cx="${p}" cy="${M.top - 9}" r="8"/>` +
+           `<rect class="n-grab" data-b="${key}" x="${p - 13}" y="${M.top - 20}" width="26" height="${base - M.top + 20}"/>` +
+           `<g class="n-handle" data-b="${key}"><circle cx="${p}" cy="${M.top - 9}" r="9"/>` +
            `<path d="M ${p - 3.5} ${M.top - 12} L ${p - 3.5} ${M.top - 6} M ${p + 3.5} ${M.top - 12} L ${p + 3.5} ${M.top - 6}"/></g>` +
            `<text class="n-bound-text" x="${p}" y="${base + 62}" text-anchor="middle">${fx(v)}　(z = ${fz(zOf(v, state.mu, state.sigma))})</text>`;
     }
@@ -313,31 +323,64 @@
     $('nChart').innerHTML = s;
   }
 
-  /* 拖动边界：求面积模式才可拖（求边界模式的边界是算出来的） */
+  /* 把拖到的位置写回状态。
+     求面积模式直接改边界；求边界模式改的是面积 —— 那边的边界是算出来的，
+     直接写边界会被下一次 solve() 覆盖掉，所以反推成面积才站得住。 */
+  function applyDragTo(x, which) {
+    const { mu, sigma, region } = state;
+    if (state.mode === 'area') {
+      if (region === 'center') {
+        if (which === 'lo') state.a = Math.min(x, state.b);
+        else state.b = Math.max(x, state.a);
+      } else state.a = x;
+      return;
+    }
+    const z = zOf(x, mu, sigma);
+    let A;
+    if (region === 'left') A = cdfZ(z);
+    else if (region === 'right') A = 1 - cdfZ(z);
+    else A = 2 * cdfZ(Math.abs(z)) - 1;          // 中间区域对称，只认离 μ 的距离
+    state.area = +Math.min(0.9999, Math.max(0.0001, A)).toFixed(4);
+  }
+
+  /* 拖动边界。整条竖线都是抓取区（.n-grab 是一条透明的宽带），
+     重绘用 requestAnimationFrame 节流，一帧最多画一次。 */
   function bindDrag() {
     const svg = $('nChart');
-    let drag = null;
+    let drag = null, pending = null, raf = 0;
     const toX = ev => {
       const box = svg.getBoundingClientRect();
       return xOfPx((ev.clientX - box.left) * W / box.width);
     };
+    const flush = () => {
+      raf = 0;
+      if (pending === null) return;
+      applyDragTo(pending, drag);
+      pending = null;
+      render(false, true);
+    };
     svg.addEventListener('pointerdown', ev => {
-      if (state.mode !== 'area') return;
-      const g = ev.target.closest('.n-handle');
+      const g = ev.target.closest('.n-grab, .n-handle');
       if (!g) return;
       drag = g.dataset.b;
-      svg.setPointerCapture(ev.pointerId);
+      try { svg.setPointerCapture(ev.pointerId); } catch {}
+      svg.classList.add('dragging');
       ev.preventDefault();
     });
     svg.addEventListener('pointermove', ev => {
       if (!drag) return;
-      const x = toX(ev);
-      if (state.region === 'center') {
-        if (drag === 'lo') state.a = Math.min(x, state.b); else state.b = Math.max(x, state.a);
-      } else state.a = x;
-      render(false, true);
+      pending = toX(ev);
+      if (!raf) raf = requestAnimationFrame(flush);
     });
-    const stop = ev => { if (drag) { drag = null; try { svg.releasePointerCapture(ev.pointerId); } catch {} render(); } };
+    const stop = ev => {
+      if (!drag) return;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      flush();
+      drag = null;
+      svg.classList.remove('dragging');
+      try { svg.releasePointerCapture(ev.pointerId); } catch {}
+      render();
+    };
     svg.addEventListener('pointerup', stop);
     svg.addEventListener('pointercancel', stop);
   }
@@ -368,10 +411,25 @@
   /* ---------- 渲染 ---------- */
   /* keepArgs: 正在输入框里打字时不要重建输入框，否则光标会跳
      keepAll : 拖动过程中连输入框的值也先不同步，拖完再统一刷新 */
+  function syncSegs() {
+    const page = $('normalPage');
+    page.querySelectorAll('[data-mode]').forEach(b => {
+      const on = b.dataset.mode === state.mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    page.querySelectorAll('[data-region]').forEach(b => {
+      const on = b.dataset.region === state.region;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+  }
+
   function render(keepArgs, keepAll) {
     if (!keepArgs && !keepAll) renderArgs();
     else if (keepAll) syncArgInputs();
-    $('nNote').textContent = state.note || (state.mode === 'area' ? T().normal_drag : '');
+    syncSegs();
+    $('nNote').textContent = state.note || T().normal_drag;
     $('nNote').classList.toggle('danger', !!state.note);
     renderStats();
     draw();
@@ -379,7 +437,11 @@
   /* 拖动时只改输入框里的数字，不重建元素 */
   function syncArgInputs() {
     const a = $('nA'), b = $('nB');
-    if (state.mode !== 'area') return;
+    if (state.mode !== 'area') {
+      const ar = $('nArea');
+      if (ar) ar.value = state.area.toFixed(4);
+      return;
+    }
     if (state.region === 'center') {
       if (a) a.value = Math.min(state.a, state.b).toFixed(dec());
       if (b) b.value = Math.max(state.a, state.b).toFixed(dec());
