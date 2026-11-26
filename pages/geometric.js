@@ -59,7 +59,7 @@
     const tableBody = document.getElementById('geoTableBody');
     const svg = document.getElementById('geoChart');
 
-    // 尝试应用当前的 i18n 翻译 (如果项目有全局函数的话)
+    // 尝试应用当前的 i18n 翻译
     if (window.applyTranslations) {
       window.applyTranslations(container);
     }
@@ -168,7 +168,7 @@
         const y = yScale(prob);
         const h = margin.top + height - y;
         
-        // 使用主题色
+        // 使用主题色，紧密相连
         svgHtml += `<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" fill="#2878b8" stroke="#004f7d" stroke-width="1" />`;
       }
 
