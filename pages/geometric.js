@@ -1,6 +1,10 @@
 /* pages/geometric.js */
 (function() {
+  // 核心渲染函数
   window.renderGeometricPage = function(container) {
+    // 如果已经渲染过就不重复渲染（防止事件重复绑定）
+    if (container.querySelector('#geoP')) return;
+
     // 支持多语言的 HTML 结构
     const html = `
       <div class="page-heading">
@@ -181,6 +185,27 @@
       if (e.key === 'Enter') generate();
     });
 
+    // 首次渲染
     generate();
   };
+
+  // ================== 路由兼容机制 ==================
+  // 自动检测并渲染（应对不同项目的路由架构）
+  function checkAndRender() {
+    const geoContainer = document.getElementById('geometricPage');
+    // 如果容器存在、可见（没有 hidden 属性），且还没渲染过
+    if (geoContainer && !geoContainer.hasAttribute('hidden') && !geoContainer.querySelector('#geoP')) {
+      window.renderGeometricPage(geoContainer);
+    }
+  }
+
+  // 监听路由哈希变化
+  window.addEventListener('hashchange', checkAndRender);
+  // 监听全局点击，延迟检查（给侧边栏路由逻辑留出切换 DOM 的时间）
+  document.addEventListener('click', () => setTimeout(checkAndRender, 50));
+  // 初始化时检查一次
+  document.addEventListener('DOMContentLoaded', checkAndRender);
+
+  // 如果你的框架有暴露特定的路由回调，也可以在这里手动挂载：
+  window.addEventListener('pageChanged', checkAndRender);
 })();
