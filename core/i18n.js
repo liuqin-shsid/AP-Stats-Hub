@@ -38,6 +38,12 @@ const translations = {
     zscore_title: 'z-score 标准化',
     binomial_title: '二项分布',
     geometric_title: '几何分布',
+    geometric_desc: '模拟首次成功所需的试验次数。调整概率 p，观察概率质量函数 (PMF) 和累积分布函数 (CDF)。', // <--- 补上这行
+    geo_p_label: '成功概率 p (0 < p ≤ 1)',
+    geo_generate: '生成 / Generate',
+    geo_hist_title: '几何分布直方图',
+    geo_model_title: '概率模型',
+    geo_th_k: 'k (次数)',
   },
   en: {
     brand: 'AP Stats Hub',
@@ -76,6 +82,12 @@ const translations = {
     zscore_title: 'z-score Standardization',
     binomial_title: 'Binomial Distribution',
     geometric_title: 'Geometric Distribution',
+    geometric_desc: 'Simulate the number of trials until the first success. Adjust the probability p to observe the PMF and CDF.',
+    geo_p_label: 'Probability of Success p (0 < p ≤ 1)',
+    geo_generate: 'Generate',
+    geo_hist_title: 'Geometric Distribution Histogram',
+    geo_model_title: 'Probability Model',
+    geo_th_k: 'k (Trials)',
   },
 };
 let lang = localStorage.getItem('apstats-lang') || 'zh';
