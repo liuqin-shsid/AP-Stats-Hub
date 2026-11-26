@@ -37,6 +37,7 @@ const translations = {
     intercept: '截距',
     zscore_title: 'z-score 标准化',
     binomial_title: '二项分布',
+    geometric_title: '几何分布',
   },
   en: {
     brand: 'AP Stats Hub',
@@ -74,6 +75,7 @@ const translations = {
     intercept: 'Intercept',
     zscore_title: 'z-score Standardization',
     binomial_title: 'Binomial Distribution',
+    geometric_title: 'Geometric Distribution',
   },
 };
 let lang = localStorage.getItem('apstats-lang') || 'zh';
