@@ -17,6 +17,8 @@ const PAGES = [
   { tool:'zscore',       group:'linreg',  pageId:'zscorePage',      titleKey:'zscore_title' },
   // 将二项分布移入概率模型分支
   { tool:'binomial',     group:'probability', pageId:'binomialPage', titleKey:'binomial_title' },
+   // 新增：几何分布
+  { tool:'geometric',      group:'probability', pageId:'geometricPage', titleKey:'geometric_title' },
   { tool:'sampling',     group:'sampling', pageId:'samplingPage',   titleKey:'sampling_title' },
   { tool:'proportion',   group:'sampling', pageId:'proportionPage', titleKey:'proportion_title' },
 ];
